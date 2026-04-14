@@ -1,0 +1,10 @@
+{
+  "name": "padaria-pao-fresquim",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Monorepo do sistema de gestão da Padaria Pão FresQUIM.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
