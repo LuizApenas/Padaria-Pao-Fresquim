@@ -1,0 +1,221 @@
+generator client {
+  // Gera o cliente clássico do Prisma em node_modules.
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // O tipo de banco do projeto é PostgreSQL.
+  provider = "postgresql"
+}
+
+// Perfis de acesso previstos na documentação do projeto.
+enum Role {
+  PROPRIETARIO
+  ATENDENTE
+  PADEIRO
+}
+
+// Formas de pagamento aceitas no sistema.
+enum FormaPagamento {
+  DINHEIRO
+  DEBITO
+  CREDITO
+  PIX
+  FIADO
+}
+
+// Situação do cliente em relação ao Serasa.
+enum StatusSerasa {
+  REGULAR
+  NEGATIVADO
+}
+
+// Estado do envio de cobrança do módulo de fiado.
+enum StatusNotificacao {
+  NENHUMA
+  PENDENTE
+  ENVIADA
+  FALHA
+}
+
+// Tipos de marcação do ponto digital.
+enum TipoRegistroPonto {
+  ENTRADA
+  SAIDA
+}
+
+// Estado de uma venda no sistema.
+enum StatusVenda {
+  PENDENTE
+  CONCLUIDA
+  CANCELADA
+}
+
+// Cadastro principal dos clientes atendidos pela padaria.
+model Cliente {
+  id           Int          @id @default(autoincrement())
+  nome         String
+  telefone     String       @unique
+  endereco     String
+  cpf          String       @unique
+  // Controle do status financeiro do cliente para operações de fiado.
+  statusSerasa StatusSerasa @default(REGULAR) @map("status_serasa")
+  ativo        Boolean      @default(true)
+  // Um cliente pode ter, no máximo, uma conta de fiado.
+  contaFiado   ContaFiado?
+  // Histórico de compras vinculadas ao cliente.
+  vendas       Venda[]
+  // Campos padrão de auditoria.
+  criadoEm     DateTime     @default(now()) @map("criado_em")
+  atualizadoEm DateTime     @updatedAt @map("atualizado_em")
+
+  @@map("clientes")
+}
+
+// Cadastro completo de funcionários com autenticação e vínculo operacional.
+model Funcionario {
+  id                Int             @id @default(autoincrement())
+  nome              String
+  cpf               String          @unique
+  telefone          String
+  endereco          String
+  matricula         String          @unique
+  cargo             String
+  dataAdmissao      DateTime        @map("data_admissao") @db.Date
+  contatoEmergencia String          @map("contato_emergencia")
+  role              Role
+  email             String          @unique
+  // A senha fica armazenada somente como hash.
+  senhaHash         String          @map("senha_hash")
+  ativo             Boolean         @default(true)
+  // Relacionamentos operacionais do funcionário no sistema.
+  vendas            Venda[]
+  registrosPonto    RegistroPonto[]
+  ferias            Ferias[]
+  licencas          Licenca[]
+  atestados         Atestado[]
+  criadoEm          DateTime        @default(now()) @map("criado_em")
+  atualizadoEm      DateTime        @updatedAt @map("atualizado_em")
+
+  @@map("funcionarios")
+}
+
+// Catálogo de produtos vendidos pela padaria.
+model Produto {
+  id           Int         @id @default(autoincrement())
+  codigoBarras String      @unique @map("codigo_barras")
+  nome         String
+  precoBase    Decimal     @map("preco_base") @db.Decimal(10, 2)
+  categoria    String
+  imagemUrl    String?     @map("imagem_url")
+  ativo        Boolean     @default(true)
+  // Itens de venda permitem rastrear onde o produto foi utilizado.
+  itensVenda   ItemVenda[]
+  criadoEm     DateTime    @default(now()) @map("criado_em")
+  atualizadoEm DateTime    @updatedAt @map("atualizado_em")
+
+  @@map("produtos")
+}
+
+// Cabeçalho da venda com responsável, cliente e forma de pagamento.
+model Venda {
+  id             Int             @id @default(autoincrement())
+  dataHora       DateTime        @default(now()) @map("data_hora")
+  valorTotal     Decimal         @map("valor_total") @db.Decimal(10, 2)
+  formaPagamento FormaPagamento  @map("forma_pagamento")
+  status         StatusVenda     @default(PENDENTE)
+  funcionarioId  Int             @map("funcionario_id")
+  // Cliente é opcional porque nem toda venda precisa ser identificada.
+  clienteId      Int?            @map("cliente_id")
+  funcionario    Funcionario     @relation(fields: [funcionarioId], references: [id])
+  cliente        Cliente?        @relation(fields: [clienteId], references: [id])
+  // A venda sempre agrega um ou mais itens.
+  itens          ItemVenda[]
+  criadoEm       DateTime        @default(now()) @map("criado_em")
+  atualizadoEm   DateTime        @updatedAt @map("atualizado_em")
+
+  @@map("vendas")
+}
+
+// Tabela de junção entre venda e produto com quantidade e subtotal.
+model ItemVenda {
+  vendaId    Int      @map("venda_id")
+  produtoId  Int      @map("produto_id")
+  quantidade Int
+  subtotal   Decimal  @db.Decimal(10, 2)
+  venda      Venda    @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+  produto    Produto  @relation(fields: [produtoId], references: [id])
+
+  @@id([vendaId, produtoId])
+  @@map("itens_venda")
+}
+
+// Controle financeiro do fiado por cliente.
+model ContaFiado {
+  id                 Int                @id @default(autoincrement())
+  saldoDevedor       Decimal            @default(0) @map("saldo_devedor") @db.Decimal(10, 2)
+  dataUltimaCobranca DateTime?          @map("data_ultima_cobranca")
+  statusNotificacao  StatusNotificacao  @default(NENHUMA) @map("status_notificacao")
+  // Garantimos uma única conta de fiado por cliente.
+  clienteId          Int                @unique @map("cliente_id")
+  cliente            Cliente            @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  criadoEm           DateTime           @default(now()) @map("criado_em")
+  atualizadoEm       DateTime           @updatedAt @map("atualizado_em")
+
+  @@map("contas_fiado")
+}
+
+// Registro individual de entrada e saída do ponto.
+model RegistroPonto {
+  id             Int                @id @default(autoincrement())
+  dataHoraBatida DateTime           @default(now()) @map("data_hora_batida")
+  tipoRegistro   TipoRegistroPonto  @map("tipo_registro")
+  funcionarioId  Int                @map("funcionario_id")
+  funcionario    Funcionario        @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  criadoEm       DateTime           @default(now()) @map("criado_em")
+
+  @@map("registros_ponto")
+}
+
+// Períodos de férias vinculados aos funcionários.
+model Ferias {
+  id            Int         @id @default(autoincrement())
+  funcionarioId Int         @map("funcionario_id")
+  dataInicio    DateTime    @map("data_inicio") @db.Date
+  dataFim       DateTime    @map("data_fim") @db.Date
+  observacao    String?
+  funcionario   Funcionario @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  criadoEm      DateTime    @default(now()) @map("criado_em")
+  atualizadoEm  DateTime    @updatedAt @map("atualizado_em")
+
+  @@map("ferias")
+}
+
+// Licenças e afastamentos registrados pelo proprietário.
+model Licenca {
+  id                Int         @id @default(autoincrement())
+  funcionarioId     Int         @map("funcionario_id")
+  tipo              String
+  dataInicio        DateTime    @map("data_inicio") @db.Date
+  retornoPrevistoEm DateTime?   @map("retorno_previsto_em") @db.Date
+  observacao        String?
+  funcionario       Funcionario @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  criadoEm          DateTime    @default(now()) @map("criado_em")
+  atualizadoEm      DateTime    @updatedAt @map("atualizado_em")
+
+  @@map("licencas")
+}
+
+// Atestados enviados para justificar ausências.
+model Atestado {
+  id            Int          @id @default(autoincrement())
+  funcionarioId Int          @map("funcionario_id")
+  arquivoUrl    String       @map("arquivo_url")
+  dataEntrega   DateTime     @map("data_entrega") @db.Date
+  observacao    String?
+  funcionario   Funcionario  @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  criadoEm      DateTime     @default(now()) @map("criado_em")
+  atualizadoEm  DateTime     @updatedAt @map("atualizado_em")
+
+  @@map("atestados")
+}

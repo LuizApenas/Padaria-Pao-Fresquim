@@ -10,7 +10,7 @@ Sistema de gestão para a Padaria Pão FresQUIM (projeto acadêmico - Anhanguera
 
 ## Stack definida
 - **Back-end:** Node.js + Express + Prisma + PostgreSQL + REST
-- **Front-end:** Next.js (fase futura)
+- **Front-end:** React + Vite (fase futura)
 - **Chatbot:** WhatsApp (fase futura, consome APIs do back)
 
 ## Documentação completa
@@ -71,7 +71,7 @@ Semana 3: Docker (#12) + Postman (#13) + review cruzado
 ### Fase 2 - Integrações externas
 APIs reais: Serasa, NF-e (Sefaz), WhatsApp, E-mail
 
-### Fase 3 - Front-end Next.js
+### Fase 3 - Front-end React
 Telas conforme mockups. RNFs: fontes grandes (min 16px), botões grandes, sem submenus.
 
 ### Fase 4 - Chatbot WhatsApp
