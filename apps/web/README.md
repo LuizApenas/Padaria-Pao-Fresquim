@@ -13,6 +13,15 @@ Implementar as telas previstas na documentação, com foco em:
 
 ## Stack planejada
 
-- Next.js
 - React
+- Vite
 - interface orientada aos mockups oficiais do projeto
+
+## Status
+
+O frontend ainda não foi iniciado nesta etapa.
+Neste momento, o projeto está focado apenas em:
+
+- criação do banco;
+- modelagem das tabelas;
+- health check da API.
