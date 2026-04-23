@@ -10,7 +10,8 @@
     "prisma:validate": "npm run prisma:validate --workspace @padaria/api",
     "prisma:db:push": "npm run prisma:db:push --workspace @padaria/api",
     "prisma:studio": "npm run prisma:studio --workspace @padaria/api",
-    "prisma:seed": "npm run prisma:seed --workspace @padaria/api"
+    "prisma:seed": "npm run prisma:seed --workspace @padaria/api",
+    "storage:setup": "npm run storage:setup --workspace @padaria/api"
   },
   "workspaces": [
     "apps/*"

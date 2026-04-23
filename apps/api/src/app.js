@@ -3,6 +3,7 @@ import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 
+import { errorHandler } from "./middlewares/errorHandler.js";
 import { router } from "./routes/index.js";
 
 export function createApp() {
@@ -20,6 +21,8 @@ export function createApp() {
 
   // Concentra todas as rotas da aplicação em um único ponto de entrada.
   app.use(router);
+  // Registra o tratamento global de erros como último middleware da aplicação.
+  app.use(errorHandler);
 
   return app;
 }
