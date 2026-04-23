@@ -12,7 +12,8 @@
     "prisma:studio": "prisma studio",
     "prisma:db:push": "prisma db push",
     "prisma:validate": "prisma validate",
-    "prisma:seed": "node prisma/seed.js"
+    "prisma:seed": "node prisma/seed.js",
+    "storage:setup": "node scripts/setup-storage-produtos.js"
   },
   "devDependencies": {
     "nodemon": "^3.1.14",

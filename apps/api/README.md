@@ -9,7 +9,8 @@ Nesta fase, o backend foi preparado para:
 - conectar no PostgreSQL hospedado no Supabase;
 - modelar o banco com Prisma;
 - popular o banco com dados iniciais;
-- expor um endpoint mínimo de verificação da API.
+- expor um endpoint mínimo de verificação da API;
+- padronizar o retorno de erros da aplicação.
 
 ## Responsabilidades futuras
 
@@ -35,6 +36,7 @@ Nesta fase, o backend foi preparado para:
 - `prisma.config.ts` configurado para uso da conexão direta na CLI;
 - seed inicial com funcionários, clientes, produtos, contas de fiado e vendas;
 - endpoint `GET /health` para validar a subida do serviço;
+- tratamento global de erros com `AppError` e middleware centralizado;
 - integração local testada com `prisma validate`, `prisma db push`, `prisma seed` e `/health`.
 
 ## Estrutura principal
@@ -47,8 +49,12 @@ apps/api
 ├── src
 │   ├── config
 │   │   └── prisma.js
+│   ├── middlewares
+│   │   └── errorHandler.js
 │   ├── routes
 │   │   └── index.js
+│   ├── utils
+│   │   └── AppError.js
 │   ├── app.js
 │   └── server.js
 ├── .env.example
@@ -62,8 +68,12 @@ apps/api
 - `prisma/seed.js`: carga inicial de dados para desenvolvimento
 - `src/config/prisma.js`: inicialização do Prisma Client
 - `src/routes/index.js`: rota `/health`
+- `src/utils/AppError.js`: classe para erros controlados da aplicação
+- `src/middlewares/errorHandler.js`: middleware global que padroniza respostas de erro
 - `.env.example`: modelo das variáveis de ambiente do backend
 - `prisma.config.ts`: configuração da CLI do Prisma 7
+- `sql/setup-storage-produtos.sql`: definição idempotente do bucket de imagens de produtos
+- `scripts/setup-storage-produtos.js`: executor para provisionar o bucket no Supabase
 
 ## Scripts disponíveis
 
@@ -89,6 +99,9 @@ Também ficam definidos:
 - `NODE_ENV`
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
+- `SUPABASE_PROJECT_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_STORAGE_BUCKET_PRODUTOS`
 
 ## Como subir o backend
 
@@ -140,13 +153,25 @@ npm run prisma:db:push --workspace @padaria/api
 npm run prisma:seed --workspace @padaria/api
 ```
 
-### 6. Subir a API em ambiente local
+### 6. Provisionar o bucket de imagens dos produtos
+
+```bash
+npm run storage:setup --workspace @padaria/api
+```
+
+Esse passo cria o bucket público `produtos` no Supabase com:
+
+- limite de 5 MB por arquivo;
+- tipos permitidos `image/jpeg`, `image/png`, `image/webp` e `image/avif`;
+- políticas básicas para usuários autenticados fazerem upload, atualização e remoção futuramente.
+
+### 7. Subir a API em ambiente local
 
 ```bash
 npm run dev --workspace @padaria/api
 ```
 
-### 7. Testar se a API está online
+### 8. Testar se a API está online
 
 Abra no navegador, Postman ou Insomnia:
 
@@ -170,12 +195,13 @@ Pronto nesta etapa:
 - banco modelado;
 - tabelas sincronizadas no Supabase;
 - seed inicial funcionando;
-- API mínima respondendo `GET /health`.
+- API mínima respondendo `GET /health`;
+- tratamento global de erros preparado para Zod, Prisma e erros customizados;
+- provisionamento do bucket de imagens de produtos automatizado.
 
 Ainda não iniciado:
 
 - autenticação;
-- middlewares de erro;
 - CRUDs;
 - regras completas de negócio;
 - relatórios.

@@ -16,7 +16,7 @@ Substituir o controle manual da padaria por um sistema digital com foco em:
 ## Escopo Atual
 
 - **Fase 1:** backend + banco de dados
-- **Status atual:** estrutura inicial da API, schema do Prisma, seed e `/health`
+- **Status atual:** estrutura inicial da API, schema do Prisma, seed, `/health` e error handling global
 - **Frontend:** ainda não iniciado nesta etapa
 
 ## Stack do Projeto
@@ -38,8 +38,12 @@ Substituir o controle manual da padaria por um sistema digital com foco em:
 |   |   |-- src
 |   |   |   |-- config
 |   |   |   |   `-- prisma.js
+|   |   |   |-- middlewares
+|   |   |   |   `-- errorHandler.js
 |   |   |   |-- routes
 |   |   |   |   `-- index.js
+|   |   |   |-- utils
+|   |   |   |   `-- AppError.js
 |   |   |   |-- app.js
 |   |   |   |-- README.md
 |   |   |   `-- server.js
@@ -55,6 +59,7 @@ Substituir o controle manual da padaria por um sistema digital com foco em:
 |-- docs
 |   |-- projeto
 |   |   |-- README.md
+|   |   |-- codificacao-diagrama-classes.md
 |   |   |-- contexto-projeto.md
 |   |   |-- documentacao-completa-padaria-pao-fresquim.pdf
 |   |   `-- issues-fase1-backend.md
@@ -92,6 +97,7 @@ Resumo:
 ## Documentação de Referência
 
 - [Contexto do projeto](./docs/projeto/contexto-projeto.md)
+- [Codificação do diagrama de classes](./docs/projeto/codificacao-diagrama-classes.md)
 - [Backlog detalhado da Fase 1](./docs/projeto/issues-fase1-backend.md)
 - [Documentação completa em PDF](./docs/projeto/documentacao-completa-padaria-pao-fresquim.pdf)
 
