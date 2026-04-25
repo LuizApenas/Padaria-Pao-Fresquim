@@ -38,6 +38,9 @@ Substituir o controle manual da padaria por um sistema digital com foco em:
 |   |   |-- src
 |   |   |   |-- config
 |   |   |   |   `-- prisma.js
+|   |   |   |-- domain
+|   |   |   |   |-- entities
+|   |   |   |   `-- enums.js
 |   |   |   |-- middlewares
 |   |   |   |   `-- errorHandler.js
 |   |   |   |-- routes

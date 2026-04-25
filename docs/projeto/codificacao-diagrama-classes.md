@@ -4,11 +4,16 @@ Este documento registra como o diagrama de classes da documentação oficial foi
 
 ## Local da Implementação
 
-A codificação das classes principais foi feita no schema do Prisma:
+A codificação das classes principais foi feita no backend:
+
+- [`apps/api/src/domain/entities`](../../apps/api/src/domain/entities)
+- [`apps/api/src/domain/enums.js`](../../apps/api/src/domain/enums.js)
+
+O schema do Prisma continua sendo a implementação do MER e da persistência:
 
 - [`apps/api/prisma/schema.prisma`](../../apps/api/prisma/schema.prisma)
 
-O Prisma foi usado como camada de modelagem porque a primeira fase do projeto tem foco em backend e banco de dados. Dessa forma, cada classe principal do domínio foi representada como um `model`, com seus atributos, tipos, chaves e relacionamentos.
+Assim, a entrega do diagrama de classes fica separada da implementação do banco: as classes do backend representam o domínio da aplicação, enquanto o Prisma representa as tabelas e relacionamentos físicos.
 
 ## Classes Codificadas
 
@@ -51,7 +56,7 @@ Os principais relacionamentos do domínio também foram representados:
 
 ## Escopo da Entrega
 
-Esta entrega cobre a codificação estrutural do diagrama de classes na camada de domínio e persistência.
+Esta entrega cobre a codificação estrutural do diagrama de classes na camada de domínio do backend.
 
 Não fazem parte desta entrega:
 
