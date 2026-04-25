@@ -15,51 +15,39 @@ O schema do Prisma continua sendo a implementação do MER e da persistência:
 
 Assim, a entrega do diagrama de classes fica separada da implementação do banco: as classes do backend representam o domínio da aplicação, enquanto o Prisma representa as tabelas e relacionamentos físicos.
 
-## Classes Codificadas
+## Classes Codificadas Nesta Entrega
 
-As classes/entidades centrais codificadas foram:
+Nesta entrega, foram codificadas apenas as duas primeiras classes como exemplo para continuidade manual pelo time:
 
 - `Cliente`
 - `Funcionario`
-- `Produto`
-- `Venda`
-- `ItemVenda`
-- `ContaFiado`
-- `RegistroPonto`
-- `Ferias`
-- `Licenca`
-- `Atestado`
 
-## Enums Codificados
+## Enums Codificados Nesta Entrega
 
-Também foram codificados enums de domínio usados pelas classes:
+Também foram codificados apenas os enums necessários para essas duas classes:
 
 - `Role`
-- `FormaPagamento`
 - `StatusSerasa`
-- `StatusNotificacao`
-- `TipoRegistroPonto`
-- `StatusVenda`
 
-## Relacionamentos Implementados
+## Relacionamentos Representados
 
-Os principais relacionamentos do domínio também foram representados:
+As duas classes de exemplo deixam preparados os campos que representam relacionamentos futuros:
 
 - `Cliente` possui zero ou uma `ContaFiado`
 - `Cliente` possui várias `Venda`
 - `Funcionario` possui várias `Venda`
 - `Funcionario` possui vários `RegistroPonto`
 - `Funcionario` possui vários registros de `Ferias`, `Licenca` e `Atestado`
-- `Venda` possui vários `ItemVenda`
-- `Produto` possui vários `ItemVenda`
-- `ItemVenda` liga `Venda` e `Produto` por chave composta
 
 ## Escopo da Entrega
 
-Esta entrega cobre a codificação estrutural do diagrama de classes na camada de domínio do backend.
+Esta entrega cobre apenas os dois primeiros exemplos da codificação estrutural do diagrama de classes na camada de domínio do backend.
+
+As próximas classes devem seguir o mesmo padrão de comentários, construtor e métodos simples de domínio.
 
 Não fazem parte desta entrega:
 
+- demais classes do diagrama
 - CRUDs
 - autenticação JWT
 - controllers

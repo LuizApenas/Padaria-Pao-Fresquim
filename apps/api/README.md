@@ -31,7 +31,7 @@ Nesta fase, o backend foi preparado para:
 ## O que já foi feito
 
 - estrutura base da API;
-- classes de domínio do backend baseadas no diagrama de classes;
+- duas classes de domínio do backend como exemplo inicial do diagrama de classes;
 - cliente Prisma 7 configurado com `@prisma/adapter-pg`;
 - `schema.prisma` inicial derivado do MER da documentação;
 - `prisma.config.ts` configurado para uso da conexão direta na CLI;
@@ -71,8 +71,8 @@ apps/api
 - `prisma/schema.prisma`: definição das tabelas e enums do banco
 - `prisma/seed.js`: carga inicial de dados para desenvolvimento
 - `src/config/prisma.js`: inicialização do Prisma Client
-- `src/domain/entities`: classes do domínio baseadas no diagrama de classes
-- `src/domain/enums.js`: enums do domínio usados pelas classes
+- `src/domain/entities`: classes `Cliente` e `Funcionario` como exemplos iniciais do diagrama de classes
+- `src/domain/enums.js`: enums necessários para as classes de exemplo
 - `src/routes/index.js`: rota `/health`
 - `src/utils/AppError.js`: classe para erros controlados da aplicação
 - `src/middlewares/errorHandler.js`: middleware global que padroniza respostas de erro

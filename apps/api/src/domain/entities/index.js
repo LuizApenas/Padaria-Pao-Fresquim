@@ -1,10 +1,2 @@
-export { Atestado } from "./Atestado.js";
 export { Cliente } from "./Cliente.js";
-export { ContaFiado } from "./ContaFiado.js";
-export { Ferias } from "./Ferias.js";
 export { Funcionario } from "./Funcionario.js";
-export { ItemVenda } from "./ItemVenda.js";
-export { Licenca } from "./Licenca.js";
-export { Produto } from "./Produto.js";
-export { RegistroPonto } from "./RegistroPonto.js";
-export { Venda } from "./Venda.js";
