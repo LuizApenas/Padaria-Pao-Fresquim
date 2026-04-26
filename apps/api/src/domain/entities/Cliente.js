@@ -1,8 +1,9 @@
 // Importa o enum usado para indicar a situacao financeira do cliente.
 import { StatusSerasa } from "../enums.js";
+import { Pessoa } from "./Pessoa.js";
 
 // Classe inicial que representa um cliente no dominio do backend.
-export class Cliente {
+export class Cliente extends Pessoa {
   // Construtor da classe, recebendo os dados em formato de objeto.
   constructor({
     // Identificador do cliente no banco; antes de salvar pode ser nulo.
@@ -28,14 +29,8 @@ export class Cliente {
     // Data da ultima atualizacao, preenchida pela camada de persistencia.
     atualizadoEm = null,
   }) {
-    // Armazena o identificador do cliente.
-    this.id = id;
-    // Armazena o nome do cliente.
-    this.nome = nome;
-    // Armazena o telefone do cliente.
-    this.telefone = telefone;
-    // Armazena o endereco do cliente.
-    this.endereco = endereco;
+    // Inicializa os dados basicos herdados da classe Pessoa.
+    super({ id, nome, telefone, endereco });
     // Armazena o CPF do cliente.
     this.cpf = cpf;
     // Armazena a situacao do cliente no Serasa.
@@ -56,5 +51,11 @@ export class Cliente {
   estaNegativado() {
     // Retorna verdadeiro quando o status for NEGATIVADO.
     return this.statusSerasa === StatusSerasa.NEGATIVADO;
+  }
+
+  // Informa se a consulta ao Serasa permite liberar operacoes de fiado.
+  consultarStatusSerasa() {
+    // Retorna verdadeiro quando o cliente estiver regular.
+    return this.statusSerasa === StatusSerasa.REGULAR;
   }
 }
