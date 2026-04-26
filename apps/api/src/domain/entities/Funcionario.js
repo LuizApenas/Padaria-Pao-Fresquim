@@ -1,8 +1,9 @@
 // Importa o enum usado para definir o perfil de acesso do funcionario.
 import { Role } from "../enums.js";
+import { Pessoa } from "./Pessoa.js";
 
 // Classe inicial que representa um funcionario no dominio do backend.
-export class Funcionario {
+export class Funcionario extends Pessoa {
   // Construtor da classe, recebendo os dados em formato de objeto.
   constructor({
     // Identificador do funcionario no banco; antes de salvar pode ser nulo.
@@ -46,16 +47,10 @@ export class Funcionario {
     // Data da ultima atualizacao, preenchida pela camada de persistencia.
     atualizadoEm = null,
   }) {
-    // Armazena o identificador do funcionario.
-    this.id = id;
-    // Armazena o nome do funcionario.
-    this.nome = nome;
+    // Inicializa os dados basicos herdados da classe Pessoa.
+    super({ id, nome, telefone, endereco });
     // Armazena o CPF do funcionario.
     this.cpf = cpf;
-    // Armazena o telefone do funcionario.
-    this.telefone = telefone;
-    // Armazena o endereco do funcionario.
-    this.endereco = endereco;
     // Armazena a matricula do funcionario.
     this.matricula = matricula;
     // Armazena o cargo do funcionario.
@@ -92,5 +87,17 @@ export class Funcionario {
   ehProprietario() {
     // Retorna verdadeiro quando o perfil for PROPRIETARIO.
     return this.role === Role.PROPRIETARIO;
+  }
+
+  // Registra uma nova batida de ponto na colecao em memoria.
+  registrarBatidaPonto(registroPonto) {
+    // Adiciona o registro informado ao historico do funcionario.
+    this.registrosPonto.push(registroPonto);
+  }
+
+  // Anexa um novo atestado ao historico do funcionario.
+  anexarAtestado(atestado) {
+    // Adiciona o atestado informado a lista atual.
+    this.atestados.push(atestado);
   }
 }
