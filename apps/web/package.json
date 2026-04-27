@@ -2,5 +2,19 @@
   "name": "@padaria/web",
   "private": true,
   "version": "0.1.0",
-  "description": "Workspace reservado para o frontend futuro da Padaria Pão FresQUIM."
+  "description": "Frontend administrativo da Padaria Pao Fresquim.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "vite": "^8.0.10"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.1"
+  }
 }

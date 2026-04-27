@@ -1,17 +1,17 @@
 # Web
 
-Workspace reservado para o front-end administrativo da Padaria Pão FresQUIM.
+Frontend administrativo da Padaria Pao Fresquim.
 
 ## Objetivo
 
-Implementar as telas previstas na documentação, com foco em:
+Implementar as telas previstas na documentacao, com foco em:
 
 - usabilidade simples;
 - fontes grandes;
-- botões amplos;
+- botoes amplos;
 - interface responsiva para computador e celular.
 
-## Stack planejada
+## Stack
 
 - React
 - Vite
@@ -19,9 +19,4 @@ Implementar as telas previstas na documentação, com foco em:
 
 ## Status
 
-O frontend ainda não foi iniciado nesta etapa.
-Neste momento, o projeto está focado apenas em:
-
-- criação do banco;
-- modelagem das tabelas;
-- health check da API.
+Frontend base integrado ao monorepo em `apps/web`.
