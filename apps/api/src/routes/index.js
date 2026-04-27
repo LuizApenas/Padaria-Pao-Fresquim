@@ -1,5 +1,7 @@
 import { Router } from "express";
 
+import { clienteRoutes } from "./clienteRoutes.js";
+
 // Router principal da API. Conforme o projeto crescer, outras rotas serão acopladas aqui.
 const router = Router();
 
@@ -10,5 +12,8 @@ router.get("/health", (_request, response) => {
     service: "padaria-api",
   });
 });
+
+// CRUD de exemplo para a entidade Cliente.
+router.use("/clientes", clienteRoutes);
 
 export { router };
