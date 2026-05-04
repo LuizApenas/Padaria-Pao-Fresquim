@@ -1,0 +1,51 @@
+<div class="chat-layout">
+  <div class="chat-main panel">
+    <div class="chat-messages">
+      <ng-container *ngFor="let message of messages; let index = index">
+        <div *ngIf="message.role === 'user'; else botMessage" class="chat-msg-user">{{ message.message }}</div>
+        <ng-template #botMessage>
+          <div class="chat-msg-bot">
+            <div class="chat-bot-row">
+              <div class="chat-bot-avatar">AI</div>
+              <div>
+                <div class="chat-bot-bubble">{{ message.message }}</div>
+                <div class="chat-meta">{{ message.meta }}</div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </ng-container>
+    </div>
+
+    <div class="chat-input-area">
+      <span class="chat-tag">Valor AI</span>
+      <input class="chat-input" [(ngModel)]="prompt" placeholder="Como foram minhas vendas nesta semana?" />
+      <button class="chat-send" type="button" (click)="sendMessage()">Enviar</button>
+    </div>
+    <div class="chat-disclaimer">As respostas sao simuladas localmente para este prototipo.</div>
+  </div>
+
+  <div class="chat-sidebar">
+    <div class="panel">
+      <div class="panel-title">Sugestoes rapidas</div>
+      <div class="catalog-list">
+        <button *ngFor="let item of ['Vendas de hoje', 'Clientes inadimplentes', 'Resumo do dia', 'Produtos mais vendidos']" class="suggestion-item" type="button" (click)="sendMessage(item)">
+          <div class="sugg-icon">*</div>
+          <div>
+            <div class="sugg-title">{{ item }}</div>
+            <div class="sugg-sub">Executar analise com dados simulados.</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Documentacao</div>
+      <div class="docs-card">
+        <div class="docs-card-title">Como usar a IA</div>
+        <div class="docs-card-sub">Aprenda a fazer perguntas mais precisas.</div>
+        <a class="btn-secondary compact" routerLink="/relatorios">Ver guia</a>
+      </div>
+    </div>
+  </div>
+</div>

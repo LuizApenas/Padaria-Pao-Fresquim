@@ -13,10 +13,18 @@ Implementar as telas previstas na documentacao, com foco em:
 
 ## Stack
 
-- React
-- Vite
-- interface orientada aos mockups oficiais do projeto
+- Angular standalone
+- Angular Router
+- CSS global para base do sistema
+- CSS por componente para particularidades de cada tela
+
+## Estrutura
+
+- `src/app/core`: dados mockados, modelos, guards, servicos e utilitarios
+- `src/app/layout`: shell principal do sistema
+- `src/app/shared`: componentes compartilhados
+- `src/app/features`: telas e fluxos do frontend
 
 ## Status
 
-Frontend base integrado ao monorepo em `apps/web`.
+Base migrada de React para Angular com roteamento e componentes separados por tela.

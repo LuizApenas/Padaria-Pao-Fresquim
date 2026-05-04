@@ -1,0 +1,61 @@
+:host {
+  display: grid;
+  gap: 1rem;
+}
+
+.employee-card {
+  padding: 1.2rem;
+}
+
+.employee-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.employee-avatar {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: #e0f2e8;
+  color: var(--green-dark);
+  font-weight: 800;
+}
+
+.employee-online {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--green-light);
+  border: 2px solid #fff;
+}
+
+.employee-name {
+  font-weight: 800;
+}
+
+.employee-role,
+.employee-id,
+.emp-stat-label {
+  color: var(--text-muted);
+}
+
+.emp-stat {
+  padding: 1rem;
+  border-radius: 12px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+}
+
+.emp-stat-value {
+  margin-top: 0.4rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+}

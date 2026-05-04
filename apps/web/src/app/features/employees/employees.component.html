@@ -1,0 +1,40 @@
+<div class="page-header">
+  <div>
+    <div class="page-title">Funcionarios</div>
+    <div class="page-subtitle">Dados pessoais, presenca, ferias e visao rapida do quadro operacional.</div>
+  </div>
+  <button class="btn-primary" type="button">Novo funcionario</button>
+</div>
+
+<article *ngFor="let employee of employees" class="employee-card">
+  <div class="employee-header">
+    <div class="employee-avatar">
+      {{ employee.name.slice(0, 1) }}
+      <div class="employee-online"></div>
+    </div>
+    <div class="flex-1">
+      <div class="employee-name">{{ employee.name }}</div>
+      <div class="employee-role">{{ employee.role }}</div>
+      <div class="employee-id">ID {{ employee.id }}</div>
+    </div>
+    <pf-status-badge [text]="employee.status" />
+  </div>
+
+  <div class="employee-stats">
+    <div class="emp-stat"><div class="emp-stat-label">Horas mensais</div><div class="emp-stat-value">{{ employee.monthlyHours }}</div></div>
+    <div class="emp-stat"><div class="emp-stat-label">Horas extras</div><div class="emp-stat-value">{{ employee.overtime }}</div></div>
+    <div class="emp-stat"><div class="emp-stat-label">Saldo de ferias</div><div class="emp-stat-value">{{ employee.vacationBalance }}</div></div>
+    <div class="emp-stat"><div class="emp-stat-label">Assiduidade</div><div class="emp-stat-value">{{ employee.attendance }}</div></div>
+  </div>
+</article>
+
+<div class="panel">
+  <div class="panel-title">Novo funcionario</div>
+  <div class="panel-sub">Formulario base para padronizar o cadastro no novo frontend Angular.</div>
+  <div class="form-grid">
+    <div class="form-group"><label class="form-label">Nome completo</label><input class="form-input" placeholder="Ex: Joao da Silva" /></div>
+    <div class="form-group"><label class="form-label">CPF</label><input class="form-input" placeholder="000.000.000-00" /></div>
+    <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" placeholder="(00) 00000-0000" /></div>
+    <div class="form-group"><label class="form-label">Cargo</label><select class="form-select"><option>Padeiro</option><option>Caixa</option><option>Supervisor</option></select></div>
+  </div>
+</div>

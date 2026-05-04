@@ -1,0 +1,91 @@
+.cameras-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.camera-main,
+.camera-second {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1f2937, #111827);
+  color: #fff;
+}
+
+.camera-main {
+  min-height: 320px;
+}
+
+.camera-second {
+  min-height: 180px;
+}
+
+.camera-feed,
+.camera-feed-sm {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.camera-badge {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.cam-live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #22c55e;
+}
+
+.cam-stat,
+.camera-side {
+  display: grid;
+  gap: 1rem;
+}
+
+.cam-stat {
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.cam-stat-label,
+.log-time {
+  color: var(--text-muted);
+}
+
+.log-item {
+  grid-template-columns: auto 1fr auto;
+}
+
+.log-tag {
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.log-critical { background: rgba(220, 38, 38, 0.12); color: var(--danger); }
+.log-system { background: rgba(34, 197, 94, 0.12); color: var(--green-dark); }
+.log-info { background: rgba(37, 99, 235, 0.12); color: var(--info); }
+
+@media (max-width: 1100px) {
+  .cameras-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,88 @@
+#login-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at top left, rgba(34, 197, 94, 0.12), transparent 28%),
+    linear-gradient(180deg, #eef7f1 0%, #f6f8fb 100%);
+}
+
+.login-card {
+  width: min(100%, 440px);
+  padding: 2rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.login-logo {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.login-logo-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--gold), #8b5e1a);
+  color: #fff;
+  font-weight: 800;
+}
+
+.login-brand {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.login-subtitle,
+.login-support,
+.login-security,
+.login-forgot,
+.login-keep {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.login-credentials,
+.login-row,
+.login-security {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.login-credentials {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: #eef6f0;
+  color: var(--green-dark);
+}
+
+.login-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.login-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.login-input {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+}
+
+.error-box {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--danger);
+  font-size: 0.9rem;
+}

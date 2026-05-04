@@ -1,0 +1,55 @@
+<div class="page-header">
+  <div>
+    <div class="page-title">Historico de vendas</div>
+    <div class="page-subtitle">Consulta de transacoes, operadores e formas de pagamento.</div>
+  </div>
+  <a class="btn-primary" routerLink="/vendas/nova">Nova venda</a>
+</div>
+
+<div class="historic-filters">
+  <div class="filter-group flex-1">
+    <label class="form-label">Inicio do periodo</label>
+    <input class="form-input" type="date" />
+  </div>
+  <div class="filter-group flex-1">
+    <label class="form-label">Fim do periodo</label>
+    <input class="form-input" type="date" />
+  </div>
+  <div class="filter-group flex-1">
+    <label class="form-label">Funcionario</label>
+    <select class="form-select"><option>Todos os funcionarios</option></select>
+  </div>
+  <button class="btn-secondary" type="button">Filtrar resultados</button>
+</div>
+
+<div class="stats-grid history-stats">
+  <div class="stat-card"><div class="stat-label">Vendas totais</div><div class="stat-value">{{ formatCurrency(12450) }}</div></div>
+  <div class="stat-card"><div class="stat-label">Ticket medio</div><div class="stat-value">{{ formatCurrency(185.5) }}</div></div>
+  <div class="stat-card"><div class="stat-label">Vendas canceladas</div><div class="stat-value">03</div></div>
+  <div class="stat-card"><div class="stat-label">Operadores ativos</div><div class="stat-value">08</div></div>
+</div>
+
+<div class="table-panel">
+  <table>
+    <thead>
+      <tr>
+        <th>ID venda</th>
+        <th>Data e hora</th>
+        <th>Cliente</th>
+        <th>Pagamento</th>
+        <th>Valor</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let sale of sales">
+        <td>{{ sale.id }}</td>
+        <td>{{ sale.datetime }}</td>
+        <td>{{ sale.client }}</td>
+        <td>{{ sale.payment }}</td>
+        <td>{{ formatCurrency(sale.value) }}</td>
+        <td><pf-status-badge [text]="sale.status" /></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
