@@ -1,0 +1,32 @@
+<div class="page-header">
+  <div>
+    <div class="page-title">Configuracoes</div>
+    <div class="page-subtitle">Ajustes operacionais, seguranca e automacoes do ambiente administrativo.</div>
+  </div>
+  <button class="btn-primary" type="button">Salvar preferencias</button>
+</div>
+
+<div class="row col-2">
+  <div class="panel">
+    <div class="panel-title">Preferencias do sistema</div>
+    <div class="catalog-list">
+      <div *ngFor="let setting of settings; let index = index; trackBy: trackByTitle" class="settings-item">
+        <div>
+          <strong>{{ setting.title }}</strong>
+          <div class="client-time">{{ setting.description }}</div>
+        </div>
+        <button class="toggle" [class.on]="setting.enabled" type="button" [attr.aria-label]="setting.title" (click)="toggleSetting(index)"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Dados da unidade</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Nome da unidade</label><input class="form-input" value="Matriz" readonly /></div>
+      <div class="form-group"><label class="form-label">E-mail corporativo</label><input class="form-input" value="arthur@email.com" readonly /></div>
+      <div class="form-group"><label class="form-label">Perfil atual</label><input class="form-input" value="Administrador" readonly /></div>
+      <div class="form-group"><label class="form-label">Modo</label><input class="form-input" value="Angular standalone" readonly /></div>
+    </div>
+  </div>
+</div>

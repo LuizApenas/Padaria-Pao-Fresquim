@@ -1,0 +1,99 @@
+.chat-layout {
+  display: grid;
+  grid-template-columns: 1.6fr 0.9fr;
+  gap: 1rem;
+}
+
+.chat-main,
+.chat-sidebar {
+  display: grid;
+  gap: 1rem;
+}
+
+.chat-messages {
+  min-height: 420px;
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
+}
+
+.chat-msg-user {
+  justify-self: end;
+  max-width: 70%;
+  padding: 0.9rem 1rem;
+  border-radius: 16px 16px 4px 16px;
+  background: var(--green);
+  color: #fff;
+}
+
+.chat-bot-row {
+  display: flex;
+  gap: 0.8rem;
+  align-items: start;
+}
+
+.chat-bot-avatar {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #eef6f0;
+  color: var(--green-dark);
+  font-weight: 800;
+}
+
+.chat-bot-bubble {
+  padding: 0.95rem 1rem;
+  border-radius: 16px 16px 16px 4px;
+  background: var(--surface-muted);
+}
+
+.chat-meta,
+.sugg-sub,
+.docs-card-sub {
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.chat-tag {
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  background: #eef6f0;
+  color: var(--green-dark);
+  font-weight: 700;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: start;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  text-align: left;
+}
+
+.sugg-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--info);
+  font-weight: 800;
+}
+
+.docs-card {
+  display: grid;
+  gap: 0.8rem;
+}
+
+@media (max-width: 1100px) {
+  .chat-layout {
+    grid-template-columns: 1fr;
+  }
+}

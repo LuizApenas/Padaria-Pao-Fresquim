@@ -1,0 +1,155 @@
+<div class="dashboard-page">
+  <div class="stats-grid dashboard-stats">
+    <article class="stat-card stat-card-highlight">
+      <div class="stat-top">
+        <div class="stat-label">TOTAL VENDIDO HOJE</div>
+        <div class="stat-icon stat-icon-green">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M4 7h16v10H4zM7 10h10M7 14h4M17 10v4" />
+          </svg>
+        </div>
+      </div>
+      <div class="stat-value">{{ formatCurrency(overview.totalSoldToday) }}</div>
+      <div class="stat-sub"><span class="stat-up">↗ +12%</span> vs. ontem</div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-top">
+        <div class="stat-label">Nº DE VENDAS</div>
+        <div class="stat-icon stat-icon-slate">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M4 6h2l2.2 9h8.7l2.1-6H9M10 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2ZM17 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" />
+          </svg>
+        </div>
+      </div>
+      <div class="stat-value">{{ overview.salesCount }}</div>
+      <div class="stat-sub">Vendas confirmadas</div>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-top">
+        <div class="stat-label">TICKET MÉDIO</div>
+        <div class="stat-icon stat-icon-slate">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M6 4h12v16H6zM9 15v-3M12 15V9M15 15v-5" />
+          </svg>
+        </div>
+      </div>
+      <div class="stat-value">{{ formatCurrency(overview.averageTicket) }}</div>
+      <div class="stat-sub">Por transação</div>
+    </article>
+
+    <article class="stat-card stat-card-warn">
+      <div class="stat-top">
+        <div class="stat-label">CLIENTES COM FIADO</div>
+        <div class="stat-icon stat-icon-orange">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M16 19a4 4 0 0 0-8 0M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM18 13h4M20 11v4" />
+          </svg>
+        </div>
+      </div>
+      <div class="stat-value">{{ overview.debtClients }}</div>
+      <div class="stat-sub stat-danger">△ Atenção necessária</div>
+    </article>
+  </div>
+
+  <div class="dashboard-main">
+    <section class="panel performance-panel">
+      <div class="performance-head">
+        <div>
+          <div class="performance-title">PERFORMANCE SEMANAL</div>
+          <div class="panel-sub">{{ chartSubtitle }}</div>
+        </div>
+
+        <div class="period-switch">
+          <button class="period-btn" [class.active]="selectedPeriod === 'semana'" type="button" (click)="setPeriod('semana')">SEMANA</button>
+          <button class="period-btn" [class.active]="selectedPeriod === 'mes'" type="button" (click)="setPeriod('mes')">MÊS</button>
+        </div>
+      </div>
+
+      <div class="bar-chart dashboard-chart">
+        <div
+          *ngFor="let item of chartData; let index = index"
+          class="bar-wrap"
+          (mouseenter)="setHoveredIndex(index)"
+          (mouseleave)="setHoveredIndex(null)"
+        >
+          <div class="bar-tooltip" [class.visible]="hoveredIndex === index">
+            {{ formatCurrency(item.value) }}
+          </div>
+          <div
+            class="bar"
+            [class.active]="selectedPeriod === 'semana' ? item.day === 'Sab' : index === 3"
+            [style.height.px]="getBarHeight(item.value)"
+          ></div>
+          <div class="bar-label">{{ item.day | uppercase }}</div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="alerts-panel dashboard-alerts">
+      <div class="alerts-title">PAINEL DE ALERTAS</div>
+
+      <div class="alert-list">
+        <div *ngFor="let alert of alerts; let index = index" class="alert-item" [class.alert-red]="index === 1" [class.alert-yellow]="index === 0" [class.alert-orange]="index === 2">
+          <div class="alert-side"></div>
+          <div class="alert-icon">
+            <svg *ngIf="index === 0" viewBox="0 0 24 24" fill="none">
+              <path d="M3 6h18M6 6l1 12h10l1-12M9 10v4M15 10v4M10 3h4" />
+            </svg>
+            <svg *ngIf="index === 1" viewBox="0 0 24 24" fill="none">
+              <path d="M4 6h2l2.2 9h8.7l2.1-6H9M10 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2ZM17 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2ZM5 5l14 14" />
+            </svg>
+            <svg *ngIf="index === 2" viewBox="0 0 24 24" fill="none">
+              <path d="M12 7v6M12 17h.01M10.3 3.9 2.6 17.2A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-2.8L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+            </svg>
+          </div>
+          <div class="alert-copy">
+            <div class="alert-text">{{ alert.title | uppercase }}</div>
+            <div class="alert-sub">{{ alert.body }}</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-resolve-dashboard" type="button">RESOLVER TUDO</button>
+    </aside>
+  </div>
+
+  <section class="table-panel latest-sales-panel">
+    <div class="section-header latest-sales-head">
+      <div class="section-title latest-sales-title">ÚLTIMAS VENDAS</div>
+      <a class="history-link" routerLink="/historico">VER HISTÓRICO COMPLETO</a>
+    </div>
+
+    <table class="latest-sales-table">
+      <thead>
+        <tr>
+          <th>CLIENTE / DATA</th>
+          <th>PRODUTO PRINCIPAL</th>
+          <th>STATUS</th>
+          <th class="th-value">VALOR</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let sale of sales | slice:0:3">
+          <td>
+            <div class="customer-cell">
+              <div class="customer-avatar" [class.customer-avatar-orange]="sale.status === 'Pendente'">
+                {{ getInitials(sale.client) }}
+              </div>
+              <div>
+                <div class="customer-name">{{ sale.client }}</div>
+                <div class="customer-date">{{ sale.datetime }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="product-main">{{ sale.mainProduct }}</td>
+          <td><pf-status-badge [text]="sale.status === 'Pendente' ? 'FIADO' : 'CONCLUÍDA'" [tone]="sale.status === 'Pendente' ? 'warning' : 'success'" /></td>
+          <td class="sale-value">{{ formatCurrency(sale.value) }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <button class="floating-sale-btn" type="button" aria-label="Nova venda">+</button>
+  </section>
+</div>

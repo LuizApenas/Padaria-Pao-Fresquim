@@ -1,0 +1,35 @@
+<div class="page-header">
+  <div>
+    <div class="page-title">Carteira de devedores</div>
+    <div class="page-subtitle">Monitoramento de recebiveis e cobrancas ativas.</div>
+  </div>
+  <button class="btn-primary" type="button">Enviar cobrancas</button>
+</div>
+
+<div class="fiado-stats">
+  <div class="stat-card"><div class="stat-label">Total em aberto</div><div class="stat-value">{{ formatCurrency(totalDebt) }}</div></div>
+  <div class="stat-card"><div class="stat-label">Recuperado no mes</div><div class="stat-value">{{ formatCurrency(5120) }}</div></div>
+  <div class="stat-card"><div class="stat-label">Clientes inadimplentes</div><div class="stat-value">42</div></div>
+  <div class="stat-card"><div class="stat-label">Status da carteira</div><div class="stat-value">Atencao</div></div>
+</div>
+
+<div class="row col-2">
+  <div class="table-panel debtors-panel">
+    <div *ngFor="let debtor of debtors" class="debtor-row">
+      <div>
+        <div class="client-name">{{ getClientName(debtor.clientId) }}</div>
+        <div class="client-time">{{ debtor.overdue }}</div>
+      </div>
+      <div class="debtor-value" [class.critical]="debtor.status === 'Critico'">{{ formatCurrency(debtor.amount) }}</div>
+      <div class="debtor-meta-ok">Ultima compra {{ debtor.lastPurchase }}</div>
+      <div><pf-status-badge [text]="debtor.status" /></div>
+      <button class="btn-cobrar" type="button">Cobrar</button>
+    </div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-label">Acoes sugeridas</div>
+    <div class="tip-text">Automatize cobrancas para titulos vencidos ha mais de 10 dias e priorize os clientes criticos.</div>
+    <button class="btn-activate" type="button">Ativar rotina</button>
+  </div>
+</div>

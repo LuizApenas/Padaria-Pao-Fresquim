@@ -1,0 +1,149 @@
+<div class="products-page">
+  <div class="page-header products-header">
+    <div>
+      <div class="page-title products-title">Gestão de Produtos</div>
+      <div class="page-subtitle">Gerencie seu catálogo, estoque e precificação em tempo real.</div>
+    </div>
+
+    <button class="btn-new-product" type="button" (click)="openCreateModal()">
+      <span class="btn-new-icon">+</span>
+      <span>Novo Produto</span>
+    </button>
+  </div>
+
+  <div class="products-toolbar">
+    <div class="category-tabs">
+      <button
+        *ngFor="let item of categories"
+        class="filter-tab"
+        [class.active]="category === item"
+        type="button"
+        (click)="category = item"
+      >
+        {{ item }}
+      </button>
+    </div>
+
+    <div class="sort-group">
+      <span class="sort-label">ORDENAR POR:</span>
+      <select class="sort-select" [(ngModel)]="sortBy">
+        <option value="recentes">Mais Recentes</option>
+        <option value="preco">Menor Preço</option>
+        <option value="estoque">Menor Estoque</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="products-grid">
+    <article *ngFor="let product of filteredProducts" class="product-card">
+      <div class="product-hero" [ngClass]="getProductVisual(product.name)">
+        <span class="product-category-badge">{{ product.category }}</span>
+        <div class="product-scene" [ngClass]="getProductVisual(product.name)"></div>
+      </div>
+
+      <div class="product-info">
+        <div class="product-head">
+          <div class="product-name">{{ product.name }}</div>
+          <div class="product-price">{{ formatCurrency(product.price) }}</div>
+        </div>
+
+        <div class="product-sku">SKU: {{ product.sku }}</div>
+
+        <div class="product-footer">
+          <div class="product-actions">
+            <button class="icon-action" type="button" aria-label="Editar produto" (click)="openEditModal(product)">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M4 20h4l10-10-4-4L4 16v4ZM13 7l4 4" />
+              </svg>
+            </button>
+            <button class="icon-action" type="button" aria-label="Excluir produto" (click)="deleteProduct(product.id)">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7M7 7l1 13h8l1-13" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="product-stock" [class.low]="product.stock < 10">Estoque: {{ product.stock }} {{ product.unit }}</div>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div class="products-summary">
+    <div class="summary-item">
+      <div class="summary-label">TOTAL EM ESTOQUE</div>
+      <div class="summary-value">{{ formatCurrency(totalInventoryValue) }}</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">PRODUTOS ATIVOS</div>
+      <div class="summary-value">{{ activeProductsCount }}</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">ITENS S/ MOVIMENTAÇÃO</div>
+      <div class="summary-value">{{ staleProductsCount }}</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">GIRO DE ESTOQUE</div>
+      <div class="summary-value summary-value-green">{{ inventoryTurnover }}%</div>
+    </div>
+  </div>
+
+  <button class="floating-stock-btn" type="button" aria-label="Atalho de estoque">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M4 7h16M6 7v10M18 7v10M8 11h8M8 15h8M4 19h16" />
+    </svg>
+  </button>
+
+  <div *ngIf="isModalOpen" class="product-modal-backdrop" (click)="closeModal()">
+    <div class="product-modal" (click)="$event.stopPropagation()">
+      <div class="product-modal-head">
+        <div>
+          <div class="product-modal-title">{{ modalMode === 'edit' ? 'Editar Produto' : 'Novo Produto' }}</div>
+          <div class="product-modal-subtitle">Os dados serão salvos localmente neste navegador.</div>
+        </div>
+        <button class="modal-close" type="button" (click)="closeModal()">×</button>
+      </div>
+
+      <form class="product-form" (ngSubmit)="submitForm()">
+        <div class="product-form-grid">
+          <div class="form-group">
+            <label class="form-label">Nome</label>
+            <input class="form-input" name="name" [(ngModel)]="form.name" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Categoria</label>
+            <select class="form-select" name="category" [(ngModel)]="form.category">
+              <option *ngFor="let item of productCategories" [value]="item">{{ item }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">SKU</label>
+            <input class="form-input" name="sku" [(ngModel)]="form.sku" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Unidade</label>
+            <input class="form-input" name="unit" [(ngModel)]="form.unit" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Estoque</label>
+            <input class="form-input" name="stock" type="number" min="0" [(ngModel)]="form.stock" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Preço</label>
+            <input class="form-input" name="price" type="number" min="0" step="0.01" [(ngModel)]="form.price" required />
+          </div>
+        </div>
+
+        <div class="product-modal-actions">
+          <button class="btn-secondary" type="button" (click)="closeModal()">Cancelar</button>
+          <button class="btn-primary" type="submit">{{ modalMode === 'edit' ? 'Salvar alterações' : 'Cadastrar produto' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

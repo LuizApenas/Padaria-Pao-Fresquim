@@ -1,0 +1,59 @@
+<div class="page-header">
+  <div>
+    <div class="page-title">Monitoramento</div>
+    <div class="page-subtitle">Centro de operacoes de seguranca em tempo real.</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn-secondary" type="button">Parar todos</button>
+    <button class="btn-primary" type="button">Tentar reconectar</button>
+  </div>
+</div>
+
+<div class="cameras-grid">
+  <div class="camera-main">
+    <div class="camera-feed">CAMERA LOJA</div>
+    <div class="camera-badge"><span class="cam-live-dot"></span> Camera loja | online</div>
+  </div>
+
+  <div class="camera-side">
+    <div class="camera-second">
+      <div class="camera-feed-sm">COZINHA</div>
+      <div class="cam-info">
+        <div class="cam-title">Camera cozinha</div>
+      </div>
+    </div>
+
+    <div class="cam-stats-row">
+      <div class="cam-stat"><div class="cam-stat-label">Cameras ativas</div><div class="cam-stat-value">12/12</div></div>
+      <div class="cam-stat"><div class="cam-stat-label">Uptime</div><div class="cam-stat-value">99.98%</div></div>
+      <div class="cam-stat"><div class="cam-stat-label">Nuvem</div><div class="cam-stat-value">68%</div></div>
+      <div class="cam-stat"><div class="cam-stat-label">Alertas</div><div class="cam-stat-value">02</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="row col-2">
+  <div class="panel">
+    <div class="panel-title">Deteccao de IA</div>
+    <div class="catalog-list">
+      <div *ngFor="let camera of cameras" class="catalog-item">
+        <div>
+          <strong>{{ camera.name }}</strong>
+          <div class="client-time">{{ camera.code }}</div>
+        </div>
+        <div class="client-time">{{ camera.ai }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="log-panel">
+    <div class="log-header">Log de eventos</div>
+    <div *ngFor="let log of logs" class="log-item">
+      <div class="log-time">{{ log.time }}</div>
+      <div class="log-msg">{{ log.message }}</div>
+      <div class="log-tag" [class.log-critical]="log.tone === 'danger'" [class.log-system]="log.tone === 'success'" [class.log-info]="log.tone === 'info'">
+        {{ log.tone.toUpperCase() }}
+      </div>
+    </div>
+  </div>
+</div>

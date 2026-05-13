@@ -1,0 +1,104 @@
+.pdv-layout {
+  display: grid;
+  grid-template-columns: 1.6fr 0.9fr;
+  gap: 1rem;
+}
+
+.pdv-left,
+.pdv-right,
+.items-body,
+.qty-control {
+  display: grid;
+  gap: 1rem;
+}
+
+.sale-item {
+  grid-template-columns: auto 1fr auto auto auto;
+}
+
+.sale-item-icon,
+.qty-val,
+.sale-item-remove,
+.pdv-dot {
+  display: grid;
+  place-items: center;
+}
+
+.sale-item-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #eef6f0;
+  color: var(--green-dark);
+  font-weight: 800;
+}
+
+.qty-control {
+  grid-auto-flow: column;
+  align-items: center;
+}
+
+.qty-btn,
+.sale-item-remove {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.sale-item-remove {
+  border: 1px solid var(--border);
+  background: #fff1f2;
+  color: var(--danger);
+}
+
+.total-card {
+  padding: 1.4rem;
+}
+
+.total-value {
+  margin: 0.5rem 0;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.pay-method,
+.pay-fiado {
+  padding: 0.75rem 0.95rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.pay-method.selected,
+.pay-fiado.selected {
+  border-color: var(--green);
+  background: #eef8f1;
+  color: var(--green-dark);
+}
+
+.pdv-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.9rem 0.25rem 0;
+  color: var(--text-muted);
+}
+
+.pdv-online {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pdv-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--green-light);
+}
+
+@media (max-width: 1100px) {
+  .pdv-layout {
+    grid-template-columns: 1fr;
+  }
+}

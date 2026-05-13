@@ -1,0 +1,43 @@
+<div id="login-screen">
+  <form class="login-card" (ngSubmit)="submit()">
+    <div class="login-logo">
+      <div class="login-logo-icon">PF</div>
+      <div class="login-brand">Padaria Pao Fresquim</div>
+      <div class="login-subtitle">Acesso corporativo</div>
+    </div>
+
+    <div class="login-credentials">
+      <strong>{{ loginEmail }}</strong>
+      <strong>{{ loginPassword }}</strong>
+    </div>
+
+    <div class="login-field">
+      <label class="login-label" for="email">Usuario</label>
+      <input class="login-input" id="email" name="email" type="email" [(ngModel)]="email" placeholder="arthur@email.com" />
+    </div>
+
+    <div class="login-field">
+      <label class="login-label" for="password">Senha</label>
+      <input class="login-input" id="password" name="password" type="password" [(ngModel)]="password" placeholder="1234" />
+    </div>
+
+    <div class="login-row">
+      <label class="login-keep">
+        <input type="checkbox" checked />
+        <span>Manter conectado</span>
+      </label>
+      <span class="login-forgot">Esqueceu a senha?</span>
+    </div>
+
+    <button class="btn-login" type="submit">Entrar no sistema</button>
+    <div *ngIf="error" class="error-box">{{ error }}</div>
+
+    <div class="login-support">
+      Total vendido hoje: <strong>{{ totalSoldToday }}</strong>
+    </div>
+    <div class="login-security">
+      <span>Problemas com o acesso?</span>
+      <span>AES-256</span>
+    </div>
+  </form>
+</div>

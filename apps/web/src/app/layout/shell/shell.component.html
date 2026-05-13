@@ -1,0 +1,129 @@
+<div class="erp-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand-mark">
+        <div class="brand-mark-top">Padaria</div>
+        <div class="brand-mark-main">Pao</div>
+        <div class="brand-mark-bottom">Fresquim</div>
+      </div>
+      <div class="brand-copy">
+        <div class="logo-text">PAO FRESQUIM</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a
+        *ngFor="let item of navItems"
+        class="nav-item"
+        routerLinkActive="active"
+        [routerLink]="item.path"
+      >
+        <span class="nav-glyph" [attr.aria-hidden]="true">
+          <svg *ngIf="item.id === 'dashboard'" viewBox="0 0 24 24" fill="none">
+            <path d="M4 4h6v6H4zM14 4h6v10h-6zM4 14h6v6H4zM14 18h6v2h-6z" />
+          </svg>
+          <svg *ngIf="item.id === 'clientes'" viewBox="0 0 24 24" fill="none">
+            <path d="M16 19a4 4 0 0 0-8 0M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM5 18a3 3 0 0 1 3-3M19 18a3 3 0 0 0-3-3" />
+          </svg>
+          <svg *ngIf="item.id === 'produtos'" viewBox="0 0 24 24" fill="none">
+            <path d="M6 4h12l-1 16H7L6 4ZM4 7h16M9 10v6M15 10v6" />
+          </svg>
+          <svg *ngIf="item.id === 'funcionarios'" viewBox="0 0 24 24" fill="none">
+            <path d="M12 4a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM5 20v-2a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v2M7 10h2M15 10h2M7 6h2M15 6h2" />
+          </svg>
+          <svg *ngIf="item.id === 'nova-venda'" viewBox="0 0 24 24" fill="none">
+            <path d="M5 18h14M7 18V8h10v10M9 8V6h6v2M11 12h2M12 11v2M4 18h16M6 21h12" />
+          </svg>
+          <svg *ngIf="item.id === 'historico'" viewBox="0 0 24 24" fill="none">
+            <path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v5h5M12 8v5l3 2" />
+          </svg>
+          <svg *ngIf="item.id === 'fiado'" viewBox="0 0 24 24" fill="none">
+            <path d="M5 6h14v12H5zM9 10h6M9 14h3M7 6V4M17 6V4" />
+          </svg>
+          <svg *ngIf="item.id === 'relatorios'" viewBox="0 0 24 24" fill="none">
+            <path d="M5 4h14v16H5zM9 15v-3M12 15V9M15 15v-5" />
+          </svg>
+          <svg *ngIf="item.id === 'cameras'" viewBox="0 0 24 24" fill="none">
+            <path d="M4 7h10l4-2v14l-4-2H4zM18 9l2 1v4l-2 1" />
+          </svg>
+          <svg *ngIf="item.id === 'chatbot'" viewBox="0 0 24 24" fill="none">
+            <path d="M8 9V6h8v3M5 10h14v8H5zM9 14h6M12 6V4M3 12h2M19 12h2" />
+          </svg>
+          <svg *ngIf="item.id === 'configuracoes'" viewBox="0 0 24 24" fill="none">
+            <path d="M12 8.5A3.5 3.5 0 1 1 8.5 12 3.5 3.5 0 0 1 12 8.5ZM19 12l2-1-1-3-2 .2a7.3 7.3 0 0 0-1.2-1.2l.2-2-3-1-1 2a7.3 7.3 0 0 0-2 0l-1-2-3 1 .2 2A7.3 7.3 0 0 0 6 8.2L4 8l-1 3 2 1a7.3 7.3 0 0 0 0 2l-2 1 1 3 2-.2a7.3 7.3 0 0 0 1.2 1.2l-.2 2 3 1 1-2a7.3 7.3 0 0 0 2 0l1 2 3-1-.2-2a7.3 7.3 0 0 0 1.2-1.2l2 .2 1-3-2-1a7.3 7.3 0 0 0 0-2Z" />
+          </svg>
+        </span>
+        <span>{{ item.label }}</span>
+      </a>
+    </nav>
+
+    <a class="nav-new-sale" routerLink="/vendas/nova">
+      <span>+</span>
+      <span>NOVA VENDA</span>
+    </a>
+  </aside>
+
+  <main class="main" [style.zoom]="zoomScale">
+    <header class="topbar">
+      <div class="topbar-title">Portal Administrativo</div>
+
+      <label class="topbar-search-wrap">
+        <span class="search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M11 5a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM20 20l-4.2-4.2" />
+          </svg>
+        </span>
+        <input class="topbar-search" type="text" placeholder="Buscar em ERP..." />
+      </label>
+
+      <div class="topbar-right">
+        <div class="topbar-zoom">
+          <span class="zoom-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M11 5a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM20 20l-4.2-4.2M9 11h4M11 9v4" />
+            </svg>
+          </span>
+          <button class="zoom-link" [class.active]="zoom() === 125" type="button" (click)="setPresetZoom(125)">125%</button>
+          <button class="zoom-link" [class.active]="zoom() === 150" type="button" (click)="setPresetZoom(150)">150%</button>
+          <div class="zoom-custom">
+            <input
+              class="zoom-input"
+              type="number"
+              min="50"
+              max="200"
+              [(ngModel)]="zoomInput"
+              (blur)="applyCustomZoom()"
+              (keyup.enter)="applyCustomZoom()"
+              aria-label="Zoom personalizado"
+            />
+            <span class="zoom-suffix">%</span>
+          </div>
+        </div>
+
+        <button class="topbar-icon" type="button" aria-label="Notificacoes">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 4a4 4 0 0 0-4 4v2.6c0 .7-.2 1.4-.6 2L6 15h12l-1.4-2.4c-.4-.6-.6-1.3-.6-2V8a4 4 0 0 0-4-4ZM10 18a2 2 0 0 0 4 0" />
+          </svg>
+        </button>
+
+        <button class="topbar-icon" type="button" aria-label="Ajuda">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 18h.01M9.1 9a3 3 0 1 1 5.8 1c-.5 1.2-1.9 1.7-2.4 2.8-.2.3-.2.7-.2 1.2M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z" />
+          </svg>
+        </button>
+
+        <div class="admin-chip topbar-divider">
+          <div class="admin-info">
+            <div class="admin-name">Administrador</div>
+            <div class="admin-unit">Unidade Matriz</div>
+          </div>
+          <div class="admin-avatar">A</div>
+        </div>
+      </div>
+    </header>
+
+    <section class="page">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+</div>

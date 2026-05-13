@@ -2,8 +2,11 @@
   "name": "padaria-pao-fresquim",
   "private": true,
   "version": "0.1.0",
-  "description": "Monorepo do sistema de gestão da Padaria Pão FresQUIM.",
+  "description": "Monorepo do sistema de gestao da Padaria Pao Fresquim.",
   "scripts": {
+    "dev:web": "npm run dev --workspace @padaria/web",
+    "build:web": "npm run build --workspace @padaria/web",
+    "preview:web": "npm run preview --workspace @padaria/web",
     "dev:api": "npm run dev --workspace @padaria/api",
     "start:api": "npm run start --workspace @padaria/api",
     "prisma:generate": "npm run prisma:generate --workspace @padaria/api",

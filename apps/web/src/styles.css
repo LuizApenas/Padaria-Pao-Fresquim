@@ -1,0 +1,556 @@
+:root {
+  --green: #1a6b45;
+  --green-light: #22c55e;
+  --green-dark: #124c31;
+  --gold: #c8a44a;
+  --sidebar-bg: #0d1117;
+  --sidebar-active: #182230;
+  --sidebar-text: #94a3b8;
+  --bg: #f2f5f8;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --border: #dbe3ee;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #2563eb;
+  --shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.erp-shell {
+  min-height: 100vh;
+  display: flex;
+}
+
+.sidebar {
+  width: 232px;
+  min-width: 232px;
+  display: flex;
+  flex-direction: column;
+  background: var(--sidebar-bg);
+  border-right: 1px solid #1f2937;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.25rem 1.125rem;
+  border-bottom: 1px solid #1f2937;
+}
+
+.logo-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--gold), #8b5e1a);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+.logo-text {
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.logo-sub {
+  color: var(--sidebar-text);
+  font-size: 0.7rem;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 0.85rem 0;
+  overflow: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 1.15rem;
+  margin: 0.15rem 0;
+  color: var(--sidebar-text);
+  border-left: 3px solid transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+}
+
+.nav-item.active {
+  color: #f8fafc;
+  background: var(--sidebar-active);
+  border-left-color: var(--green-light);
+}
+
+.nav-glyph {
+  min-width: 22px;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.nav-new-sale {
+  margin: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem;
+  background: var(--green);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  height: 64px;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar-title {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.topbar-search,
+.search-bar,
+.form-input,
+.form-select,
+.scanner-input,
+.chat-input,
+.report-filter {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 0.75rem 0.95rem;
+  color: var(--text);
+  outline: none;
+}
+
+.topbar-search {
+  max-width: 420px;
+  background: var(--surface-muted);
+}
+
+.topbar-right,
+.topbar-zoom,
+.admin-chip,
+.toolbar,
+.section-header,
+.page-header,
+.payment-methods,
+.pdv-actions,
+.pdv-finalize-area,
+.historic-filters,
+.chat-input-area,
+.catalog-item,
+.settings-item,
+.total-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.topbar-right {
+  margin-left: auto;
+}
+
+.zoom-btn,
+.page-btn,
+.qty-btn,
+.toggle,
+.topbar-icon {
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.zoom-btn,
+.page-btn {
+  padding: 0.45rem 0.7rem;
+  border-radius: 10px;
+  color: var(--text-muted);
+}
+
+.zoom-btn.active,
+.page-btn.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.topbar-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--text-muted);
+}
+
+.admin-avatar {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #64748b, #334155);
+  color: #fff;
+  font-weight: 700;
+}
+
+.admin-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.admin-unit {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.page {
+  padding: 1.5rem;
+}
+
+.page-header {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.page-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.page-subtitle,
+.panel-sub,
+.client-time,
+.table-footer,
+.chat-disclaimer {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.panel,
+.table-panel,
+.stat-card,
+.tip-card,
+.alerts-panel,
+.total-card,
+.payment-panel,
+.log-panel,
+.login-card,
+.employee-card,
+.product-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+}
+
+.panel,
+.table-panel,
+.alerts-panel,
+.tip-card,
+.log-panel,
+.payment-panel {
+  padding: 1.2rem;
+}
+
+.panel-title,
+.section-title,
+.alerts-title,
+.log-header,
+.items-title,
+.payment-label {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.stat-label,
+.form-label,
+.items-count,
+.total-label,
+.debtor-meta-ok,
+.product-sku,
+.product-stock {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.stat-value {
+  margin-top: 0.45rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-login,
+.btn-finalize,
+.btn-cancel,
+.btn-cobrar,
+.btn-activate,
+.chat-send {
+  border: 0;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  font-weight: 700;
+}
+
+.btn-primary,
+.btn-login,
+.btn-finalize,
+.btn-activate,
+.chat-send {
+  background: var(--green);
+  color: #fff;
+}
+
+.btn-secondary,
+.btn-cancel,
+.btn-cobrar {
+  background: var(--surface-muted);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary.compact {
+  padding: 0.65rem 0.85rem;
+}
+
+.stats-grid,
+.stats-row,
+.fiado-stats,
+.cam-stats-row,
+.employee-stats,
+.form-grid,
+.products-grid,
+.row.col-2 {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 1.5rem;
+}
+
+.stats-row,
+.fiado-stats,
+.cam-stats-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.row.col-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.table-panel table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.client-name,
+.product-name,
+.top-product-name,
+.sale-item-name {
+  font-weight: 700;
+}
+
+.table-panel th,
+.table-panel td {
+  padding: 0.95rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table-panel th {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.table-panel tr:last-child td {
+  border-bottom: 0;
+}
+
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+}
+
+.pagination {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.section-head,
+.search-row,
+.catalog-list,
+.suggestions-panel,
+.docs-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.catalog-item,
+.settings-item,
+.top-product-item,
+.alert-item,
+.sale-item,
+.log-item,
+.debtor-row {
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+
+.top-product-item,
+.alert-item,
+.log-item,
+.debtor-row {
+  display: grid;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.green {
+  color: var(--green);
+}
+
+.red {
+  color: var(--danger);
+}
+
+@media (max-width: 1180px) {
+  .stats-grid,
+  .stats-row,
+  .fiado-stats,
+  .cam-stats-row,
+  .row.col-2,
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .erp-shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .main {
+    min-height: 0;
+  }
+
+  .topbar {
+    height: auto;
+    padding: 1rem;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 720px) {
+  .stats-grid,
+  .stats-row,
+  .fiado-stats,
+  .cam-stats-row,
+  .row.col-2,
+  .products-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page {
+    padding: 1rem;
+  }
+}

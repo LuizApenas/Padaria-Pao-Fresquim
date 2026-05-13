@@ -1,0 +1,57 @@
+<div class="page-header">
+  <div>
+    <div class="page-title">Gestao de clientes</div>
+    <div class="page-subtitle">Gerencie sua base de clientes e controle de credito.</div>
+  </div>
+  <div class="toolbar">
+    <button class="btn-secondary" type="button">Exportar PDF</button>
+    <button class="btn-secondary" type="button">Exportar Excel</button>
+    <button class="btn-primary" type="button">Novo cliente</button>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-row-item"><div class="stat-row-label">Total de clientes</div><div class="stat-row-value">1.284</div></div>
+  <div class="stat-row-item"><div class="stat-row-label">Clientes ativos</div><div class="stat-row-value green">1.120</div></div>
+  <div class="stat-row-item"><div class="stat-row-label">Bloqueados (fiado)</div><div class="stat-row-value red">164</div></div>
+  <div class="stat-row-item"><div class="stat-row-label">Ticket medio</div><div class="stat-row-value">{{ formatCurrency(452) }}</div></div>
+</div>
+
+<input class="search-bar" type="text" placeholder="Buscar clientes por nome ou telefone..." [(ngModel)]="query" />
+
+<div class="table-panel">
+  <table>
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Telefone</th>
+        <th>Endereco</th>
+        <th>Status</th>
+        <th>Fiado</th>
+        <th>Ticket medio</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let client of filteredClients">
+        <td>
+          <div class="client-name">{{ client.name }}</div>
+          <div class="client-time">{{ client.email }}</div>
+        </td>
+        <td>{{ client.phone }}</td>
+        <td>{{ client.address }}</td>
+        <td><pf-status-badge [text]="client.status" /></td>
+        <td><pf-status-badge [text]="client.debtStatus" /></td>
+        <td>{{ formatCurrency(client.ticket) }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer">
+    <span>Exibindo {{ filteredClients.length }} de {{ clients.length }} clientes simulados</span>
+    <div class="pagination">
+      <button class="page-btn active" type="button">1</button>
+      <button class="page-btn" type="button">2</button>
+      <button class="page-btn" type="button">3</button>
+    </div>
+  </div>
+</div>

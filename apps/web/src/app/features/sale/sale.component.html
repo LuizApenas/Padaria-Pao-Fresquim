@@ -1,0 +1,99 @@
+<div class="pdv-layout">
+  <div class="pdv-left">
+    <div class="panel pdv-scanner">
+      <div class="scanner-label">Leitura de codigo de barras</div>
+      <input class="scanner-input" placeholder="Escaneie o codigo ou digite o nome do produto..." [(ngModel)]="search" />
+    </div>
+
+    <div class="panel items-panel">
+      <div class="items-header">
+        <div class="items-title">Itens da venda</div>
+        <div class="items-count">{{ cart.length }} item(ns)</div>
+      </div>
+
+      <div class="items-body">
+        <div *ngIf="!cart.length" class="empty-state">
+          <div class="empty-text">Carrinho vazio</div>
+          <div class="empty-sub">Adicione itens para simular uma venda.</div>
+        </div>
+
+        <div *ngFor="let item of cart" class="sale-item">
+          <div class="sale-item-icon">IT</div>
+          <div>
+            <div class="sale-item-name">{{ item.name }}</div>
+            <div class="client-time">Qtd. {{ item.quantity }}</div>
+          </div>
+
+          <div class="qty-control">
+            <button class="qty-btn" type="button" (click)="updateQuantity(item.id, -1)">-</button>
+            <div class="qty-val">{{ item.quantity }}</div>
+            <button class="qty-btn" type="button" (click)="updateQuantity(item.id, 1)">+</button>
+          </div>
+
+          <div class="sale-item-price">{{ formatCurrency(item.price * item.quantity) }}</div>
+          <button class="sale-item-remove" type="button" (click)="removeItem(item.id)">x</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Catalogo rapido</div>
+      <div class="catalog-list">
+        <div *ngFor="let product of catalog" class="catalog-item">
+          <div>
+            <strong>{{ product.name }}</strong>
+            <div class="client-time">COD: {{ product.sku }} | Estoque {{ product.stock }} {{ product.unit }}</div>
+          </div>
+          <div class="toolbar">
+            <strong>{{ formatCurrency(product.price) }}</strong>
+            <button class="btn-primary" type="button" (click)="addProduct(product)">Adicionar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pdv-right">
+    <div class="total-card">
+      <div class="total-label">Total da venda</div>
+      <div class="total-value">{{ formatCurrency(subtotal - discount > 0 ? subtotal - discount : 0) }}</div>
+      <div class="total-breakdown">
+        <span>Subtotal {{ formatCurrency(subtotal) }}</span>
+        <span>Desconto {{ formatCurrency(discount) }}</span>
+      </div>
+    </div>
+
+    <div class="payment-panel">
+      <div class="payment-label">Identificar cliente</div>
+      <select class="form-select" [(ngModel)]="selectedClientId">
+        <option value="">Cliente balcao</option>
+        <option *ngFor="let client of clients" [value]="client.id">{{ client.name }}</option>
+      </select>
+    </div>
+
+    <div class="payment-panel">
+      <div class="payment-label">Forma de pagamento</div>
+      <div class="payment-methods">
+        <button *ngFor="let option of ['Dinheiro', 'Credito', 'Debito', 'PIX']" class="pay-method" [class.selected]="payment === option" type="button" (click)="payment = option">
+          {{ option }}
+        </button>
+        <button class="pay-fiado" [class.selected]="payment === 'Fiado'" type="button" (click)="payment = 'Fiado'">Fiado</button>
+      </div>
+    </div>
+
+    <div class="pdv-actions">
+      <button class="btn-secondary" type="button" (click)="discount = discount ? 0 : 5">Aplicar desconto</button>
+      <button class="btn-secondary" type="button">Buscar produto</button>
+    </div>
+
+    <div class="pdv-finalize-area">
+      <button class="btn-cancel" type="button" (click)="cart = []">Cancelar</button>
+      <button class="btn-finalize" type="button" (click)="finalizeSale()">Finalizar</button>
+    </div>
+
+    <div class="pdv-status-bar">
+      <div class="pdv-online"><span class="pdv-dot"></span>PDV online</div>
+      <div class="pdv-info">Caixa 001 | Operador Admin</div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,26 @@
+.stats-row {
+  margin-bottom: 1rem;
+}
+
+.stat-row-item {
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.stat-row-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.stat-row-value {
+  margin-top: 0.45rem;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.search-bar {
+  margin: 0 0 1rem;
+}
