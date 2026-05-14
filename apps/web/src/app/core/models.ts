@@ -10,7 +10,7 @@ export interface Client {
   id: number;
   initials: string;
   name: string;
-  email: string;
+  email?: string | null;
   phone: string;
   address: string;
   status: string;
