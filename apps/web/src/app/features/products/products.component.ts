@@ -1,7 +1,9 @@
 import { CommonModule } from "@angular/common";
-import { Component } from "@angular/core";
+import { Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Product } from "../../core/models";
+import { products as mockProducts } from "../../core/mock-data";
+import { ProductsApiService } from "../../core/services/products-api.service";
 import { StorageService } from "../../core/services/storage.service";
 import { formatCurrency } from "../../core/utils/format";
 
@@ -10,8 +12,6 @@ type ProductForm = {
   name: string;
   category: string;
   sku: string;
-  stock: number;
-  unit: string;
   price: number;
 };
 
@@ -22,19 +22,28 @@ type ProductForm = {
   templateUrl: "./products.component.html",
   styleUrl: "./products.component.css"
 })
-export class ProductsComponent {
+export class ProductsComponent implements OnInit {
   category = "Todos";
   sortBy = "recentes";
   isModalOpen = false;
   modalMode: "create" | "edit" = "create";
   products: Product[] = [];
+  isLoading = true;
+  errorMessage = "";
+  isUsingFallbackData = false;
+  fallbackMessage = "";
   readonly categories = ["Todos", "Paes", "Frios", "Bebidas", "Mercearia"];
   readonly productCategories = ["Paes", "Frios", "Bebidas", "Mercearia"];
   readonly formatCurrency = formatCurrency;
 
   form: ProductForm = this.getEmptyForm();
 
-  constructor(private readonly storageService: StorageService) {
+  constructor(
+    private readonly storageService: StorageService,
+    private readonly productsApiService: ProductsApiService,
+  ) {}
+
+  ngOnInit(): void {
     this.loadProducts();
   }
 
@@ -45,32 +54,33 @@ export class ProductsComponent {
       return [...filtered].sort((a, b) => a.price - b.price);
     }
 
-    if (this.sortBy === "estoque") {
-      return [...filtered].sort((a, b) => a.stock - b.stock);
-    }
-
     return [...filtered].sort((a, b) => b.id - a.id);
   }
 
-  get totalInventoryValue(): number {
-    return this.products.reduce((sum, product) => sum + product.price * product.stock, 0);
+  get averagePrice(): number {
+    if (!this.products.length) {
+      return 0;
+    }
+
+    const total = this.products.reduce((sum, product) => sum + product.price, 0);
+
+    return Number((total / this.products.length).toFixed(2));
   }
 
   get activeProductsCount(): number {
     return this.products.length;
   }
 
-  get staleProductsCount(): number {
-    return this.products.filter((product) => product.stock <= 12).length;
+  get categorizedProductsCount(): number {
+    return this.products.filter((product) => product.category.trim().length > 0).length;
   }
 
-  get inventoryTurnover(): number {
+  get categoriesCount(): number {
     if (!this.products.length) {
       return 0;
     }
 
-    const inStock = this.products.filter((product) => product.stock > 0).length;
-    return Math.round((inStock / this.products.length) * 100);
+    return new Set(this.products.map((product) => product.category)).size;
   }
 
   openCreateModal(): void {
@@ -96,12 +106,12 @@ export class ProductsComponent {
       name: this.form.name.trim(),
       category: this.form.category,
       sku: this.form.sku.trim(),
-      stock: Number(this.form.stock),
-      unit: this.form.unit.trim(),
+      stock: 0,
+      unit: "un",
       price: Number(this.form.price)
     };
 
-    if (!normalizedProduct.name || !normalizedProduct.sku || !normalizedProduct.unit) {
+    if (!normalizedProduct.name || !normalizedProduct.sku) {
       return;
     }
 
@@ -120,6 +130,10 @@ export class ProductsComponent {
     this.storageService.saveProducts(this.products);
   }
 
+  retry(): void {
+    this.loadProducts();
+  }
+
   getProductVisual(productName: string): string {
     if (productName.includes("Pao")) return "visual-bread";
     if (productName.includes("Presunto")) return "visual-coldcuts";
@@ -131,7 +145,29 @@ export class ProductsComponent {
   }
 
   private loadProducts(): void {
-    this.products = this.storageService.getProducts();
+    this.isLoading = true;
+    this.errorMessage = "";
+    this.isUsingFallbackData = false;
+    this.fallbackMessage = "";
+
+    this.productsApiService.listProducts().subscribe({
+      next: (products) => {
+        this.products = products;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.products = this.storageService.getProducts();
+
+        if (!this.products.length) {
+          this.products = mockProducts;
+        }
+
+        this.isUsingFallbackData = true;
+        this.fallbackMessage =
+          "API de produtos indisponivel no momento. Exibindo dados locais para continuarmos a validacao da tela.";
+        this.isLoading = false;
+      },
+    });
   }
 
   private getEmptyForm(): ProductForm {
@@ -140,8 +176,6 @@ export class ProductsComponent {
       name: "",
       category: "Paes",
       sku: "",
-      stock: 0,
-      unit: "un",
       price: 0
     };
   }

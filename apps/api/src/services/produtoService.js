@@ -11,6 +11,22 @@ const produtoInclude = {
   itensVenda: true,
 };
 
+function serializeProduto(produto) {
+  if (!produto) {
+    return produto;
+  }
+
+  return {
+    ...produto,
+    name: produto.nome,
+    category: produto.categoria,
+    sku: produto.codigoBarras,
+    price: Number(produto.precoBase),
+    stock: 0,
+    unit: "un",
+  };
+}
+
 function buildProdutoData(data, { partial = false } = {}) {
   if (!partial) {
     requireFields(data, ["codigoBarras", "nome", "precoBase", "categoria"]);
@@ -32,23 +48,28 @@ function buildProdutoData(data, { partial = false } = {}) {
 }
 
 export async function createProduto(data) {
-  return prisma.produto.create({
+  const produto = await prisma.produto.create({
     data: buildProdutoData(data),
     include: produtoInclude,
   });
+
+  return serializeProduto(produto);
 }
 
 export async function listProdutos() {
-  return prisma.produto.findMany({
+  const produtos = await prisma.produto.findMany({
+    where: { ativo: true },
     orderBy: { id: "asc" },
     include: produtoInclude,
   });
+
+  return produtos.map(serializeProduto);
 }
 
 export async function getProdutoById(idParam) {
   const id = parseId(idParam);
-  const produto = await prisma.produto.findUnique({
-    where: { id },
+  const produto = await prisma.produto.findFirst({
+    where: { id, ativo: true },
     include: produtoInclude,
   });
 
@@ -56,7 +77,7 @@ export async function getProdutoById(idParam) {
     throw new AppError("Produto nao encontrado.", 404);
   }
 
-  return produto;
+  return serializeProduto(produto);
 }
 
 export async function updateProduto(idParam, data) {
@@ -64,11 +85,13 @@ export async function updateProduto(idParam, data) {
 
   await getProdutoById(id);
 
-  return prisma.produto.update({
+  const produto = await prisma.produto.update({
     where: { id },
     data: buildProdutoData(data, { partial: true }),
     include: produtoInclude,
   });
+
+  return serializeProduto(produto);
 }
 
 export async function deleteProduto(idParam) {

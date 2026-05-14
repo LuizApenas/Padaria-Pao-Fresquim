@@ -40,6 +40,24 @@ export class DashboardComponent {
       : "Vendas consolidadas nas ultimas 4 semanas";
   }
 
+  get chartTotal(): number {
+    return this.chartData.reduce((sum, item) => sum + item.value, 0);
+  }
+
+  get chartAverage(): number {
+    if (!this.chartData.length) {
+      return 0;
+    }
+
+    return Number((this.chartTotal / this.chartData.length).toFixed(2));
+  }
+
+  get chartPeak() {
+    return this.chartData.reduce((highest, current) =>
+      current.value > highest.value ? current : highest,
+    );
+  }
+
   setPeriod(period: "semana" | "mes"): void {
     this.selectedPeriod = period;
     this.hoveredIndex = null;
@@ -51,8 +69,8 @@ export class DashboardComponent {
 
   getBarHeight(value: number): number {
     const max = Math.max(...this.chartData.map((item) => item.value));
-    const normalized = (value / max) * 255;
-    return normalized < 64 ? 64 : normalized;
+    const normalized = (value / max) * 220;
+    return normalized < 72 ? 72 : normalized;
   }
 
   getInitials(name: string): string {
