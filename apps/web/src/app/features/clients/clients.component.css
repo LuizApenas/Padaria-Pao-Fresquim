@@ -1,3 +1,42 @@
+.clients-page {
+  position: relative;
+}
+
+.clients-header {
+  align-items: start;
+}
+
+.clients-title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.btn-new-client {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 0;
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  background: #162236;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  box-shadow: 0 10px 20px rgba(22, 34, 54, 0.18);
+}
+
+.btn-new-icon {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
 .stats-row {
   margin-bottom: 1rem;
 }
@@ -25,6 +64,110 @@
   margin: 0 0 1rem;
 }
 
+.client-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.icon-action {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  background: transparent;
+  color: #90a0b8;
+  padding: 0;
+}
+
+.icon-action svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .retry-button {
   margin-top: 1rem;
+}
+
+.client-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.client-modal {
+  width: min(100%, 720px);
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e5ebf3;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+
+.client-modal-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.3rem 1.4rem 1rem;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.client-modal-title {
+  color: #162236;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.client-modal-subtitle {
+  margin-top: 0.25rem;
+  color: #8290a6;
+  font-size: 0.88rem;
+}
+
+.modal-close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 10px;
+  background: #f3f6fa;
+  color: #5d6d84;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.client-form {
+  display: grid;
+  gap: 1.2rem;
+  padding: 1.25rem 1.4rem 1.4rem;
+}
+
+.client-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.client-form-full {
+  grid-column: 1 / -1;
+}
+
+.client-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+}
+
+@media (max-width: 720px) {
+  .client-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
