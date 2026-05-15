@@ -134,6 +134,13 @@
   height: 100%;
 }
 
+.product-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 .visual-bread {
   background:
     radial-gradient(circle at 38% 68%, #c98b41 0 18%, transparent 19%),
@@ -356,6 +363,33 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.product-form-full {
+  grid-column: 1 / -1;
+}
+
+.product-upload {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.product-upload ui5-file-uploader {
+  width: 100%;
+}
+
+.upload-helper {
+  color: #8290a6;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.product-upload-preview {
+  width: min(100%, 240px);
+  height: 132px;
+  border-radius: 12px;
+  border: 1px solid #e5ebf3;
+  object-fit: cover;
 }
 
 .product-modal-actions {

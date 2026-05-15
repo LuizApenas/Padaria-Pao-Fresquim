@@ -1,10 +1,12 @@
 import { CommonModule } from "@angular/common";
-import { Component } from "@angular/core";
+import { Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
-import { clients, products } from "../../core/mock-data";
+import { clients as mockClients, products as mockProducts } from "../../core/mock-data";
 import { StorageService } from "../../core/services/storage.service";
-import { Product } from "../../core/models";
+import { Client, Product } from "../../core/models";
+import { ClientsApiService } from "../../core/services/clients-api.service";
+import { ProductsApiService } from "../../core/services/products-api.service";
 import { formatCurrency } from "../../core/utils/format";
 
 @Component({
@@ -14,21 +16,32 @@ import { formatCurrency } from "../../core/utils/format";
   templateUrl: "./sale.component.html",
   styleUrl: "./sale.component.css"
 })
-export class SaleComponent {
+export class SaleComponent implements OnInit {
   search = "";
   selectedClientId = "";
   payment = "PIX";
   discount = 0;
   cart: Array<{ id: number; name: string; price: number; quantity: number }> = [];
+  clients: Client[] = [];
+  products: Product[] = [];
+  isLoading = true;
+  errorMessage = "";
+  isUsingFallbackData = false;
+  fallbackMessage = "";
+  readonly canPersistSaleToApi = false;
 
-  readonly clients = clients;
-  readonly products = products;
   readonly formatCurrency = formatCurrency;
 
   constructor(
     private readonly storageService: StorageService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly clientsApiService: ClientsApiService,
+    private readonly productsApiService: ProductsApiService,
   ) {}
+
+  ngOnInit(): void {
+    this.loadDependencies();
+  }
 
   get catalog() {
     const normalized = this.search.toLowerCase();
@@ -39,6 +52,10 @@ export class SaleComponent {
 
   get subtotal(): number {
     return this.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }
+
+  retry(): void {
+    this.loadDependencies();
   }
 
   addProduct(product: Product): void {
@@ -78,5 +95,53 @@ export class SaleComponent {
     });
 
     this.router.navigateByUrl("/historico");
+  }
+
+  private loadDependencies(): void {
+    this.isLoading = true;
+    this.errorMessage = "";
+    this.isUsingFallbackData = false;
+    this.fallbackMessage = "";
+
+    let pending = 2;
+    let hasApiFailure = false;
+
+    const finish = () => {
+      pending -= 1;
+
+      if (pending === 0) {
+        this.isLoading = false;
+
+        if (hasApiFailure) {
+          this.isUsingFallbackData = true;
+          this.fallbackMessage =
+            "API de clientes/produtos indisponivel no momento. Mantendo fallback local para validacao da tela de vendas.";
+        }
+      }
+    };
+
+    this.clientsApiService.listClients().subscribe({
+      next: (clients) => {
+        this.clients = clients;
+        finish();
+      },
+      error: () => {
+        hasApiFailure = true;
+        this.clients = mockClients;
+        finish();
+      },
+    });
+
+    this.productsApiService.listProducts().subscribe({
+      next: (products) => {
+        this.products = products;
+        finish();
+      },
+      error: () => {
+        hasApiFailure = true;
+        this.products = mockProducts;
+        finish();
+      },
+    });
   }
 }

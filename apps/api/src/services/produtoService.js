@@ -7,10 +7,6 @@ import {
   toMoney,
 } from "../utils/validation.js";
 
-const produtoInclude = {
-  itensVenda: true,
-};
-
 function serializeProduto(produto) {
   if (!produto) {
     return produto;
@@ -21,6 +17,8 @@ function serializeProduto(produto) {
     name: produto.nome,
     category: produto.categoria,
     sku: produto.codigoBarras,
+    barcode: produto.codigoBarras,
+    imageUrl: produto.imagemUrl,
     price: Number(produto.precoBase),
     stock: 0,
     unit: "un",
@@ -50,7 +48,6 @@ function buildProdutoData(data, { partial = false } = {}) {
 export async function createProduto(data) {
   const produto = await prisma.produto.create({
     data: buildProdutoData(data),
-    include: produtoInclude,
   });
 
   return serializeProduto(produto);
@@ -60,17 +57,37 @@ export async function listProdutos() {
   const produtos = await prisma.produto.findMany({
     where: { ativo: true },
     orderBy: { id: "asc" },
-    include: produtoInclude,
   });
 
   return produtos.map(serializeProduto);
+}
+
+export async function listProdutoCategorias() {
+  const produtos = await prisma.produto.findMany({
+    where: { ativo: true },
+    select: { categoria: true },
+    orderBy: { categoria: "asc" },
+  });
+
+  return [...new Set(produtos.map((produto) => produto.categoria).filter(Boolean))];
+}
+
+export async function getProdutoByCodigoBarras(codigoBarras) {
+  const produto = await prisma.produto.findFirst({
+    where: { codigoBarras, ativo: true },
+  });
+
+  if (!produto) {
+    throw new AppError("Produto nao encontrado.", 404);
+  }
+
+  return serializeProduto(produto);
 }
 
 export async function getProdutoById(idParam) {
   const id = parseId(idParam);
   const produto = await prisma.produto.findFirst({
     where: { id, ativo: true },
-    include: produtoInclude,
   });
 
   if (!produto) {
@@ -88,7 +105,6 @@ export async function updateProduto(idParam, data) {
   const produto = await prisma.produto.update({
     where: { id },
     data: buildProdutoData(data, { partial: true }),
-    include: produtoInclude,
   });
 
   return serializeProduto(produto);

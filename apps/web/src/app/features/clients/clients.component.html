@@ -21,7 +21,7 @@
     <div class="stat-row-item"><div class="stat-row-label">Ticket medio</div><div class="stat-row-value">{{ formatCurrency(averageTicket) }}</div></div>
   </div>
 
-  <input class="search-bar" type="text" placeholder="Buscar clientes por nome ou telefone..." [(ngModel)]="query" />
+  <input class="search-bar" type="text" placeholder="Buscar clientes por nome, CPF ou telefone..." [(ngModel)]="query" />
 
   <div class="table-panel">
     <div *ngIf="isLoading" class="empty-state">Carregando clientes da API...</div>
@@ -35,9 +35,10 @@
       <thead *ngIf="!isLoading && !errorMessage">
         <tr>
           <th>Cliente</th>
+          <th>CPF</th>
           <th>Telefone</th>
           <th>Endereco</th>
-          <th>Status</th>
+          <th>Status Serasa</th>
           <th>Fiado</th>
           <th>Ticket medio</th>
           <th>Acoes</th>
@@ -46,12 +47,13 @@
       <tbody *ngIf="!isLoading && !errorMessage">
         <tr *ngFor="let client of filteredClients">
           <td>
-            <div class="client-name">{{ client.name }}</div>
+            <div class="client-name">{{ client.nome }}</div>
             <div class="client-time">{{ client.email || "Sem e-mail cadastrado" }}</div>
           </td>
-          <td>{{ client.phone }}</td>
-          <td>{{ client.address }}</td>
-          <td><pf-status-badge [text]="client.status" /></td>
+          <td>{{ client.cpf || "Nao informado" }}</td>
+          <td>{{ client.telefone }}</td>
+          <td>{{ client.endereco }}</td>
+          <td><pf-status-badge [text]="client.statusSerasa || client.status" /></td>
           <td><pf-status-badge [text]="client.debtStatus" /></td>
           <td>{{ formatCurrency(client.ticket) }}</td>
           <td>
@@ -70,7 +72,7 @@
           </td>
         </tr>
         <tr *ngIf="filteredClients.length === 0">
-          <td colspan="7" class="empty-state">Nenhum cliente encontrado.</td>
+          <td colspan="8" class="empty-state">Nenhum cliente encontrado.</td>
         </tr>
       </tbody>
     </table>
@@ -95,7 +97,7 @@
       <div class="client-modal-head">
         <div>
           <div class="client-modal-title">{{ modalMode === 'edit' ? 'Editar cliente' : 'Novo cliente' }}</div>
-          <div class="client-modal-subtitle">Os dados serao salvos localmente nesta tela enquanto a gravacao no backend nao estiver ativa.</div>
+          <div class="client-modal-subtitle">Campos alinhados ao backend: nome, CPF, telefone, endereco e status Serasa.</div>
         </div>
         <button class="modal-close" type="button" (click)="closeModal()">×</button>
       </div>
@@ -104,7 +106,12 @@
         <div class="client-form-grid">
           <div class="form-group">
             <label class="form-label">Nome</label>
-            <input class="form-input" name="name" [(ngModel)]="form.name" required />
+            <input class="form-input" name="nome" [(ngModel)]="form.nome" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">CPF</label>
+            <input class="form-input" name="cpf" [(ngModel)]="form.cpf" required />
           </div>
 
           <div class="form-group">
@@ -114,17 +121,17 @@
 
           <div class="form-group">
             <label class="form-label">Telefone</label>
-            <input class="form-input" name="phone" [(ngModel)]="form.phone" required />
+            <input class="form-input" name="telefone" [(ngModel)]="form.telefone" required />
           </div>
 
           <div class="form-group">
             <label class="form-label">Endereco</label>
-            <input class="form-input" name="address" [(ngModel)]="form.address" required />
+            <input class="form-input" name="endereco" [(ngModel)]="form.endereco" required />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Status</label>
-            <select class="form-select" name="status" [(ngModel)]="form.status">
+            <label class="form-label">Status Serasa</label>
+            <select class="form-select" name="statusSerasa" [(ngModel)]="form.statusSerasa">
               <option *ngFor="let item of statusOptions" [value]="item">{{ item }}</option>
             </select>
           </div>

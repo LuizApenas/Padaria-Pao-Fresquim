@@ -5,6 +5,13 @@
       <input class="scanner-input" placeholder="Escaneie o codigo ou digite o nome do produto..." [(ngModel)]="search" />
     </div>
 
+    <div *ngIf="isLoading" class="panel empty-state">Carregando clientes e produtos da API...</div>
+
+    <div *ngIf="!isLoading && isUsingFallbackData" class="panel sale-fallback-note">
+      <div>{{ fallbackMessage }}</div>
+      <button class="btn-secondary compact" type="button" (click)="retry()">Tentar API novamente</button>
+    </div>
+
     <div class="panel items-panel">
       <div class="items-header">
         <div class="items-title">Itens da venda</div>
@@ -42,7 +49,7 @@
         <div *ngFor="let product of catalog" class="catalog-item">
           <div>
             <strong>{{ product.name }}</strong>
-            <div class="client-time">COD: {{ product.sku }} | Estoque {{ product.stock }} {{ product.unit }}</div>
+            <div class="client-time">COD: {{ product.sku }} | Categoria: {{ product.category }}</div>
           </div>
           <div class="toolbar">
             <strong>{{ formatCurrency(product.price) }}</strong>
@@ -86,9 +93,16 @@
       <button class="btn-secondary" type="button">Buscar produto</button>
     </div>
 
+    <div class="payment-panel sale-contract-note">
+      <div class="payment-label">Status da integracao</div>
+      <div class="client-time">
+        Clientes e produtos ja tentam leitura da API. O fechamento da venda ainda permanece local porque o backend exige `funcionarioId` e payload operacional completo.
+      </div>
+    </div>
+
     <div class="pdv-finalize-area">
       <button class="btn-cancel" type="button" (click)="cart = []">Cancelar</button>
-      <button class="btn-finalize" type="button" (click)="finalizeSale()">Finalizar</button>
+      <button class="btn-finalize" type="button" (click)="finalizeSale()">Finalizar localmente</button>
     </div>
 
     <div class="pdv-status-bar">

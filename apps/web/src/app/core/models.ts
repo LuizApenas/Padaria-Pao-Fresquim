@@ -9,6 +9,17 @@ export interface PageMeta {
 export interface Client {
   id: number;
   initials: string;
+  nome?: string;
+  cpf?: string;
+  telefone?: string;
+  endereco?: string;
+  statusSerasa?: string;
+  contaFiado?: {
+    saldoDevedor: number;
+    limiteCredito?: number | null;
+    dataUltimaCobranca?: string | null;
+    statusNotificacao?: string | null;
+  } | null;
   name: string;
   email?: string | null;
   phone: string;
@@ -20,6 +31,11 @@ export interface Client {
 
 export interface Product {
   id: number;
+  codigoBarras?: string;
+  nome?: string;
+  precoBase?: number;
+  categoria?: string;
+  imagemUrl?: string | null;
   name: string;
   category: string;
   sku: string;
@@ -53,11 +69,14 @@ export interface Sale {
 
 export interface Debtor {
   clientId: number;
+  clientName?: string;
+  phone?: string;
   amount: number;
   overdue: string;
   status: string;
   lastPurchase: string;
   lastInstallment: number;
+  statusNotificacao?: string;
 }
 
 export interface ReportProduct {

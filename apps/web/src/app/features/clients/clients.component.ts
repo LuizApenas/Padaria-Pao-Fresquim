@@ -9,11 +9,12 @@ import { formatCurrency } from "../../core/utils/format";
 
 type ClientForm = {
   id: number | null;
-  name: string;
+  nome: string;
+  cpf: string;
   email: string;
-  phone: string;
-  address: string;
-  status: string;
+  telefone: string;
+  endereco: string;
+  statusSerasa: string;
   debtStatus: string;
   ticket: number;
 };
@@ -35,7 +36,7 @@ export class ClientsComponent implements OnInit {
   isModalOpen = false;
   modalMode: "create" | "edit" = "create";
   readonly formatCurrency = formatCurrency;
-  readonly statusOptions = ["Ativo", "Bloqueado", "VIP", "Inativo"];
+  readonly statusOptions = ["REGULAR", "NEGATIVADO"];
   readonly debtStatusOptions = ["Em dia", "Fiado ativo", "Bloqueado", "Critico", "Acompanhando"];
   form: ClientForm = this.getEmptyForm();
 
@@ -48,7 +49,7 @@ export class ClientsComponent implements OnInit {
   get filteredClients() {
     const normalized = this.query.toLowerCase();
     return this.clients.filter((client) =>
-      [client.name, client.email ?? "", client.phone].some((value) =>
+      [client.nome ?? client.name, client.email ?? "", client.cpf ?? "", client.telefone ?? client.phone].some((value) =>
         value.toLowerCase().includes(normalized),
       )
     );
@@ -59,11 +60,11 @@ export class ClientsComponent implements OnInit {
   }
 
   get activeClients(): number {
-    return this.clients.filter((client) => client.status === "Ativo").length;
+    return this.clients.filter((client) => (client.statusSerasa ?? client.status) !== "NEGATIVADO").length;
   }
 
   get blockedClients(): number {
-    return this.clients.filter((client) => client.status === "Bloqueado").length;
+    return this.clients.filter((client) => (client.statusSerasa ?? client.status) === "NEGATIVADO").length;
   }
 
   get averageTicket(): number {
@@ -90,11 +91,12 @@ export class ClientsComponent implements OnInit {
     this.modalMode = "edit";
     this.form = {
       id: client.id,
-      name: client.name,
+      nome: client.nome ?? client.name,
+      cpf: client.cpf ?? "",
       email: client.email ?? "",
-      phone: client.phone,
-      address: client.address,
-      status: client.status,
+      telefone: client.telefone ?? client.phone,
+      endereco: client.endereco ?? client.address,
+      statusSerasa: client.statusSerasa ?? client.status,
       debtStatus: client.debtStatus,
       ticket: client.ticket,
     };
@@ -109,33 +111,51 @@ export class ClientsComponent implements OnInit {
   submitForm(): void {
     const normalizedClient: Client = {
       id: this.form.id ?? this.generateNextId(),
-      initials: this.getInitials(this.form.name),
-      name: this.form.name.trim(),
+      initials: this.getInitials(this.form.nome),
+      nome: this.form.nome.trim(),
+      cpf: this.form.cpf.trim(),
+      telefone: this.form.telefone.trim(),
+      endereco: this.form.endereco.trim(),
+      statusSerasa: this.form.statusSerasa,
+      name: this.form.nome.trim(),
       email: this.form.email.trim() || null,
-      phone: this.form.phone.trim(),
-      address: this.form.address.trim(),
-      status: this.form.status,
+      phone: this.form.telefone.trim(),
+      address: this.form.endereco.trim(),
+      status: this.form.statusSerasa,
       debtStatus: this.form.debtStatus,
       ticket: Number(this.form.ticket),
     };
 
-    if (!normalizedClient.name || !normalizedClient.phone || !normalizedClient.address) {
+    if (!normalizedClient.nome || !normalizedClient.cpf || !normalizedClient.telefone || !normalizedClient.endereco) {
       return;
     }
 
     if (this.modalMode === "edit" && this.form.id !== null) {
-      this.clients = this.clients.map((client) =>
-        client.id === this.form.id ? normalizedClient : client,
-      );
+      this.clientsApiService.updateClient(normalizedClient).subscribe({
+        next: (updatedClient) => {
+          this.clients = this.clients.map((client) =>
+            client.id === this.form.id ? updatedClient : client,
+          );
+          this.closeModal();
+        },
+        error: () => this.saveClientLocally(normalizedClient),
+      });
     } else {
-      this.clients = [normalizedClient, ...this.clients];
+      this.clientsApiService.createClient(normalizedClient).subscribe({
+        next: (createdClient) => {
+          this.clients = [createdClient, ...this.clients];
+          this.closeModal();
+        },
+        error: () => this.saveClientLocally(normalizedClient),
+      });
     }
-
-    this.closeModal();
   }
 
   deleteClient(clientId: number): void {
-    this.clients = this.clients.filter((client) => client.id !== clientId);
+    this.clientsApiService.deleteClient(clientId).subscribe({
+      next: () => this.removeClientLocally(clientId),
+      error: () => this.removeClientLocally(clientId),
+    });
   }
 
   private loadClients(): void {
@@ -146,11 +166,11 @@ export class ClientsComponent implements OnInit {
 
     this.clientsApiService.listClients().subscribe({
       next: (clients) => {
-        this.clients = clients;
+        this.clients = clients.map((client) => this.clientsApiService.normalizeClient(client));
         this.isLoading = false;
       },
       error: () => {
-        this.clients = mockClients;
+        this.clients = mockClients.map((client) => this.clientsApiService.normalizeClient(client));
         this.isUsingFallbackData = true;
         this.fallbackMessage = "API de clientes indisponivel no momento. Exibindo dados locais para continuarmos a validacao da tela.";
         this.isLoading = false;
@@ -161,11 +181,12 @@ export class ClientsComponent implements OnInit {
   private getEmptyForm(): ClientForm {
     return {
       id: null,
-      name: "",
+      nome: "",
+      cpf: "",
       email: "",
-      phone: "",
-      address: "",
-      status: "Ativo",
+      telefone: "",
+      endereco: "",
+      statusSerasa: "REGULAR",
       debtStatus: "Em dia",
       ticket: 0,
     };
@@ -183,5 +204,26 @@ export class ClientsComponent implements OnInit {
 
   private generateNextId(): number {
     return this.clients.reduce((max, client) => Math.max(max, client.id), 0) + 1;
+  }
+
+  private saveClientLocally(client: Client): void {
+    const normalizedClient = this.clientsApiService.normalizeClient(client);
+
+    if (this.modalMode === "edit" && this.form.id !== null) {
+      this.clients = this.clients.map((currentClient) =>
+        currentClient.id === this.form.id ? normalizedClient : currentClient,
+      );
+    } else {
+      this.clients = [normalizedClient, ...this.clients];
+    }
+
+    this.isUsingFallbackData = true;
+    this.fallbackMessage =
+      "API de clientes indisponivel. Alteracao aplicada localmente para manter a validacao da tela.";
+    this.closeModal();
+  }
+
+  private removeClientLocally(clientId: number): void {
+    this.clients = this.clients.filter((client) => client.id !== clientId);
   }
 }

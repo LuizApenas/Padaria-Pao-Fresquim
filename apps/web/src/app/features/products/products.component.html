@@ -42,18 +42,19 @@
     </div>
 
     <article *ngFor="let product of filteredProducts" class="product-card">
-      <div class="product-hero" [ngClass]="getProductVisual(product.name)">
-        <span class="product-category-badge">{{ product.category }}</span>
-        <div class="product-scene" [ngClass]="getProductVisual(product.name)"></div>
+      <div class="product-hero" [ngClass]="!product.imagemUrl ? getProductVisual(product.nome) : null">
+        <span class="product-category-badge">{{ product.categoria }}</span>
+        <img *ngIf="product.imagemUrl" class="product-image" [src]="product.imagemUrl" [alt]="product.nome" />
+        <div *ngIf="!product.imagemUrl" class="product-scene" [ngClass]="getProductVisual(product.nome)"></div>
       </div>
 
       <div class="product-info">
         <div class="product-head">
-          <div class="product-name">{{ product.name }}</div>
-          <div class="product-price">{{ formatCurrency(product.price) }}</div>
+          <div class="product-name">{{ product.nome }}</div>
+          <div class="product-price">{{ formatCurrency(product.precoBase || 0) }}</div>
         </div>
 
-        <div class="product-sku">SKU: {{ product.sku }}</div>
+        <div class="product-sku">Codigo de barras: {{ product.codigoBarras }}</div>
 
         <div class="product-footer">
           <div class="product-actions">
@@ -102,7 +103,7 @@
       <div class="product-modal-head">
         <div>
           <div class="product-modal-title">{{ modalMode === 'edit' ? 'Editar Produto' : 'Novo Produto' }}</div>
-          <div class="product-modal-subtitle">Os dados serao salvos localmente neste navegador.</div>
+          <div class="product-modal-subtitle">Campos alinhados ao contrato do backend: nome, categoria, codigo de barras, preco base e imagem.</div>
         </div>
         <button class="modal-close" type="button" (click)="closeModal()">x</button>
       </div>
@@ -111,24 +112,43 @@
         <div class="product-form-grid">
           <div class="form-group">
             <label class="form-label">Nome</label>
-            <input class="form-input" name="name" [(ngModel)]="form.name" required />
+            <input class="form-input" name="nome" [(ngModel)]="form.nome" required />
           </div>
 
           <div class="form-group">
             <label class="form-label">Categoria</label>
-            <select class="form-select" name="category" [(ngModel)]="form.category">
+            <select class="form-select" name="categoria" [(ngModel)]="form.categoria">
               <option *ngFor="let item of productCategories" [value]="item">{{ item }}</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label class="form-label">SKU</label>
-            <input class="form-input" name="sku" [(ngModel)]="form.sku" required />
+            <label class="form-label">Codigo de barras</label>
+            <input class="form-input" name="codigoBarras" [(ngModel)]="form.codigoBarras" required />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Preco</label>
-            <input class="form-input" name="price" type="number" min="0" step="0.01" [(ngModel)]="form.price" required />
+            <label class="form-label">Preco base</label>
+            <input class="form-input" name="precoBase" type="number" min="0" step="0.01" [(ngModel)]="form.precoBase" required />
+          </div>
+
+          <div class="form-group product-form-full">
+            <label class="form-label">Imagem do produto (URL)</label>
+            <input class="form-input" name="imagemUrl" type="url" [(ngModel)]="form.imagemUrl" />
+          </div>
+
+          <div class="form-group product-form-full">
+            <label class="form-label">Upload de imagem</label>
+            <div class="product-upload">
+              <ui5-file-uploader
+                accept="image/*"
+                placeholder="Selecione uma imagem do produto"
+                [maxFileSize]="1"
+                (ui5Change)="onImageSelect($event)"
+              ></ui5-file-uploader>
+              <span class="upload-helper">Fundamental NGX UI5 FileUploader ativo. Nesta etapa, a imagem vira preview local; o upload real entra quando ligarmos o storage.</span>
+            </div>
+            <img *ngIf="form.imagemUrl" class="product-upload-preview" [src]="form.imagemUrl" alt="Preview do produto" />
           </div>
         </div>
 
