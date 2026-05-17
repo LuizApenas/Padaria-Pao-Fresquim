@@ -86,10 +86,6 @@
       </div>
     </div>
 
-    <div *ngIf="!isLoading && isUsingFallbackData" class="table-footer fallback-note">
-      <span>{{ fallbackMessage }}</span>
-      <button class="btn-secondary" type="button" (click)="retry()">Tentar API novamente</button>
-    </div>
   </div>
 
   <div *ngIf="isModalOpen" class="client-modal-backdrop" (click)="closeModal()">
@@ -97,7 +93,7 @@
       <div class="client-modal-head">
         <div>
           <div class="client-modal-title">{{ modalMode === 'edit' ? 'Editar cliente' : 'Novo cliente' }}</div>
-          <div class="client-modal-subtitle">Campos alinhados ao backend: nome, CPF, telefone, endereco e status Serasa.</div>
+          <div class="client-modal-subtitle">O status Serasa e calculado por uma consulta fake a partir do CPF informado.</div>
         </div>
         <button class="modal-close" type="button" (click)="closeModal()">×</button>
       </div>
@@ -111,7 +107,12 @@
 
           <div class="form-group">
             <label class="form-label">CPF</label>
-            <input class="form-input" name="cpf" [(ngModel)]="form.cpf" required />
+            <div class="serasa-cpf-row">
+              <input class="form-input" name="cpf" [(ngModel)]="form.cpf" (ngModelChange)="onCpfChange()" required />
+              <button class="btn-secondary compact" type="button" [disabled]="isConsultingSerasa" (click)="consultSerasa()">
+                {{ isConsultingSerasa ? 'Consultando...' : 'Consultar Serasa' }}
+              </button>
+            </div>
           </div>
 
           <div class="form-group">
@@ -131,16 +132,10 @@
 
           <div class="form-group">
             <label class="form-label">Status Serasa</label>
-            <select class="form-select" name="statusSerasa" [(ngModel)]="form.statusSerasa">
-              <option *ngFor="let item of statusOptions" [value]="item">{{ item }}</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Fiado</label>
-            <select class="form-select" name="debtStatus" [(ngModel)]="form.debtStatus">
-              <option *ngFor="let item of debtStatusOptions" [value]="item">{{ item }}</option>
-            </select>
+            <div class="serasa-result" [class.negative]="form.statusSerasa === 'NEGATIVADO'">
+              <strong>{{ form.statusSerasa }}</strong>
+              <span>{{ serasaMessage }}</span>
+            </div>
           </div>
 
           <div class="form-group client-form-full">

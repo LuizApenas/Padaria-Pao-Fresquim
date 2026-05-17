@@ -7,8 +7,8 @@
 
     <div *ngIf="isLoading" class="panel empty-state">Carregando clientes e produtos da API...</div>
 
-    <div *ngIf="!isLoading && isUsingFallbackData" class="panel sale-fallback-note">
-      <div>{{ fallbackMessage }}</div>
+    <div *ngIf="!isLoading && errorMessage" class="panel sale-fallback-note">
+      <div>{{ errorMessage }}</div>
       <button class="btn-secondary compact" type="button" (click)="retry()">Tentar API novamente</button>
     </div>
 
@@ -48,11 +48,11 @@
       <div class="catalog-list">
         <div *ngFor="let product of catalog" class="catalog-item">
           <div>
-            <strong>{{ product.name }}</strong>
-            <div class="client-time">COD: {{ product.sku }} | Categoria: {{ product.category }}</div>
+            <strong>{{ product.nome || product.name }}</strong>
+            <div class="client-time">COD: {{ product.codigoBarras || product.sku }} | Categoria: {{ product.categoria || product.category }}</div>
           </div>
           <div class="toolbar">
-            <strong>{{ formatCurrency(product.price) }}</strong>
+            <strong>{{ formatCurrency(product.precoBase || product.price) }}</strong>
             <button class="btn-primary" type="button" (click)="addProduct(product)">Adicionar</button>
           </div>
         </div>
@@ -74,7 +74,7 @@
       <div class="payment-label">Identificar cliente</div>
       <select class="form-select" [(ngModel)]="selectedClientId">
         <option value="">Cliente balcao</option>
-        <option *ngFor="let client of clients" [value]="client.id">{{ client.name }}</option>
+        <option *ngFor="let client of clients" [value]="client.id">{{ client.nome || client.name }}</option>
       </select>
     </div>
 
@@ -96,13 +96,15 @@
     <div class="payment-panel sale-contract-note">
       <div class="payment-label">Status da integracao</div>
       <div class="client-time">
-        Clientes e produtos ja tentam leitura da API. O fechamento da venda ainda permanece local porque o backend exige `funcionarioId` e payload operacional completo.
+        Clientes, produtos e fechamento de venda usam API. O operador ainda usa `funcionarioId` fixo ate a autenticacao retornar o funcionario logado.
       </div>
     </div>
 
     <div class="pdv-finalize-area">
       <button class="btn-cancel" type="button" (click)="cart = []">Cancelar</button>
-      <button class="btn-finalize" type="button" (click)="finalizeSale()">Finalizar localmente</button>
+      <button class="btn-finalize" type="button" [disabled]="isSubmitting" (click)="finalizeSale()">
+        {{ isSubmitting ? 'Finalizando...' : 'Finalizar venda' }}
+      </button>
     </div>
 
     <div class="pdv-status-bar">

@@ -1,8 +1,7 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, NgZone, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Client } from "../../core/models";
-import { clients as mockClients } from "../../core/mock-data";
 import { ClientsApiService } from "../../core/services/clients-api.service";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
 import { formatCurrency } from "../../core/utils/format";
@@ -15,7 +14,6 @@ type ClientForm = {
   telefone: string;
   endereco: string;
   statusSerasa: string;
-  debtStatus: string;
   ticket: number;
 };
 
@@ -31,16 +29,19 @@ export class ClientsComponent implements OnInit {
   clients: Client[] = [];
   isLoading = true;
   errorMessage = "";
-  isUsingFallbackData = false;
-  fallbackMessage = "";
   isModalOpen = false;
   modalMode: "create" | "edit" = "create";
   readonly formatCurrency = formatCurrency;
-  readonly statusOptions = ["REGULAR", "NEGATIVADO"];
-  readonly debtStatusOptions = ["Em dia", "Fiado ativo", "Bloqueado", "Critico", "Acompanhando"];
+  serasaConsultedCpf = "";
+  isConsultingSerasa = false;
+  serasaMessage = "Informe o CPF e consulte o status antes de salvar.";
   form: ClientForm = this.getEmptyForm();
 
-  constructor(private readonly clientsApiService: ClientsApiService) {}
+  constructor(
+    private readonly clientsApiService: ClientsApiService,
+    private readonly changeDetectorRef: ChangeDetectorRef,
+    private readonly ngZone: NgZone,
+  ) {}
 
   ngOnInit(): void {
     this.loadClients();
@@ -84,6 +85,7 @@ export class ClientsComponent implements OnInit {
   openCreateModal(): void {
     this.modalMode = "create";
     this.form = this.getEmptyForm();
+    this.resetSerasaState();
     this.isModalOpen = true;
   }
 
@@ -97,15 +99,17 @@ export class ClientsComponent implements OnInit {
       telefone: client.telefone ?? client.phone,
       endereco: client.endereco ?? client.address,
       statusSerasa: client.statusSerasa ?? client.status,
-      debtStatus: client.debtStatus,
       ticket: client.ticket,
     };
+    this.serasaConsultedCpf = this.form.cpf;
+    this.serasaMessage = "Status recuperado do cadastro atual.";
     this.isModalOpen = true;
   }
 
   closeModal(): void {
     this.isModalOpen = false;
     this.form = this.getEmptyForm();
+    this.resetSerasaState();
   }
 
   submitForm(): void {
@@ -122,7 +126,7 @@ export class ClientsComponent implements OnInit {
       phone: this.form.telefone.trim(),
       address: this.form.endereco.trim(),
       status: this.form.statusSerasa,
-      debtStatus: this.form.debtStatus,
+      debtStatus: this.form.statusSerasa === "NEGATIVADO" ? "Bloqueado" : "Em dia",
       ticket: Number(this.form.ticket),
     };
 
@@ -130,50 +134,93 @@ export class ClientsComponent implements OnInit {
       return;
     }
 
+    if (!this.hasValidSerasaCheck()) {
+      this.showPersistenceError("Consulte o CPF no Serasa fake antes de salvar o cliente.");
+      return;
+    }
+
     if (this.modalMode === "edit" && this.form.id !== null) {
       this.clientsApiService.updateClient(normalizedClient).subscribe({
-        next: (updatedClient) => {
-          this.clients = this.clients.map((client) =>
-            client.id === this.form.id ? updatedClient : client,
-          );
+        next: () => {
           this.closeModal();
+          this.loadClients();
         },
-        error: () => this.saveClientLocally(normalizedClient),
+        error: () => this.showPersistenceError("Nao foi possivel atualizar o cliente na API."),
       });
     } else {
       this.clientsApiService.createClient(normalizedClient).subscribe({
-        next: (createdClient) => {
-          this.clients = [createdClient, ...this.clients];
+        next: () => {
           this.closeModal();
+          this.loadClients();
         },
-        error: () => this.saveClientLocally(normalizedClient),
+        error: () => this.showPersistenceError("Nao foi possivel cadastrar o cliente na API."),
       });
     }
   }
 
   deleteClient(clientId: number): void {
     this.clientsApiService.deleteClient(clientId).subscribe({
-      next: () => this.removeClientLocally(clientId),
-      error: () => this.removeClientLocally(clientId),
+      next: () => this.loadClients(),
+      error: () => this.showPersistenceError("Nao foi possivel excluir o cliente na API."),
     });
   }
 
+  consultSerasa(): void {
+    const cpfDigits = this.form.cpf.replace(/\D/g, "");
+
+    if (cpfDigits.length !== 11) {
+      this.form.statusSerasa = "REGULAR";
+      this.serasaConsultedCpf = "";
+      this.serasaMessage = "CPF deve ter 11 digitos para consulta fake.";
+      return;
+    }
+
+    this.isConsultingSerasa = true;
+    this.serasaMessage = "Consultando status Serasa fake...";
+
+    window.setTimeout(() => {
+      const lastDigit = Number(cpfDigits.at(-1));
+      const isNegativado = [0, 3, 7].includes(lastDigit);
+
+      this.form.statusSerasa = isNegativado ? "NEGATIVADO" : "REGULAR";
+      this.serasaConsultedCpf = this.form.cpf;
+      this.serasaMessage = isNegativado
+        ? "Consulta fake retornou CPF com restricao."
+        : "Consulta fake retornou CPF regular.";
+      this.isConsultingSerasa = false;
+    }, 450);
+  }
+
+  onCpfChange(): void {
+    if (this.form.cpf !== this.serasaConsultedCpf) {
+      this.form.statusSerasa = "REGULAR";
+      this.serasaMessage = "CPF alterado. Consulte novamente antes de salvar.";
+    }
+  }
+
   private loadClients(): void {
+    console.info("[clientes] carregando lista da API");
     this.isLoading = true;
     this.errorMessage = "";
-    this.isUsingFallbackData = false;
-    this.fallbackMessage = "";
+    this.changeDetectorRef.detectChanges();
 
     this.clientsApiService.listClients().subscribe({
       next: (clients) => {
-        this.clients = clients.map((client) => this.clientsApiService.normalizeClient(client));
-        this.isLoading = false;
+        this.ngZone.run(() => {
+          this.clients = clients.map((client) => this.clientsApiService.normalizeClient(client));
+          this.isLoading = false;
+          console.info("[clientes] lista carregada", this.clients.length);
+          this.changeDetectorRef.detectChanges();
+        });
       },
       error: () => {
-        this.clients = mockClients.map((client) => this.clientsApiService.normalizeClient(client));
-        this.isUsingFallbackData = true;
-        this.fallbackMessage = "API de clientes indisponivel no momento. Exibindo dados locais para continuarmos a validacao da tela.";
-        this.isLoading = false;
+        this.ngZone.run(() => {
+          this.clients = [];
+          this.errorMessage = "API de clientes indisponivel. Nao ha fallback mockado nesta tela.";
+          this.isLoading = false;
+          console.error("[clientes] falha ao carregar lista");
+          this.changeDetectorRef.detectChanges();
+        });
       },
     });
   }
@@ -187,7 +234,6 @@ export class ClientsComponent implements OnInit {
       telefone: "",
       endereco: "",
       statusSerasa: "REGULAR",
-      debtStatus: "Em dia",
       ticket: 0,
     };
   }
@@ -206,24 +252,17 @@ export class ClientsComponent implements OnInit {
     return this.clients.reduce((max, client) => Math.max(max, client.id), 0) + 1;
   }
 
-  private saveClientLocally(client: Client): void {
-    const normalizedClient = this.clientsApiService.normalizeClient(client);
-
-    if (this.modalMode === "edit" && this.form.id !== null) {
-      this.clients = this.clients.map((currentClient) =>
-        currentClient.id === this.form.id ? normalizedClient : currentClient,
-      );
-    } else {
-      this.clients = [normalizedClient, ...this.clients];
-    }
-
-    this.isUsingFallbackData = true;
-    this.fallbackMessage =
-      "API de clientes indisponivel. Alteracao aplicada localmente para manter a validacao da tela.";
-    this.closeModal();
+  private showPersistenceError(message: string): void {
+    this.errorMessage = message;
   }
 
-  private removeClientLocally(clientId: number): void {
-    this.clients = this.clients.filter((client) => client.id !== clientId);
+  private hasValidSerasaCheck(): boolean {
+    return this.form.cpf.trim().length > 0 && this.form.cpf === this.serasaConsultedCpf;
+  }
+
+  private resetSerasaState(): void {
+    this.serasaConsultedCpf = "";
+    this.isConsultingSerasa = false;
+    this.serasaMessage = "Informe o CPF e consulte o status antes de salvar.";
   }
 }

@@ -1,11 +1,9 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, NgZone, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { FileUploader } from "@fundamental-ngx/ui5-webcomponents/file-uploader";
 import { Product } from "../../core/models";
-import { products as mockProducts } from "../../core/mock-data";
 import { ProductsApiService } from "../../core/services/products-api.service";
-import { StorageService } from "../../core/services/storage.service";
 import { formatCurrency } from "../../core/utils/format";
 
 type ProductForm = {
@@ -32,8 +30,6 @@ export class ProductsComponent implements OnInit {
   products: Product[] = [];
   isLoading = true;
   errorMessage = "";
-  isUsingFallbackData = false;
-  fallbackMessage = "";
   categories = ["Todos", "Paes", "Frios", "Bebidas", "Mercearia"];
   productCategories = ["Paes", "Frios", "Bebidas", "Mercearia"];
   readonly formatCurrency = formatCurrency;
@@ -41,8 +37,9 @@ export class ProductsComponent implements OnInit {
   form: ProductForm = this.getEmptyForm();
 
   constructor(
-    private readonly storageService: StorageService,
     private readonly productsApiService: ProductsApiService,
+    private readonly changeDetectorRef: ChangeDetectorRef,
+    private readonly ngZone: NgZone,
   ) {}
 
   ngOnInit(): void {
@@ -134,19 +131,17 @@ export class ProductsComponent implements OnInit {
       this.productsApiService.updateProduct(normalizedProduct).subscribe({
         next: (updatedProduct) => {
           this.products = this.products.map((product) => (product.id === this.form.id ? updatedProduct : product));
-          this.storageService.saveProducts(this.products);
           this.closeModal();
         },
-        error: () => this.saveProductLocally(normalizedProduct),
+        error: () => this.showPersistenceError("Nao foi possivel atualizar o produto na API."),
       });
     } else {
       this.productsApiService.createProduct(normalizedProduct).subscribe({
         next: (createdProduct) => {
           this.products = [createdProduct, ...this.products];
-          this.storageService.saveProducts(this.products);
           this.closeModal();
         },
-        error: () => this.saveProductLocally(normalizedProduct),
+        error: () => this.showPersistenceError("Nao foi possivel cadastrar o produto na API."),
       });
     }
   }
@@ -154,7 +149,7 @@ export class ProductsComponent implements OnInit {
   deleteProduct(productId: number): void {
     this.productsApiService.deleteProduct(productId).subscribe({
       next: () => this.removeProductLocally(productId),
-      error: () => this.removeProductLocally(productId),
+      error: () => this.showPersistenceError("Nao foi possivel excluir o produto na API."),
     });
   }
 
@@ -191,27 +186,23 @@ export class ProductsComponent implements OnInit {
   private loadProducts(): void {
     this.isLoading = true;
     this.errorMessage = "";
-    this.isUsingFallbackData = false;
-    this.fallbackMessage = "";
+    this.changeDetectorRef.detectChanges();
 
     this.productsApiService.listProducts().subscribe({
       next: (products) => {
-        this.products = products.map((product) => this.productsApiService.normalizeProduct(product));
-        this.isLoading = false;
+        this.ngZone.run(() => {
+          this.products = products.map((product) => this.productsApiService.normalizeProduct(product));
+          this.isLoading = false;
+          this.changeDetectorRef.detectChanges();
+        });
       },
       error: () => {
-        this.products = this.storageService
-          .getProducts()
-          .map((product) => this.productsApiService.normalizeProduct(product));
-
-        if (!this.products.length) {
-          this.products = mockProducts.map((product) => this.productsApiService.normalizeProduct(product));
-        }
-
-        this.isUsingFallbackData = true;
-        this.fallbackMessage =
-          "API de produtos indisponivel no momento. Exibindo dados locais para continuarmos a validacao da tela.";
-        this.isLoading = false;
+        this.ngZone.run(() => {
+          this.products = [];
+          this.errorMessage = "API de produtos indisponivel. Nao ha fallback mockado nesta tela.";
+          this.isLoading = false;
+          this.changeDetectorRef.detectChanges();
+        });
       },
     });
   }
@@ -234,34 +225,22 @@ export class ProductsComponent implements OnInit {
   private loadCategories(): void {
     this.productsApiService.listCategories().subscribe({
       next: (categories) => {
-        const validCategories = categories.filter((item) => item.trim().length > 0);
-        this.productCategories = validCategories.length ? validCategories : this.productCategories;
-        this.categories = ["Todos", ...this.productCategories];
+        this.ngZone.run(() => {
+          const validCategories = categories.filter((item) => item.trim().length > 0);
+          this.productCategories = validCategories.length ? validCategories : this.productCategories;
+          this.categories = ["Todos", ...this.productCategories];
+          this.changeDetectorRef.detectChanges();
+        });
       },
       error: () => undefined,
     });
   }
 
-  private saveProductLocally(product: Product): void {
-    const normalizedProduct = this.productsApiService.normalizeProduct(product);
-
-    if (this.modalMode === "edit" && this.form.id !== null) {
-      this.products = this.products.map((currentProduct) =>
-        currentProduct.id === this.form.id ? normalizedProduct : currentProduct,
-      );
-    } else {
-      this.products = [normalizedProduct, ...this.products];
-    }
-
-    this.storageService.saveProducts(this.products);
-    this.isUsingFallbackData = true;
-    this.fallbackMessage =
-      "API de produtos indisponivel. Alteracao aplicada localmente para manter a validacao da tela.";
-    this.closeModal();
-  }
-
   private removeProductLocally(productId: number): void {
     this.products = this.products.filter((product) => product.id !== productId);
-    this.storageService.saveProducts(this.products);
+  }
+
+  private showPersistenceError(message: string): void {
+    this.errorMessage = message;
   }
 }

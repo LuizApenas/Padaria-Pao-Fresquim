@@ -67,6 +67,19 @@ export interface Sale {
   status: string;
 }
 
+export interface CreateSaleItemPayload {
+  produtoId: number;
+  quantidade: number;
+}
+
+export interface CreateSalePayload {
+  funcionarioId: number;
+  clienteId?: number | null;
+  formaPagamento: string;
+  status?: string;
+  itens: CreateSaleItemPayload[];
+}
+
 export interface Debtor {
   clientId: number;
   clientName?: string;

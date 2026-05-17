@@ -74,11 +74,6 @@
     </article>
   </div>
 
-  <div *ngIf="!isLoading && isUsingFallbackData" class="products-fallback-note">
-    <span>{{ fallbackMessage }}</span>
-    <button class="btn-secondary" type="button" (click)="retry()">Tentar API novamente</button>
-  </div>
-
   <div class="products-summary">
     <div class="summary-item">
       <div class="summary-label">PRODUTOS ATIVOS</div>

@@ -1,10 +1,14 @@
 import { Injectable, inject } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Observable } from "rxjs";
-import { map } from "rxjs/operators";
+import { map, timeout } from "rxjs/operators";
 import { Client } from "../models";
 
 const API_BASE_URL = "http://localhost:3333";
+const NO_CACHE_HEADERS = new HttpHeaders({
+  "Cache-Control": "no-cache",
+  Pragma: "no-cache",
+});
 
 @Injectable({ providedIn: "root" })
 export class ClientsApiService {
@@ -12,8 +16,11 @@ export class ClientsApiService {
 
   listClients(): Observable<Client[]> {
     return this.http
-      .get<Client[]>(`${API_BASE_URL}/clientes`)
-      .pipe(map((clients) => clients.map((client) => this.normalizeClient(client))));
+      .get<Client[]>(`${API_BASE_URL}/clientes`, { headers: NO_CACHE_HEADERS })
+      .pipe(
+        timeout(8000),
+        map((clients) => clients.map((client) => this.normalizeClient(client))),
+      );
   }
 
   createClient(client: Client): Observable<Client> {

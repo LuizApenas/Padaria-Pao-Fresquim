@@ -1,7 +1,6 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
 import { Client, Debtor } from "../../core/models";
-import { clients, debtors } from "../../core/mock-data";
 import { ClientsApiService } from "../../core/services/clients-api.service";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
 import { formatCurrency } from "../../core/utils/format";
@@ -17,8 +16,7 @@ export class DebtsComponent implements OnInit {
   debtors: Debtor[] = [];
   clients: Client[] = [];
   isLoading = true;
-  isUsingFallbackData = false;
-  fallbackMessage = "";
+  errorMessage = "";
   readonly formatCurrency = formatCurrency;
 
   constructor(private readonly clientsApiService: ClientsApiService) {}
@@ -43,8 +41,7 @@ export class DebtsComponent implements OnInit {
 
   private loadFiadoFromClients(): void {
     this.isLoading = true;
-    this.isUsingFallbackData = false;
-    this.fallbackMessage = "";
+    this.errorMessage = "";
 
     this.clientsApiService.listClients().subscribe({
       next: (apiClients) => {
@@ -53,11 +50,9 @@ export class DebtsComponent implements OnInit {
         this.isLoading = false;
       },
       error: () => {
-        this.clients = clients.map((client) => this.clientsApiService.normalizeClient(client));
-        this.debtors = debtors;
-        this.isUsingFallbackData = true;
-        this.fallbackMessage =
-          "API de clientes indisponivel. Carteira de fiado exibida com dados mockados ate existir a rota dedicada de fiado.";
+        this.clients = [];
+        this.debtors = [];
+        this.errorMessage = "API de clientes indisponivel. Nao ha fallback mockado para carteira de fiado.";
         this.isLoading = false;
       },
     });

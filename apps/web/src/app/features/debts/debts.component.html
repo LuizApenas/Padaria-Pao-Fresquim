@@ -17,8 +17,8 @@
   <div class="table-panel debtors-panel">
     <div *ngIf="isLoading" class="empty-state">Carregando carteira de fiado...</div>
 
-    <div *ngIf="!isLoading && isUsingFallbackData" class="empty-state">
-      {{ fallbackMessage }}
+    <div *ngIf="!isLoading && errorMessage" class="empty-state">
+      {{ errorMessage }}
     </div>
 
     <div *ngFor="let debtor of debtors" class="debtor-row">
