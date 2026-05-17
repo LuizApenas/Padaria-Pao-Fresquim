@@ -218,11 +218,78 @@ export async function createVenda(data) {
   });
 }
 
-export async function listVendas() {
-  return prisma.venda.findMany({
-    orderBy: { id: "asc" },
-    include: vendaInclude,
+export async function listVendas({ inicio, fim, funcionarioId, page = 1, limit = 10 } = {}) {
+  const paginaAtual = Math.max(Number(page) || 1, 1);
+  const limiteAtual = Math.min(Math.max(Number(limit) || 10, 1), 100);
+  const skip = (paginaAtual - 1) * limiteAtual;
+  const where = {};
+
+  if (funcionarioId) {
+    where.funcionarioId = parseId(funcionarioId, "funcionarioId");
+  }
+
+  if (inicio || fim) {
+    where.dataHora = {};
+
+    if (inicio) {
+      const dataInicio = new Date(inicio);
+
+      if (Number.isNaN(dataInicio.getTime())) {
+        throw new AppError("O filtro inicio deve conter uma data valida.", 400);
+      }
+
+      where.dataHora.gte = dataInicio;
+    }
+
+    if (fim) {
+      const dataFim = new Date(fim);
+
+      if (Number.isNaN(dataFim.getTime())) {
+        throw new AppError("O filtro fim deve conter uma data valida.", 400);
+      }
+
+      dataFim.setHours(23, 59, 59, 999);
+      where.dataHora.lte = dataFim;
+    }
+  }
+
+  const [vendas, total, agregados] = await prisma.$transaction([
+    prisma.venda.findMany({
+      where,
+      orderBy: { dataHora: "desc" },
+      skip,
+      take: limiteAtual,
+      include: vendaInclude,
+    }),
+    prisma.venda.count({ where }),
+    prisma.venda.aggregate({
+      where,
+      _sum: { valorTotal: true },
+      _avg: { valorTotal: true },
+    }),
+  ]);
+  const canceladas = await prisma.venda.count({
+    where: { ...where, status: StatusVenda.CANCELADA },
   });
+  const operadoresAtivos = await prisma.funcionario.count({
+    where: { ativo: true },
+  });
+
+  return {
+    data: vendas,
+    pagination: {
+      page: paginaAtual,
+      limit: limiteAtual,
+      total,
+      totalPages: Math.max(Math.ceil(total / limiteAtual), 1),
+    },
+    summary: {
+      totalSold: Number(agregados._sum.valorTotal ?? 0),
+      averageTicket: Number(agregados._avg.valorTotal ?? 0),
+      canceledSales: canceladas,
+      activeOperators: operadoresAtivos,
+    },
+  };
 }
 
 export async function getVendaById(idParam) {

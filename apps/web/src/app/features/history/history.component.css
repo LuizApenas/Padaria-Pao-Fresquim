@@ -1,4 +1,7 @@
 .historic-filters {
+  display: flex;
+  align-items: end;
+  gap: 1rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
 }
@@ -9,4 +12,18 @@
 
 .history-stats .stat-card {
   padding: 1rem 1.1rem;
+}
+
+.retry-button {
+  margin-top: 1rem;
+}
+
+@media (max-width: 900px) {
+  .table-panel {
+    overflow-x: auto;
+  }
+
+  .table-panel table {
+    min-width: 980px;
+  }
 }

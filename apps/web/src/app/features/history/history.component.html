@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
     <div class="page-title">Historico de vendas</div>
-    <div class="page-subtitle">Consulta de transacoes, operadores e formas de pagamento.</div>
+    <div class="page-subtitle">Consulta de transacoes, operadores e formas de pagamento com dados da API.</div>
   </div>
   <a class="btn-primary" routerLink="/vendas/nova">Nova venda</a>
 </div>
@@ -9,47 +9,73 @@
 <div class="historic-filters">
   <div class="filter-group flex-1">
     <label class="form-label">Inicio do periodo</label>
-    <input class="form-input" type="date" />
+    <input class="form-input" type="date" [(ngModel)]="startDate" />
   </div>
   <div class="filter-group flex-1">
     <label class="form-label">Fim do periodo</label>
-    <input class="form-input" type="date" />
+    <input class="form-input" type="date" [(ngModel)]="endDate" />
   </div>
   <div class="filter-group flex-1">
     <label class="form-label">Funcionario</label>
-    <select class="form-select"><option>Todos os funcionarios</option></select>
+    <select class="form-select" [(ngModel)]="selectedEmployeeId">
+      <option value="">Todos os funcionarios</option>
+      <option *ngFor="let employee of employees" [value]="employee.id">{{ employee.nome || employee.name }}</option>
+    </select>
   </div>
-  <button class="btn-secondary" type="button">Filtrar resultados</button>
+  <button class="btn-secondary" type="button" (click)="applyFilters()">Filtrar resultados</button>
 </div>
 
 <div class="stats-grid history-stats">
-  <div class="stat-card"><div class="stat-label">Vendas totais</div><div class="stat-value">{{ formatCurrency(12450) }}</div></div>
-  <div class="stat-card"><div class="stat-label">Ticket medio</div><div class="stat-value">{{ formatCurrency(185.5) }}</div></div>
-  <div class="stat-card"><div class="stat-label">Vendas canceladas</div><div class="stat-value">03</div></div>
-  <div class="stat-card"><div class="stat-label">Operadores ativos</div><div class="stat-value">08</div></div>
+  <div class="stat-card"><div class="stat-label">Vendas totais</div><div class="stat-value">{{ formatCurrency(summary.totalSold) }}</div></div>
+  <div class="stat-card"><div class="stat-label">Ticket medio</div><div class="stat-value">{{ formatCurrency(summary.averageTicket) }}</div></div>
+  <div class="stat-card"><div class="stat-label">Vendas canceladas</div><div class="stat-value">{{ summary.canceledSales }}</div></div>
+  <div class="stat-card"><div class="stat-label">Operadores ativos</div><div class="stat-value">{{ summary.activeOperators }}</div></div>
 </div>
 
 <div class="table-panel">
+  <div *ngIf="isLoading" class="empty-state">Carregando historico da API...</div>
+
+  <div *ngIf="!isLoading && errorMessage" class="empty-state">
+    <div>{{ errorMessage }}</div>
+    <button class="btn-secondary retry-button" type="button" (click)="retry()">Tentar novamente</button>
+  </div>
+
   <table>
-    <thead>
+    <thead *ngIf="!isLoading && !errorMessage">
       <tr>
         <th>ID venda</th>
         <th>Data e hora</th>
         <th>Cliente</th>
+        <th>Funcionario</th>
+        <th>Itens</th>
         <th>Pagamento</th>
         <th>Valor</th>
         <th>Status</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody *ngIf="!isLoading && !errorMessage">
       <tr *ngFor="let sale of sales">
-        <td>{{ sale.id }}</td>
+        <td>#{{ sale.id }}</td>
         <td>{{ sale.datetime }}</td>
         <td>{{ sale.client }}</td>
+        <td>{{ sale.funcionario?.nome || sale.funcionario?.name || "Nao informado" }}</td>
+        <td>{{ sale.mainProduct }}</td>
         <td>{{ sale.payment }}</td>
         <td>{{ formatCurrency(sale.value) }}</td>
         <td><pf-status-badge [text]="sale.status" /></td>
       </tr>
+      <tr *ngIf="sales.length === 0">
+        <td colspan="8" class="empty-state">Nenhuma venda encontrada.</td>
+      </tr>
     </tbody>
   </table>
+
+  <div *ngIf="!isLoading && !errorMessage" class="table-footer">
+    <span>Exibindo {{ sales.length }} de {{ totalItems }} vendas</span>
+    <div class="pagination">
+      <button class="page-btn" type="button" [disabled]="currentPage <= 1" (click)="previousPage()">Anterior</button>
+      <button class="page-btn active" type="button">{{ currentPage }} / {{ totalPages }}</button>
+      <button class="page-btn" type="button" [disabled]="currentPage >= totalPages" (click)="nextPage()">Proxima</button>
+    </div>
+  </div>
 </div>

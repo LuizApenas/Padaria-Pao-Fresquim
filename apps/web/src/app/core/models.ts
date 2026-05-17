@@ -45,7 +45,23 @@ export interface Product {
 }
 
 export interface Employee {
-  id: string;
+  id: number;
+  nome?: string;
+  cpf?: string;
+  telefone?: string;
+  endereco?: string;
+  matricula?: string;
+  cargo?: string;
+  dataAdmissao?: string;
+  contatoEmergencia?: string;
+  accessRole?: "PROPRIETARIO" | "ATENDENTE" | "PADEIRO";
+  email?: string;
+  ativo?: boolean;
+  vendas?: unknown[];
+  registrosPonto?: unknown[];
+  ferias?: unknown[];
+  licencas?: unknown[];
+  atestados?: unknown[];
   name: string;
   role: string;
   status: string;
@@ -59,6 +75,16 @@ export interface Employee {
 
 export interface Sale {
   id: string;
+  dataHora?: string;
+  valorTotal?: number | string;
+  formaPagamento?: string;
+  cliente?: Client | null;
+  funcionario?: Employee | null;
+  itens?: Array<{
+    quantidade: number;
+    subtotal: number | string;
+    produto?: Product | null;
+  }>;
   datetime: string;
   client: string;
   mainProduct: string;

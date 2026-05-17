@@ -24,6 +24,7 @@ export function createApp() {
   });
 
   // Concentra todas as rotas da aplicação em um único ponto de entrada.
+  app.use("/api", router);
   app.use(router);
   // Registra o tratamento global de erros como último middleware da aplicação.
   app.use(errorHandler);

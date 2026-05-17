@@ -22,8 +22,8 @@ vendasRoutes.post(
 
 vendasRoutes.get(
   "/",
-  asyncHandler(async (_request, response) => {
-    const vendas = await listVendas();
+  asyncHandler(async (request, response) => {
+    const vendas = await listVendas(request.query);
 
     response.status(200).json(vendas);
   }),
