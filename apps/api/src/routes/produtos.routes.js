@@ -24,8 +24,8 @@ produtosRoutes.post(
 
 produtosRoutes.get(
   "/",
-  asyncHandler(async (_request, response) => {
-    const produtos = await listProdutos();
+  asyncHandler(async (request, response) => {
+    const produtos = await listProdutos(request.query);
 
     response.status(200).json(produtos);
   }),

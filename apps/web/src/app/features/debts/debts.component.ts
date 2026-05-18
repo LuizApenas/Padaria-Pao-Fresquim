@@ -1,7 +1,7 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
-import { Client, Debtor } from "../../core/models";
-import { ClientsApiService } from "../../core/services/clients-api.service";
+import { Debtor } from "../../core/models";
+import { FiadoApiService } from "../../core/services/fiado-api.service";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
 import { formatCurrency } from "../../core/utils/format";
 
@@ -14,15 +14,14 @@ import { formatCurrency } from "../../core/utils/format";
 })
 export class DebtsComponent implements OnInit {
   debtors: Debtor[] = [];
-  clients: Client[] = [];
   isLoading = true;
   errorMessage = "";
   readonly formatCurrency = formatCurrency;
 
-  constructor(private readonly clientsApiService: ClientsApiService) {}
+  constructor(private readonly fiadoApiService: FiadoApiService) {}
 
   ngOnInit(): void {
-    this.loadFiadoFromClients();
+    this.loadDebtors();
   }
 
   get totalDebt(): number {
@@ -36,43 +35,38 @@ export class DebtsComponent implements OnInit {
   getClientName(clientId: number): string {
     const debtor = this.debtors.find((item) => item.clientId === clientId);
 
-    return debtor?.clientName ?? this.clients.find((client) => client.id === clientId)?.nome ?? "Cliente";
+    return debtor?.clientName ?? "Cliente";
   }
 
-  private loadFiadoFromClients(): void {
-    this.isLoading = true;
-    this.errorMessage = "";
+  retry(): void {
+    this.loadDebtors();
+  }
 
-    this.clientsApiService.listClients().subscribe({
-      next: (apiClients) => {
-        this.clients = apiClients;
-        this.debtors = this.buildDebtorsFromClients(apiClients);
-        this.isLoading = false;
+  chargeDebtor(clientId: number): void {
+    this.fiadoApiService.registerCharge(clientId).subscribe({
+      next: (updatedDebtor) => {
+        this.debtors = this.debtors.map((debtor) => (debtor.clientId === clientId ? updatedDebtor : debtor));
       },
       error: () => {
-        this.clients = [];
-        this.debtors = [];
-        this.errorMessage = "API de clientes indisponivel. Nao ha fallback mockado para carteira de fiado.";
-        this.isLoading = false;
+        this.errorMessage = "Nao foi possivel registrar cobranca na API.";
       },
     });
   }
 
-  private buildDebtorsFromClients(apiClients: Client[]): Debtor[] {
-    return apiClients
-      .filter((client) => Number(client.contaFiado?.saldoDevedor ?? 0) > 0)
-      .map((client) => ({
-        clientId: client.id,
-        clientName: client.nome ?? client.name,
-        phone: client.telefone ?? client.phone,
-        amount: Number(client.contaFiado?.saldoDevedor ?? 0),
-        overdue: client.contaFiado?.dataUltimaCobranca
-          ? `Ultima cobranca em ${new Date(client.contaFiado.dataUltimaCobranca).toLocaleDateString("pt-BR")}`
-          : "Sem cobranca registrada",
-        status: client.statusSerasa === "NEGATIVADO" ? "Critico" : "Fiado ativo",
-        lastPurchase: "Aguardando historico de vendas",
-        lastInstallment: 0,
-        statusNotificacao: client.contaFiado?.statusNotificacao ?? "NENHUMA",
-      }));
+  private loadDebtors(): void {
+    this.isLoading = true;
+    this.errorMessage = "";
+
+    this.fiadoApiService.listDebtors().subscribe({
+      next: (apiDebtors) => {
+        this.debtors = apiDebtors;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.debtors = [];
+        this.errorMessage = "API de fiado indisponivel. Nao ha fallback mockado para carteira de fiado.";
+        this.isLoading = false;
+      },
+    });
   }
 }

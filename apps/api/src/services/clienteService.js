@@ -103,14 +103,45 @@ export async function createCliente(data) {
   return serializeCliente(cliente);
 }
 
-export async function listClientes() {
-  const clientes = await prisma.cliente.findMany({
-    where: { ativo: true },
-    orderBy: { id: "asc" },
-    include: clienteInclude,
-  });
+export async function listClientes({ busca = "", page = 1, limit = 10 } = {}) {
+  const paginaAtual = Math.max(Number(page) || 1, 1);
+  const limiteAtual = Math.min(Math.max(Number(limit) || 10, 1), 100);
+  const skip = (paginaAtual - 1) * limiteAtual;
+  const termoBusca = String(busca).trim();
+  const where = {
+    ativo: true,
+    ...(termoBusca
+      ? {
+          OR: [
+            { nome: { contains: termoBusca, mode: "insensitive" } },
+            { cpf: { contains: termoBusca, mode: "insensitive" } },
+            { telefone: { contains: termoBusca, mode: "insensitive" } },
+            { endereco: { contains: termoBusca, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
 
-  return clientes.map(serializeCliente);
+  const [clientes, total] = await prisma.$transaction([
+    prisma.cliente.findMany({
+      where,
+      orderBy: { id: "asc" },
+      skip,
+      take: limiteAtual,
+      include: clienteInclude,
+    }),
+    prisma.cliente.count({ where }),
+  ]);
+
+  return {
+    data: clientes.map(serializeCliente),
+    pagination: {
+      page: paginaAtual,
+      limit: limiteAtual,
+      total,
+      totalPages: Math.max(Math.ceil(total / limiteAtual), 1),
+    },
+  };
 }
 
 export async function getClienteById(idParam) {

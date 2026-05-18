@@ -32,3 +32,7 @@
   color: var(--text-muted);
   line-height: 1.55;
 }
+
+.retry-button {
+  margin-top: 1rem;
+}

@@ -10,33 +10,57 @@ const NO_CACHE_HEADERS = new HttpHeaders({
   Pragma: "no-cache",
 });
 
+export type PaginatedClientsResponse = {
+  data: Client[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
 @Injectable({ providedIn: "root" })
 export class ClientsApiService {
   private readonly http = inject(HttpClient);
 
   listClients(): Observable<Client[]> {
+    return this.listClientsPage({ limit: 100 }).pipe(map((response) => response.data));
+  }
+
+  listClientsPage(params: { busca?: string; page?: number; limit?: number } = {}): Observable<PaginatedClientsResponse> {
     return this.http
-      .get<Client[]>(`${API_BASE_URL}/clientes`, { headers: NO_CACHE_HEADERS })
+      .get<PaginatedClientsResponse>(`${API_BASE_URL}/api/clientes`, {
+        headers: NO_CACHE_HEADERS,
+        params: {
+          busca: params.busca ?? "",
+          page: String(params.page ?? 1),
+          limit: String(params.limit ?? 10),
+        },
+      })
       .pipe(
         timeout(8000),
-        map((clients) => clients.map((client) => this.normalizeClient(client))),
+        map((response) => ({
+          ...response,
+          data: response.data.map((client) => this.normalizeClient(client)),
+        })),
       );
   }
 
   createClient(client: Client): Observable<Client> {
     return this.http
-      .post<Client>(`${API_BASE_URL}/clientes`, this.toClientePayload(client))
+      .post<Client>(`${API_BASE_URL}/api/clientes`, this.toClientePayload(client))
       .pipe(map((createdClient) => this.normalizeClient(createdClient)));
   }
 
   updateClient(client: Client): Observable<Client> {
     return this.http
-      .put<Client>(`${API_BASE_URL}/clientes/${client.id}`, this.toClientePayload(client))
+      .put<Client>(`${API_BASE_URL}/api/clientes/${client.id}`, this.toClientePayload(client))
       .pipe(map((updatedClient) => this.normalizeClient(updatedClient)));
   }
 
   deleteClient(clientId: number): Observable<void> {
-    return this.http.delete<void>(`${API_BASE_URL}/clientes/${clientId}`);
+    return this.http.delete<void>(`${API_BASE_URL}/api/clientes/${clientId}`);
   }
 
   normalizeClient(client: Client): Client {

@@ -18,18 +18,20 @@
     <div *ngIf="isLoading" class="empty-state">Carregando carteira de fiado...</div>
 
     <div *ngIf="!isLoading && errorMessage" class="empty-state">
-      {{ errorMessage }}
+      <div>{{ errorMessage }}</div>
+      <button class="btn-secondary retry-button" type="button" (click)="retry()">Tentar novamente</button>
     </div>
 
     <div *ngFor="let debtor of debtors" class="debtor-row">
       <div>
         <div class="client-name">{{ getClientName(debtor.clientId) }}</div>
         <div class="client-time">{{ debtor.phone || debtor.overdue }}</div>
+        <div class="client-time">{{ debtor.lastPurchase }}</div>
       </div>
       <div class="debtor-value" [class.critical]="debtor.status === 'Critico'">{{ formatCurrency(debtor.amount) }}</div>
       <div class="debtor-meta-ok">{{ debtor.overdue }}</div>
       <div><pf-status-badge [text]="debtor.status" /></div>
-      <button class="btn-cobrar" type="button">Cobrar</button>
+      <button class="btn-cobrar" type="button" (click)="chargeDebtor(debtor.clientId)">Cobrar</button>
     </div>
 
     <div *ngIf="!isLoading && debtors.length === 0" class="empty-state">Nenhum cliente com saldo de fiado em aberto.</div>

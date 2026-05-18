@@ -53,13 +53,45 @@ export async function createProduto(data) {
   return serializeProduto(produto);
 }
 
-export async function listProdutos() {
-  const produtos = await prisma.produto.findMany({
-    where: { ativo: true },
-    orderBy: { id: "asc" },
-  });
+export async function listProdutos({ busca = "", categoria = "", page = 1, limit = 10 } = {}) {
+  const paginaAtual = Math.max(Number(page) || 1, 1);
+  const limiteAtual = Math.min(Math.max(Number(limit) || 10, 1), 100);
+  const skip = (paginaAtual - 1) * limiteAtual;
+  const termoBusca = String(busca).trim();
+  const categoriaFiltro = String(categoria).trim();
+  const where = {
+    ativo: true,
+    ...(categoriaFiltro ? { categoria: categoriaFiltro } : {}),
+    ...(termoBusca
+      ? {
+          OR: [
+            { nome: { contains: termoBusca, mode: "insensitive" } },
+            { codigoBarras: { contains: termoBusca, mode: "insensitive" } },
+            { categoria: { contains: termoBusca, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
 
-  return produtos.map(serializeProduto);
+  const [produtos, total] = await prisma.$transaction([
+    prisma.produto.findMany({
+      where,
+      orderBy: { id: "asc" },
+      skip,
+      take: limiteAtual,
+    }),
+    prisma.produto.count({ where }),
+  ]);
+
+  return {
+    data: produtos.map(serializeProduto),
+    pagination: {
+      page: paginaAtual,
+      limit: limiteAtual,
+      total,
+      totalPages: Math.max(Math.ceil(total / limiteAtual), 1),
+    },
+  };
 }
 
 export async function listProdutoCategorias() {

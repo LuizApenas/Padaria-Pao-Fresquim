@@ -74,6 +74,15 @@ export class HistoryComponent implements OnInit {
     this.loadSales();
   }
 
+  cancelSale(saleId: string): void {
+    this.salesApiService.cancelSale(saleId).subscribe({
+      next: () => this.loadSales(),
+      error: () => {
+        this.errorMessage = "Nao foi possivel cancelar a venda na API.";
+      },
+    });
+  }
+
   private loadSales(): void {
     this.isLoading = true;
     this.errorMessage = "";

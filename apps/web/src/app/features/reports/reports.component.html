@@ -1,40 +1,58 @@
 <div class="page-header">
   <div>
     <div class="page-title">Relatorios</div>
-    <div class="page-subtitle">KPIs consolidados, top produtos e visao do desempenho acumulado.</div>
+    <div class="page-subtitle">KPIs consolidados, top produtos e vendas por periodo vindos da API.</div>
   </div>
-  <div class="toolbar">
-    <select class="report-filter"><option>Ultimos 30 dias</option></select>
-    <button class="btn-primary" type="button">Gerar ranking completo</button>
+  <div class="toolbar report-toolbar">
+    <input class="form-input" type="date" [(ngModel)]="dataInicio" aria-label="Data inicial" />
+    <input class="form-input" type="date" [(ngModel)]="dataFim" aria-label="Data final" />
+    <button class="btn-primary" type="button" (click)="applyFilters()">Gerar relatorio</button>
   </div>
 </div>
 
-<div class="stats-grid">
-  <div class="stat-card"><div class="stat-label">Total vendido</div><div class="stat-value">{{ formatCurrency(reports.totalSold) }}</div></div>
-  <div class="stat-card"><div class="stat-label">Numero de vendas</div><div class="stat-value">{{ reports.totalOrders }}</div></div>
-  <div class="stat-card"><div class="stat-label">Ticket medio</div><div class="stat-value">{{ formatCurrency(reports.averageTicket) }}</div></div>
-  <div class="stat-card"><div class="stat-label">Crescimento</div><div class="stat-value">+12%</div></div>
+<div *ngIf="isLoading" class="panel empty-state">Carregando relatorio da API...</div>
+
+<div *ngIf="!isLoading && errorMessage" class="panel empty-state">
+  <div>{{ errorMessage }}</div>
+  <button class="btn-secondary retry-button" type="button" (click)="retry()">Tentar novamente</button>
 </div>
 
-<div class="row col-2">
-  <div class="panel">
-    <div class="panel-title">Volume de vendas diario</div>
-    <div class="panel-sub">Desempenho acumulado no periodo selecionado</div>
-    <div class="bar-chart">
-      <div *ngFor="let item of weeklySales; let index = index" class="bar-wrap">
-        <div class="bar" [class.active]="index >= 4" [style.height.px]="item.value / 14 < 20 ? 20 : item.value / 14"></div>
-        <div class="bar-label">{{ item.day }}</div>
+<ng-container *ngIf="!isLoading && !errorMessage">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Total vendido</div><div class="stat-value">{{ formatCurrency(report.totalSold) }}</div></div>
+    <div class="stat-card"><div class="stat-label">Numero de vendas</div><div class="stat-value">{{ report.totalOrders }}</div></div>
+    <div class="stat-card"><div class="stat-label">Ticket medio</div><div class="stat-value">{{ formatCurrency(report.averageTicket) }}</div></div>
+    <div class="stat-card"><div class="stat-label">Crescimento</div><div class="stat-value">{{ growthLabel }}</div></div>
+  </div>
+
+  <div class="row col-2">
+    <div class="panel">
+      <div class="panel-title">Volume de vendas diario</div>
+      <div class="panel-sub">Desempenho acumulado no periodo selecionado</div>
+      <div class="bar-chart" *ngIf="report.dailySales.length; else noDailySales">
+        <div *ngFor="let item of report.dailySales; let index = index" class="bar-wrap">
+          <div class="bar" [class.active]="index >= report.dailySales.length / 2" [style.height.px]="getBarHeight(item.value)"></div>
+          <div class="bar-label">{{ item.day }}</div>
+          <div class="bar-value">{{ item.orders }}</div>
+        </div>
       </div>
+      <ng-template #noDailySales>
+        <div class="empty-state">Nenhuma venda no periodo.</div>
+      </ng-template>
     </div>
-  </div>
 
-  <div class="panel">
-    <div class="panel-title">Top produtos</div>
-    <div class="panel-sub">Itens com melhor saida no periodo</div>
-    <div *ngFor="let product of reports.topProducts; let index = index" class="top-product-item">
-      <div class="top-rank">{{ index + 1 }}</div>
-      <div class="top-product-name">{{ product.name }}</div>
-      <div class="top-product-sales">{{ product.sales }} vendas</div>
+    <div class="panel">
+      <div class="panel-title">Top produtos</div>
+      <div class="panel-sub">Itens com melhor saida no periodo</div>
+      <div *ngFor="let product of report.topProducts; let index = index" class="top-product-item">
+        <div class="top-rank">{{ index + 1 }}</div>
+        <div>
+          <div class="top-product-name">{{ product.name }}</div>
+          <div class="top-product-revenue">{{ formatCurrency(product.revenue) }}</div>
+        </div>
+        <div class="top-product-sales">{{ product.sales }} un.</div>
+      </div>
+      <div *ngIf="report.topProducts.length === 0" class="empty-state">Sem produtos vendidos no periodo.</div>
     </div>
   </div>
-</div>
+</ng-container>

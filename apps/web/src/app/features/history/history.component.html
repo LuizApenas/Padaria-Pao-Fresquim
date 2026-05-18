@@ -51,6 +51,7 @@
         <th>Pagamento</th>
         <th>Valor</th>
         <th>Status</th>
+        <th>Acoes</th>
       </tr>
     </thead>
     <tbody *ngIf="!isLoading && !errorMessage">
@@ -63,9 +64,14 @@
         <td>{{ sale.payment }}</td>
         <td>{{ formatCurrency(sale.value) }}</td>
         <td><pf-status-badge [text]="sale.status" /></td>
+        <td>
+          <button class="btn-cancel-sale" type="button" [disabled]="sale.status === 'CANCELADA'" (click)="cancelSale(sale.id)">
+            Cancelar
+          </button>
+        </td>
       </tr>
       <tr *ngIf="sales.length === 0">
-        <td colspan="8" class="empty-state">Nenhuma venda encontrada.</td>
+        <td colspan="9" class="empty-state">Nenhuma venda encontrada.</td>
       </tr>
     </tbody>
   </table>

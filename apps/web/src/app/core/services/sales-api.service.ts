@@ -55,6 +55,12 @@ export class SalesApiService {
     return this.http.post<unknown>(`${API_BASE_URL}/api/vendas`, payload);
   }
 
+  cancelSale(saleId: number | string): Observable<Sale> {
+    return this.http
+      .patch<Sale>(`${API_BASE_URL}/api/vendas/${saleId}/cancelar`, {})
+      .pipe(map((sale) => this.normalizeSale(sale)));
+  }
+
   normalizeSale(sale: Sale): Sale {
     const value = Number(sale.valorTotal ?? sale.value ?? 0);
     const productNames = sale.itens

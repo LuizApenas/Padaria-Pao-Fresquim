@@ -402,3 +402,32 @@ export async function deleteVenda(idParam) {
     await tx.venda.delete({ where: { id } });
   });
 }
+
+export async function cancelarVenda(idParam) {
+  const id = parseId(idParam);
+
+  return prisma.$transaction(async (tx) => {
+    const venda = await tx.venda.findUnique({
+      where: { id },
+      include: vendaInclude,
+    });
+
+    if (!venda) {
+      throw new AppError("Venda nao encontrada.", 404);
+    }
+
+    if (venda.status === StatusVenda.CANCELADA) {
+      return venda;
+    }
+
+    if (venda.formaPagamento === FormaPagamento.FIADO) {
+      await atualizarSaldoFiado(tx, venda.clienteId, -Number(venda.valorTotal));
+    }
+
+    return tx.venda.update({
+      where: { id },
+      data: { status: StatusVenda.CANCELADA },
+      include: vendaInclude,
+    });
+  });
+}
