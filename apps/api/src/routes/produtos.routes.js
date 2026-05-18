@@ -3,7 +3,9 @@ import { Router } from "express";
 import {
   createProduto,
   deleteProduto,
+  getProdutoByCodigoBarras,
   getProdutoById,
+  listProdutoCategorias,
   listProdutos,
   updateProduto,
 } from "../services/produtoService.js";
@@ -22,10 +24,28 @@ produtosRoutes.post(
 
 produtosRoutes.get(
   "/",
-  asyncHandler(async (_request, response) => {
-    const produtos = await listProdutos();
+  asyncHandler(async (request, response) => {
+    const produtos = await listProdutos(request.query);
 
     response.status(200).json(produtos);
+  }),
+);
+
+produtosRoutes.get(
+  "/categorias",
+  asyncHandler(async (_request, response) => {
+    const categorias = await listProdutoCategorias();
+
+    response.status(200).json(categorias);
+  }),
+);
+
+produtosRoutes.get(
+  "/codigo/:codigoBarras",
+  asyncHandler(async (request, response) => {
+    const produto = await getProdutoByCodigoBarras(request.params.codigoBarras);
+
+    response.status(200).json(produto);
   }),
 );
 

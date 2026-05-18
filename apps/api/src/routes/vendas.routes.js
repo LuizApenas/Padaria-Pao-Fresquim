@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import {
+  cancelarVenda,
   createVenda,
   deleteVenda,
   getVendaById,
@@ -22,8 +23,8 @@ vendasRoutes.post(
 
 vendasRoutes.get(
   "/",
-  asyncHandler(async (_request, response) => {
-    const vendas = await listVendas();
+  asyncHandler(async (request, response) => {
+    const vendas = await listVendas(request.query);
 
     response.status(200).json(vendas);
   }),
@@ -33,6 +34,15 @@ vendasRoutes.get(
   "/:id",
   asyncHandler(async (request, response) => {
     const venda = await getVendaById(request.params.id);
+
+    response.status(200).json(venda);
+  }),
+);
+
+vendasRoutes.patch(
+  "/:id/cancelar",
+  asyncHandler(async (request, response) => {
+    const venda = await cancelarVenda(request.params.id);
 
     response.status(200).json(venda);
   }),

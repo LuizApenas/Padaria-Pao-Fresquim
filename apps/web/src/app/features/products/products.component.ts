@@ -1,76 +1,86 @@
 import { CommonModule } from "@angular/common";
-import { Component } from "@angular/core";
+import { ChangeDetectorRef, Component, NgZone, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
+import { FileUploader } from "@fundamental-ngx/ui5-webcomponents/file-uploader";
 import { Product } from "../../core/models";
-import { StorageService } from "../../core/services/storage.service";
+import { ProductsApiService } from "../../core/services/products-api.service";
 import { formatCurrency } from "../../core/utils/format";
 
 type ProductForm = {
   id: number | null;
-  name: string;
-  category: string;
-  sku: string;
-  stock: number;
-  unit: string;
-  price: number;
+  nome: string;
+  categoria: string;
+  codigoBarras: string;
+  precoBase: number;
+  imagemUrl: string;
 };
 
 @Component({
   selector: "pf-products",
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FileUploader],
   templateUrl: "./products.component.html",
   styleUrl: "./products.component.css"
 })
-export class ProductsComponent {
+export class ProductsComponent implements OnInit {
   category = "Todos";
   sortBy = "recentes";
   isModalOpen = false;
   modalMode: "create" | "edit" = "create";
   products: Product[] = [];
-  readonly categories = ["Todos", "Paes", "Frios", "Bebidas", "Mercearia"];
-  readonly productCategories = ["Paes", "Frios", "Bebidas", "Mercearia"];
+  isLoading = true;
+  errorMessage = "";
+  categories = ["Todos", "Paes", "Frios", "Bebidas", "Mercearia"];
+  productCategories = ["Paes", "Frios", "Bebidas", "Mercearia"];
   readonly formatCurrency = formatCurrency;
 
   form: ProductForm = this.getEmptyForm();
 
-  constructor(private readonly storageService: StorageService) {
+  constructor(
+    private readonly productsApiService: ProductsApiService,
+    private readonly changeDetectorRef: ChangeDetectorRef,
+    private readonly ngZone: NgZone,
+  ) {}
+
+  ngOnInit(): void {
+    this.loadCategories();
     this.loadProducts();
   }
 
   get filteredProducts() {
-    const filtered = this.products.filter((product) => this.category === "Todos" || product.category === this.category);
+    const filtered = this.products.filter((product) => this.category === "Todos" || product.categoria === this.category);
 
     if (this.sortBy === "preco") {
-      return [...filtered].sort((a, b) => a.price - b.price);
-    }
-
-    if (this.sortBy === "estoque") {
-      return [...filtered].sort((a, b) => a.stock - b.stock);
+      return [...filtered].sort((a, b) => Number(a.precoBase) - Number(b.precoBase));
     }
 
     return [...filtered].sort((a, b) => b.id - a.id);
   }
 
-  get totalInventoryValue(): number {
-    return this.products.reduce((sum, product) => sum + product.price * product.stock, 0);
+  get averagePrice(): number {
+    if (!this.products.length) {
+      return 0;
+    }
+
+    const total = this.products.reduce((sum, product) => sum + Number(product.precoBase), 0);
+
+    return Number((total / this.products.length).toFixed(2));
   }
 
   get activeProductsCount(): number {
     return this.products.length;
   }
 
-  get staleProductsCount(): number {
-    return this.products.filter((product) => product.stock <= 12).length;
+  get categorizedProductsCount(): number {
+    return this.products.filter((product) => product.categoria?.trim().length).length;
   }
 
-  get inventoryTurnover(): number {
+  get categoriesCount(): number {
     if (!this.products.length) {
       return 0;
     }
 
-    const inStock = this.products.filter((product) => product.stock > 0).length;
-    return Math.round((inStock / this.products.length) * 100);
+    return new Set(this.products.map((product) => product.categoria)).size;
   }
 
   openCreateModal(): void {
@@ -81,7 +91,14 @@ export class ProductsComponent {
 
   openEditModal(product: Product): void {
     this.modalMode = "edit";
-    this.form = { ...product };
+    this.form = {
+      id: product.id,
+      nome: product.nome ?? product.name,
+      categoria: product.categoria ?? product.category,
+      codigoBarras: product.codigoBarras ?? product.sku,
+      precoBase: product.precoBase ?? product.price,
+      imagemUrl: product.imagemUrl ?? "",
+    };
     this.isModalOpen = true;
   }
 
@@ -93,34 +110,70 @@ export class ProductsComponent {
   submitForm(): void {
     const normalizedProduct: Product = {
       id: this.form.id ?? this.generateNextId(),
-      name: this.form.name.trim(),
-      category: this.form.category,
-      sku: this.form.sku.trim(),
-      stock: Number(this.form.stock),
-      unit: this.form.unit.trim(),
-      price: Number(this.form.price)
+      nome: this.form.nome.trim(),
+      categoria: this.form.categoria,
+      codigoBarras: this.form.codigoBarras.trim(),
+      precoBase: Number(this.form.precoBase),
+      imagemUrl: this.form.imagemUrl.trim() || null,
+      name: this.form.nome.trim(),
+      category: this.form.categoria,
+      sku: this.form.codigoBarras.trim(),
+      stock: 0,
+      unit: "un",
+      price: Number(this.form.precoBase)
     };
 
-    if (!normalizedProduct.name || !normalizedProduct.sku || !normalizedProduct.unit) {
+    if (!normalizedProduct.nome || !normalizedProduct.codigoBarras) {
       return;
     }
 
     if (this.modalMode === "edit" && this.form.id !== null) {
-      this.products = this.products.map((product) => (product.id === this.form.id ? normalizedProduct : product));
+      this.productsApiService.updateProduct(normalizedProduct).subscribe({
+        next: (updatedProduct) => {
+          this.products = this.products.map((product) => (product.id === this.form.id ? updatedProduct : product));
+          this.closeModal();
+        },
+        error: () => this.showPersistenceError("Nao foi possivel atualizar o produto na API."),
+      });
     } else {
-      this.products = [normalizedProduct, ...this.products];
+      this.productsApiService.createProduct(normalizedProduct).subscribe({
+        next: (createdProduct) => {
+          this.products = [createdProduct, ...this.products];
+          this.closeModal();
+        },
+        error: () => this.showPersistenceError("Nao foi possivel cadastrar o produto na API."),
+      });
     }
-
-    this.storageService.saveProducts(this.products);
-    this.closeModal();
   }
 
   deleteProduct(productId: number): void {
-    this.products = this.products.filter((product) => product.id !== productId);
-    this.storageService.saveProducts(this.products);
+    this.productsApiService.deleteProduct(productId).subscribe({
+      next: () => this.removeProductLocally(productId),
+      error: () => this.showPersistenceError("Nao foi possivel excluir o produto na API."),
+    });
   }
 
-  getProductVisual(productName: string): string {
+  onImageSelect(event: Event): void {
+    const uploader = event.target as EventTarget & { files?: FileList | null };
+    const file = uploader.files?.item(0);
+
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.form.imagemUrl = String(reader.result ?? "");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  retry(): void {
+    this.loadProducts();
+  }
+
+  getProductVisual(productName: string | undefined): string {
+    if (!productName) return "visual-default";
     if (productName.includes("Pao")) return "visual-bread";
     if (productName.includes("Presunto")) return "visual-coldcuts";
     if (productName.includes("Cafe")) return "visual-coffee";
@@ -131,22 +184,63 @@ export class ProductsComponent {
   }
 
   private loadProducts(): void {
-    this.products = this.storageService.getProducts();
+    this.isLoading = true;
+    this.errorMessage = "";
+    this.changeDetectorRef.detectChanges();
+
+    this.productsApiService.listProducts().subscribe({
+      next: (products) => {
+        this.ngZone.run(() => {
+          this.products = products.map((product) => this.productsApiService.normalizeProduct(product));
+          this.isLoading = false;
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+      error: () => {
+        this.ngZone.run(() => {
+          this.products = [];
+          this.errorMessage = "API de produtos indisponivel. Nao ha fallback mockado nesta tela.";
+          this.isLoading = false;
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+    });
   }
 
   private getEmptyForm(): ProductForm {
     return {
       id: null,
-      name: "",
-      category: "Paes",
-      sku: "",
-      stock: 0,
-      unit: "un",
-      price: 0
+      nome: "",
+      categoria: "Paes",
+      codigoBarras: "",
+      precoBase: 0,
+      imagemUrl: "",
     };
   }
 
   private generateNextId(): number {
     return this.products.reduce((max, product) => Math.max(max, product.id), 100) + 1;
+  }
+
+  private loadCategories(): void {
+    this.productsApiService.listCategories().subscribe({
+      next: (categories) => {
+        this.ngZone.run(() => {
+          const validCategories = categories.filter((item) => item.trim().length > 0);
+          this.productCategories = validCategories.length ? validCategories : this.productCategories;
+          this.categories = ["Todos", ...this.productCategories];
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+      error: () => undefined,
+    });
+  }
+
+  private removeProductLocally(productId: number): void {
+    this.products = this.products.filter((product) => product.id !== productId);
+  }
+
+  private showPersistenceError(message: string): void {
+    this.errorMessage = message;
   }
 }

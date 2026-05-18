@@ -1,57 +1,154 @@
-<div class="page-header">
-  <div>
-    <div class="page-title">Gestao de clientes</div>
-    <div class="page-subtitle">Gerencie sua base de clientes e controle de credito.</div>
+<div class="clients-page">
+  <div class="page-header clients-header">
+    <div>
+      <div class="page-title clients-title">Gestao de clientes</div>
+      <div class="page-subtitle">Gerencie sua base de clientes e controle de credito.</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn-secondary" type="button">Exportar PDF</button>
+      <button class="btn-secondary" type="button">Exportar Excel</button>
+      <button class="btn-new-client" type="button" (click)="openCreateModal()">
+        <span class="btn-new-icon">+</span>
+        <span>Novo cliente</span>
+      </button>
+    </div>
   </div>
-  <div class="toolbar">
-    <button class="btn-secondary" type="button">Exportar PDF</button>
-    <button class="btn-secondary" type="button">Exportar Excel</button>
-    <button class="btn-primary" type="button">Novo cliente</button>
+
+  <div class="stats-row">
+    <div class="stat-row-item"><div class="stat-row-label">Total de clientes</div><div class="stat-row-value">{{ totalClients }}</div></div>
+    <div class="stat-row-item"><div class="stat-row-label">Clientes ativos</div><div class="stat-row-value green">{{ activeClients }}</div></div>
+    <div class="stat-row-item"><div class="stat-row-label">Bloqueados (fiado)</div><div class="stat-row-value red">{{ blockedClients }}</div></div>
+    <div class="stat-row-item"><div class="stat-row-label">Ticket medio</div><div class="stat-row-value">{{ formatCurrency(averageTicket) }}</div></div>
   </div>
-</div>
 
-<div class="stats-row">
-  <div class="stat-row-item"><div class="stat-row-label">Total de clientes</div><div class="stat-row-value">1.284</div></div>
-  <div class="stat-row-item"><div class="stat-row-label">Clientes ativos</div><div class="stat-row-value green">1.120</div></div>
-  <div class="stat-row-item"><div class="stat-row-label">Bloqueados (fiado)</div><div class="stat-row-value red">164</div></div>
-  <div class="stat-row-item"><div class="stat-row-label">Ticket medio</div><div class="stat-row-value">{{ formatCurrency(452) }}</div></div>
-</div>
+  <input class="search-bar" type="text" placeholder="Buscar clientes por nome, CPF ou telefone..." [(ngModel)]="query" />
 
-<input class="search-bar" type="text" placeholder="Buscar clientes por nome ou telefone..." [(ngModel)]="query" />
+  <div class="table-panel">
+    <div *ngIf="isLoading" class="empty-state">Carregando clientes da API...</div>
 
-<div class="table-panel">
-  <table>
-    <thead>
-      <tr>
-        <th>Cliente</th>
-        <th>Telefone</th>
-        <th>Endereco</th>
-        <th>Status</th>
-        <th>Fiado</th>
-        <th>Ticket medio</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let client of filteredClients">
-        <td>
-          <div class="client-name">{{ client.name }}</div>
-          <div class="client-time">{{ client.email }}</div>
-        </td>
-        <td>{{ client.phone }}</td>
-        <td>{{ client.address }}</td>
-        <td><pf-status-badge [text]="client.status" /></td>
-        <td><pf-status-badge [text]="client.debtStatus" /></td>
-        <td>{{ formatCurrency(client.ticket) }}</td>
-      </tr>
-    </tbody>
-  </table>
+    <div *ngIf="!isLoading && errorMessage" class="empty-state">
+      <div>{{ errorMessage }}</div>
+      <button class="btn-secondary retry-button" type="button" (click)="retry()">Tentar novamente</button>
+    </div>
 
-  <div class="table-footer">
-    <span>Exibindo {{ filteredClients.length }} de {{ clients.length }} clientes simulados</span>
-    <div class="pagination">
-      <button class="page-btn active" type="button">1</button>
-      <button class="page-btn" type="button">2</button>
-      <button class="page-btn" type="button">3</button>
+    <table>
+      <thead *ngIf="!isLoading && !errorMessage">
+        <tr>
+          <th>Cliente</th>
+          <th>CPF</th>
+          <th>Telefone</th>
+          <th>Endereco</th>
+          <th>Status Serasa</th>
+          <th>Fiado</th>
+          <th>Ticket medio</th>
+          <th>Acoes</th>
+        </tr>
+      </thead>
+      <tbody *ngIf="!isLoading && !errorMessage">
+        <tr *ngFor="let client of filteredClients">
+          <td>
+            <div class="client-name">{{ client.nome }}</div>
+            <div class="client-time">{{ client.email || "Sem e-mail cadastrado" }}</div>
+          </td>
+          <td>{{ client.cpf || "Nao informado" }}</td>
+          <td>{{ client.telefone }}</td>
+          <td>{{ client.endereco }}</td>
+          <td><pf-status-badge [text]="client.statusSerasa || client.status" /></td>
+          <td><pf-status-badge [text]="client.debtStatus" /></td>
+          <td>{{ formatCurrency(client.ticket) }}</td>
+          <td>
+            <div class="client-actions">
+              <button class="icon-action" type="button" aria-label="Editar cliente" (click)="openEditModal(client)">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 20h4l10-10-4-4L4 16v4ZM13 7l4 4" />
+                </svg>
+              </button>
+              <button class="icon-action" type="button" aria-label="Excluir cliente" (click)="deleteClient(client.id)">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7M7 7l1 13h8l1-13" />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="filteredClients.length === 0">
+          <td colspan="8" class="empty-state">Nenhum cliente encontrado.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="!isLoading && !errorMessage" class="table-footer">
+      <span>Exibindo {{ filteredClients.length }} de {{ clients.length }} clientes</span>
+      <div class="pagination">
+        <button class="page-btn active" type="button">1</button>
+        <button class="page-btn" type="button">2</button>
+        <button class="page-btn" type="button">3</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div *ngIf="isModalOpen" class="client-modal-backdrop" (click)="closeModal()">
+    <div class="client-modal" (click)="$event.stopPropagation()">
+      <div class="client-modal-head">
+        <div>
+          <div class="client-modal-title">{{ modalMode === 'edit' ? 'Editar cliente' : 'Novo cliente' }}</div>
+          <div class="client-modal-subtitle">O status Serasa e calculado por uma consulta fake a partir do CPF informado.</div>
+        </div>
+        <button class="modal-close" type="button" (click)="closeModal()">×</button>
+      </div>
+
+      <form class="client-form" (ngSubmit)="submitForm()">
+        <div class="client-form-grid">
+          <div class="form-group">
+            <label class="form-label">Nome</label>
+            <input class="form-input" name="nome" [(ngModel)]="form.nome" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">CPF</label>
+            <div class="serasa-cpf-row">
+              <input class="form-input" name="cpf" [(ngModel)]="form.cpf" (ngModelChange)="onCpfChange()" required />
+              <button class="btn-secondary compact" type="button" [disabled]="isConsultingSerasa" (click)="consultSerasa()">
+                {{ isConsultingSerasa ? 'Consultando...' : 'Consultar Serasa' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <input class="form-input" name="email" type="email" [(ngModel)]="form.email" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Telefone</label>
+            <input class="form-input" name="telefone" [(ngModel)]="form.telefone" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Endereco</label>
+            <input class="form-input" name="endereco" [(ngModel)]="form.endereco" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Status Serasa</label>
+            <div class="serasa-result" [class.negative]="form.statusSerasa === 'NEGATIVADO'">
+              <strong>{{ form.statusSerasa }}</strong>
+              <span>{{ serasaMessage }}</span>
+            </div>
+          </div>
+
+          <div class="form-group client-form-full">
+            <label class="form-label">Ticket medio</label>
+            <input class="form-input" name="ticket" type="number" min="0" step="0.01" [(ngModel)]="form.ticket" required />
+          </div>
+        </div>
+
+        <div class="client-modal-actions">
+          <button class="btn-secondary" type="button" (click)="closeModal()">Cancelar</button>
+          <button class="btn-primary" type="submit">{{ modalMode === 'edit' ? 'Salvar alteracoes' : 'Cadastrar cliente' }}</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

@@ -1,8 +1,8 @@
 <div class="products-page">
   <div class="page-header products-header">
     <div>
-      <div class="page-title products-title">Gestão de Produtos</div>
-      <div class="page-subtitle">Gerencie seu catálogo, estoque e precificação em tempo real.</div>
+      <div class="page-title products-title">Gestao de Produtos</div>
+      <div class="page-subtitle">Gerencie seu catalogo e precificacao em tempo real.</div>
     </div>
 
     <button class="btn-new-product" type="button" (click)="openCreateModal()">
@@ -28,26 +28,33 @@
       <span class="sort-label">ORDENAR POR:</span>
       <select class="sort-select" [(ngModel)]="sortBy">
         <option value="recentes">Mais Recentes</option>
-        <option value="preco">Menor Preço</option>
-        <option value="estoque">Menor Estoque</option>
+        <option value="preco">Menor Preco</option>
       </select>
     </div>
   </div>
 
   <div class="products-grid">
+    <div *ngIf="isLoading" class="empty-state">Carregando produtos da API...</div>
+
+    <div *ngIf="!isLoading && errorMessage" class="empty-state">
+      <div>{{ errorMessage }}</div>
+      <button class="btn-secondary" type="button" (click)="retry()">Tentar novamente</button>
+    </div>
+
     <article *ngFor="let product of filteredProducts" class="product-card">
-      <div class="product-hero" [ngClass]="getProductVisual(product.name)">
-        <span class="product-category-badge">{{ product.category }}</span>
-        <div class="product-scene" [ngClass]="getProductVisual(product.name)"></div>
+      <div class="product-hero" [ngClass]="!product.imagemUrl ? getProductVisual(product.nome) : null">
+        <span class="product-category-badge">{{ product.categoria }}</span>
+        <img *ngIf="product.imagemUrl" class="product-image" [src]="product.imagemUrl" [alt]="product.nome" />
+        <div *ngIf="!product.imagemUrl" class="product-scene" [ngClass]="getProductVisual(product.nome)"></div>
       </div>
 
       <div class="product-info">
         <div class="product-head">
-          <div class="product-name">{{ product.name }}</div>
-          <div class="product-price">{{ formatCurrency(product.price) }}</div>
+          <div class="product-name">{{ product.nome }}</div>
+          <div class="product-price">{{ formatCurrency(product.precoBase || 0) }}</div>
         </div>
 
-        <div class="product-sku">SKU: {{ product.sku }}</div>
+        <div class="product-sku">Codigo de barras: {{ product.codigoBarras }}</div>
 
         <div class="product-footer">
           <div class="product-actions">
@@ -62,8 +69,6 @@
               </svg>
             </button>
           </div>
-
-          <div class="product-stock" [class.low]="product.stock < 10">Estoque: {{ product.stock }} {{ product.unit }}</div>
         </div>
       </div>
     </article>
@@ -71,77 +76,80 @@
 
   <div class="products-summary">
     <div class="summary-item">
-      <div class="summary-label">TOTAL EM ESTOQUE</div>
-      <div class="summary-value">{{ formatCurrency(totalInventoryValue) }}</div>
-    </div>
-    <div class="summary-item">
       <div class="summary-label">PRODUTOS ATIVOS</div>
       <div class="summary-value">{{ activeProductsCount }}</div>
     </div>
     <div class="summary-item">
-      <div class="summary-label">ITENS S/ MOVIMENTAÇÃO</div>
-      <div class="summary-value">{{ staleProductsCount }}</div>
+      <div class="summary-label">CATEGORIAS</div>
+      <div class="summary-value">{{ categoriesCount }}</div>
     </div>
     <div class="summary-item">
-      <div class="summary-label">GIRO DE ESTOQUE</div>
-      <div class="summary-value summary-value-green">{{ inventoryTurnover }}%</div>
+      <div class="summary-label">COM CATEGORIA</div>
+      <div class="summary-value">{{ categorizedProductsCount }}</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">PRECO MEDIO</div>
+      <div class="summary-value summary-value-green">{{ formatCurrency(averagePrice) }}</div>
     </div>
   </div>
-
-  <button class="floating-stock-btn" type="button" aria-label="Atalho de estoque">
-    <svg viewBox="0 0 24 24" fill="none">
-      <path d="M4 7h16M6 7v10M18 7v10M8 11h8M8 15h8M4 19h16" />
-    </svg>
-  </button>
 
   <div *ngIf="isModalOpen" class="product-modal-backdrop" (click)="closeModal()">
     <div class="product-modal" (click)="$event.stopPropagation()">
       <div class="product-modal-head">
         <div>
           <div class="product-modal-title">{{ modalMode === 'edit' ? 'Editar Produto' : 'Novo Produto' }}</div>
-          <div class="product-modal-subtitle">Os dados serão salvos localmente neste navegador.</div>
+          <div class="product-modal-subtitle">Campos alinhados ao contrato do backend: nome, categoria, codigo de barras, preco base e imagem.</div>
         </div>
-        <button class="modal-close" type="button" (click)="closeModal()">×</button>
+        <button class="modal-close" type="button" (click)="closeModal()">x</button>
       </div>
 
       <form class="product-form" (ngSubmit)="submitForm()">
         <div class="product-form-grid">
           <div class="form-group">
             <label class="form-label">Nome</label>
-            <input class="form-input" name="name" [(ngModel)]="form.name" required />
+            <input class="form-input" name="nome" [(ngModel)]="form.nome" required />
           </div>
 
           <div class="form-group">
             <label class="form-label">Categoria</label>
-            <select class="form-select" name="category" [(ngModel)]="form.category">
+            <select class="form-select" name="categoria" [(ngModel)]="form.categoria">
               <option *ngFor="let item of productCategories" [value]="item">{{ item }}</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label class="form-label">SKU</label>
-            <input class="form-input" name="sku" [(ngModel)]="form.sku" required />
+            <label class="form-label">Codigo de barras</label>
+            <input class="form-input" name="codigoBarras" [(ngModel)]="form.codigoBarras" required />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Unidade</label>
-            <input class="form-input" name="unit" [(ngModel)]="form.unit" required />
+            <label class="form-label">Preco base</label>
+            <input class="form-input" name="precoBase" type="number" min="0" step="0.01" [(ngModel)]="form.precoBase" required />
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Estoque</label>
-            <input class="form-input" name="stock" type="number" min="0" [(ngModel)]="form.stock" required />
+          <div class="form-group product-form-full">
+            <label class="form-label">Imagem do produto (URL)</label>
+            <input class="form-input" name="imagemUrl" type="url" [(ngModel)]="form.imagemUrl" />
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Preço</label>
-            <input class="form-input" name="price" type="number" min="0" step="0.01" [(ngModel)]="form.price" required />
+          <div class="form-group product-form-full">
+            <label class="form-label">Upload de imagem</label>
+            <div class="product-upload">
+              <ui5-file-uploader
+                accept="image/*"
+                placeholder="Selecione uma imagem do produto"
+                [maxFileSize]="1"
+                (ui5Change)="onImageSelect($event)"
+              ></ui5-file-uploader>
+              <span class="upload-helper">Fundamental NGX UI5 FileUploader ativo. Nesta etapa, a imagem vira preview local; o upload real entra quando ligarmos o storage.</span>
+            </div>
+            <img *ngIf="form.imagemUrl" class="product-upload-preview" [src]="form.imagemUrl" alt="Preview do produto" />
           </div>
         </div>
 
         <div class="product-modal-actions">
           <button class="btn-secondary" type="button" (click)="closeModal()">Cancelar</button>
-          <button class="btn-primary" type="submit">{{ modalMode === 'edit' ? 'Salvar alterações' : 'Cadastrar produto' }}</button>
+          <button class="btn-primary" type="submit">{{ modalMode === 'edit' ? 'Salvar alteracoes' : 'Cadastrar produto' }}</button>
         </div>
       </form>
     </div>

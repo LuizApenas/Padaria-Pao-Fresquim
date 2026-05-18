@@ -48,9 +48,9 @@ export const products: Product[] = [
 ];
 
 export const employees: Employee[] = [
-  { id: "ERP-0942", name: "Joao Jose da Silva", role: "Padeiro chefe", status: "Ativo", monthlyHours: "168h", overtime: "+4h", vacationBalance: "22 dias", attendance: "98.5%", admission: "12 de janeiro de 2021", shift: "05:00 - 14:00" },
-  { id: "ERP-1021", name: "Ana Beatriz Moreira", role: "Caixa", status: "Ativo", monthlyHours: "160h", overtime: "+2h", vacationBalance: "18 dias", attendance: "97.2%", admission: "04 de agosto de 2022", shift: "12:00 - 20:20" },
-  { id: "ERP-1115", name: "Carlos Oliveira", role: "Supervisor", status: "Plantao", monthlyHours: "176h", overtime: "+8h", vacationBalance: "30 dias", attendance: "99.1%", admission: "19 de marco de 2020", shift: "08:00 - 17:00" }
+  { id: 942, name: "Joao Jose da Silva", role: "Padeiro chefe", status: "Ativo", monthlyHours: "168h", overtime: "+4h", vacationBalance: "22 dias", attendance: "98.5%", admission: "12 de janeiro de 2021", shift: "05:00 - 14:00" },
+  { id: 1021, name: "Ana Beatriz Moreira", role: "Caixa", status: "Ativo", monthlyHours: "160h", overtime: "+2h", vacationBalance: "18 dias", attendance: "97.2%", admission: "04 de agosto de 2022", shift: "12:00 - 20:20" },
+  { id: 1115, name: "Carlos Oliveira", role: "Supervisor", status: "Plantao", monthlyHours: "176h", overtime: "+8h", vacationBalance: "30 dias", attendance: "99.1%", admission: "19 de marco de 2020", shift: "08:00 - 17:00" }
 ];
 
 export const initialSales: Sale[] = [

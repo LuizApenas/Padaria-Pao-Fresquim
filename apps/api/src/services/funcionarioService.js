@@ -38,7 +38,7 @@ async function buildFuncionarioData(data, { partial = false } = {}) {
       "email",
     ]);
 
-    if (!data.senha && !data.senhaHash) {
+    if (!data.senha) {
       throw new AppError("O campo senha e obrigatorio.", 400);
     }
   }
@@ -70,8 +70,6 @@ async function buildFuncionarioData(data, { partial = false } = {}) {
 
   if (data.senha) {
     funcionarioData.senhaHash = await bcrypt.hash(data.senha, 10);
-  } else if (data.senhaHash) {
-    funcionarioData.senhaHash = data.senhaHash;
   }
 
   return funcionarioData;
@@ -86,8 +84,51 @@ export async function createFuncionario(data) {
   return serializeFuncionario(funcionario);
 }
 
-export async function listFuncionarios() {
+export async function listFuncionarios({ busca = "", page = 1, limit = 10 } = {}) {
+  const paginaAtual = Math.max(Number(page) || 1, 1);
+  const limiteAtual = Math.min(Math.max(Number(limit) || 10, 1), 100);
+  const skip = (paginaAtual - 1) * limiteAtual;
+  const termoBusca = String(busca).trim();
+  const where = {
+    ativo: true,
+    ...(termoBusca
+      ? {
+          OR: [
+            { nome: { contains: termoBusca, mode: "insensitive" } },
+            { cpf: { contains: termoBusca, mode: "insensitive" } },
+            { email: { contains: termoBusca, mode: "insensitive" } },
+            { matricula: { contains: termoBusca, mode: "insensitive" } },
+            { cargo: { contains: termoBusca, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+
+  const [funcionarios, total] = await prisma.$transaction([
+    prisma.funcionario.findMany({
+      where,
+      orderBy: { id: "asc" },
+      skip,
+      take: limiteAtual,
+      include: funcionarioInclude,
+    }),
+    prisma.funcionario.count({ where }),
+  ]);
+
+  return {
+    data: funcionarios.map(serializeFuncionario),
+    pagination: {
+      page: paginaAtual,
+      limit: limiteAtual,
+      total,
+      totalPages: Math.max(Math.ceil(total / limiteAtual), 1),
+    },
+  };
+}
+
+export async function listFuncionariosLegacy() {
   const funcionarios = await prisma.funcionario.findMany({
+    where: { ativo: true },
     orderBy: { id: "asc" },
     include: funcionarioInclude,
   });
@@ -97,8 +138,8 @@ export async function listFuncionarios() {
 
 export async function getFuncionarioById(idParam) {
   const id = parseId(idParam);
-  const funcionario = await prisma.funcionario.findUnique({
-    where: { id },
+  const funcionario = await prisma.funcionario.findFirst({
+    where: { id, ativo: true },
     include: funcionarioInclude,
   });
 

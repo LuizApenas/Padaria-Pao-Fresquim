@@ -9,8 +9,19 @@ export interface PageMeta {
 export interface Client {
   id: number;
   initials: string;
+  nome?: string;
+  cpf?: string;
+  telefone?: string;
+  endereco?: string;
+  statusSerasa?: string;
+  contaFiado?: {
+    saldoDevedor: number;
+    limiteCredito?: number | null;
+    dataUltimaCobranca?: string | null;
+    statusNotificacao?: string | null;
+  } | null;
   name: string;
-  email: string;
+  email?: string | null;
   phone: string;
   address: string;
   status: string;
@@ -20,6 +31,11 @@ export interface Client {
 
 export interface Product {
   id: number;
+  codigoBarras?: string;
+  nome?: string;
+  precoBase?: number;
+  categoria?: string;
+  imagemUrl?: string | null;
   name: string;
   category: string;
   sku: string;
@@ -29,7 +45,23 @@ export interface Product {
 }
 
 export interface Employee {
-  id: string;
+  id: number;
+  nome?: string;
+  cpf?: string;
+  telefone?: string;
+  endereco?: string;
+  matricula?: string;
+  cargo?: string;
+  dataAdmissao?: string;
+  contatoEmergencia?: string;
+  accessRole?: "PROPRIETARIO" | "ATENDENTE" | "PADEIRO";
+  email?: string;
+  ativo?: boolean;
+  vendas?: unknown[];
+  registrosPonto?: unknown[];
+  ferias?: unknown[];
+  licencas?: unknown[];
+  atestados?: unknown[];
   name: string;
   role: string;
   status: string;
@@ -43,6 +75,16 @@ export interface Employee {
 
 export interface Sale {
   id: string;
+  dataHora?: string;
+  valorTotal?: number | string;
+  formaPagamento?: string;
+  cliente?: Client | null;
+  funcionario?: Employee | null;
+  itens?: Array<{
+    quantidade: number;
+    subtotal: number | string;
+    produto?: Product | null;
+  }>;
   datetime: string;
   client: string;
   mainProduct: string;
@@ -51,13 +93,29 @@ export interface Sale {
   status: string;
 }
 
+export interface CreateSaleItemPayload {
+  produtoId: number;
+  quantidade: number;
+}
+
+export interface CreateSalePayload {
+  funcionarioId: number;
+  clienteId?: number | null;
+  formaPagamento: string;
+  status?: string;
+  itens: CreateSaleItemPayload[];
+}
+
 export interface Debtor {
   clientId: number;
+  clientName?: string;
+  phone?: string;
   amount: number;
   overdue: string;
   status: string;
   lastPurchase: string;
   lastInstallment: number;
+  statusNotificacao?: string;
 }
 
 export interface ReportProduct {

@@ -22,8 +22,8 @@ funcionariosRoutes.post(
 
 funcionariosRoutes.get(
   "/",
-  asyncHandler(async (_request, response) => {
-    const funcionarios = await listFuncionarios();
+  asyncHandler(async (request, response) => {
+    const funcionarios = await listFuncionarios(request.query);
 
     response.status(200).json(funcionarios);
   }),

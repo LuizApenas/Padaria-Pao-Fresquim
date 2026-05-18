@@ -22,8 +22,8 @@ clientesRoutes.post(
 
 clientesRoutes.get(
   "/",
-  asyncHandler(async (_request, response) => {
-    const clientes = await listClientes();
+  asyncHandler(async (request, response) => {
+    const clientes = await listClientes(request.query);
 
     response.status(200).json(clientes);
   }),

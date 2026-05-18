@@ -1,40 +1,182 @@
-<div class="page-header">
-  <div>
-    <div class="page-title">Funcionarios</div>
-    <div class="page-subtitle">Dados pessoais, presenca, ferias e visao rapida do quadro operacional.</div>
-  </div>
-  <button class="btn-primary" type="button">Novo funcionario</button>
-</div>
-
-<article *ngFor="let employee of employees" class="employee-card">
-  <div class="employee-header">
-    <div class="employee-avatar">
-      {{ employee.name.slice(0, 1) }}
-      <div class="employee-online"></div>
+<div class="employees-page">
+  <div class="page-header employees-header">
+    <div>
+      <div class="page-title employees-title">Gestao de funcionarios</div>
+      <div class="page-subtitle">Cadastro operacional, perfil de acesso, ponto, ferias e documentos vinculados.</div>
     </div>
-    <div class="flex-1">
-      <div class="employee-name">{{ employee.name }}</div>
-      <div class="employee-role">{{ employee.role }}</div>
-      <div class="employee-id">ID {{ employee.id }}</div>
+    <button class="btn-new-employee" type="button" (click)="openCreateModal()">
+      <span class="btn-new-icon">+</span>
+      <span>Novo funcionario</span>
+    </button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-row-item"><div class="stat-row-label">Total de funcionarios</div><div class="stat-row-value">{{ totalEmployees }}</div></div>
+    <div class="stat-row-item"><div class="stat-row-label">Ativos</div><div class="stat-row-value green">{{ activeEmployees }}</div></div>
+    <div class="stat-row-item"><div class="stat-row-label">Com ponto</div><div class="stat-row-value">{{ attendanceRegistered }}</div></div>
+    <div class="stat-row-item"><div class="stat-row-label">Ferias registradas</div><div class="stat-row-value">{{ vacationRecords }}</div></div>
+  </div>
+
+  <div class="employee-search-row">
+    <input
+      class="search-bar"
+      type="text"
+      placeholder="Buscar por nome, CPF, matricula, e-mail ou cargo..."
+      [(ngModel)]="query"
+      (keyup.enter)="searchEmployees()"
+    />
+    <button class="btn-secondary" type="button" (click)="searchEmployees()">Buscar</button>
+  </div>
+
+  <div class="table-panel">
+    <div *ngIf="isLoading" class="empty-state">Carregando funcionarios da API...</div>
+
+    <div *ngIf="!isLoading && errorMessage" class="empty-state">
+      <div>{{ errorMessage }}</div>
+      <button class="btn-secondary retry-button" type="button" (click)="retry()">Tentar novamente</button>
     </div>
-    <pf-status-badge [text]="employee.status" />
+
+    <table>
+      <thead *ngIf="!isLoading && !errorMessage">
+        <tr>
+          <th>Funcionario</th>
+          <th>Matricula</th>
+          <th>CPF</th>
+          <th>Contato</th>
+          <th>Cargo</th>
+          <th>Perfil</th>
+          <th>Admissao</th>
+          <th>Status</th>
+          <th>Acoes</th>
+        </tr>
+      </thead>
+      <tbody *ngIf="!isLoading && !errorMessage">
+        <tr *ngFor="let employee of filteredEmployees">
+          <td>
+            <div class="employee-cell">
+              <div class="employee-avatar">{{ (employee.nome || employee.name).slice(0, 1) }}</div>
+              <div>
+                <div class="employee-name">{{ employee.nome || employee.name }}</div>
+                <div class="employee-id">{{ employee.email || "Sem e-mail" }}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{ employee.matricula || "Nao informado" }}</td>
+          <td>{{ employee.cpf || "Nao informado" }}</td>
+          <td>
+            <div>{{ employee.telefone || "Nao informado" }}</div>
+            <div class="employee-id">{{ employee.contatoEmergencia || "Sem emergencia" }}</div>
+          </td>
+          <td>{{ employee.cargo || employee.role }}</td>
+          <td>{{ formatRole(employee.accessRole) }}</td>
+          <td>{{ employee.admission }}</td>
+          <td><pf-status-badge [text]="employee.status" /></td>
+          <td>
+            <div class="employee-actions">
+              <button class="icon-action" type="button" aria-label="Editar funcionario" (click)="openEditModal(employee)">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 20h4l10-10-4-4L4 16v4ZM13 7l4 4" />
+                </svg>
+              </button>
+              <button class="icon-action" type="button" aria-label="Excluir funcionario" (click)="deleteEmployee(employee.id)">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7M7 7l1 13h8l1-13" />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="filteredEmployees.length === 0">
+          <td colspan="9" class="empty-state">Nenhum funcionario encontrado.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="!isLoading && !errorMessage" class="table-footer">
+      <span>Exibindo {{ filteredEmployees.length }} de {{ totalItems }} funcionarios</span>
+      <div class="pagination">
+        <button class="page-btn" type="button" [disabled]="currentPage <= 1" (click)="previousPage()">Anterior</button>
+        <button class="page-btn active" type="button">{{ currentPage }} / {{ totalPages }}</button>
+        <button class="page-btn" type="button" [disabled]="currentPage >= totalPages" (click)="nextPage()">Proxima</button>
+      </div>
+    </div>
   </div>
 
-  <div class="employee-stats">
-    <div class="emp-stat"><div class="emp-stat-label">Horas mensais</div><div class="emp-stat-value">{{ employee.monthlyHours }}</div></div>
-    <div class="emp-stat"><div class="emp-stat-label">Horas extras</div><div class="emp-stat-value">{{ employee.overtime }}</div></div>
-    <div class="emp-stat"><div class="emp-stat-label">Saldo de ferias</div><div class="emp-stat-value">{{ employee.vacationBalance }}</div></div>
-    <div class="emp-stat"><div class="emp-stat-label">Assiduidade</div><div class="emp-stat-value">{{ employee.attendance }}</div></div>
-  </div>
-</article>
+  <div *ngIf="isModalOpen" class="employee-modal-backdrop" (click)="closeModal()">
+    <div class="employee-modal" (click)="$event.stopPropagation()">
+      <div class="employee-modal-head">
+        <div>
+          <div class="employee-modal-title">{{ modalMode === 'edit' ? 'Editar funcionario' : 'Novo funcionario' }}</div>
+          <div class="employee-modal-subtitle">A tela segue o contrato do backend. O backend recebe senha e grava somente o hash.</div>
+        </div>
+        <button class="modal-close" type="button" (click)="closeModal()">x</button>
+      </div>
 
-<div class="panel">
-  <div class="panel-title">Novo funcionario</div>
-  <div class="panel-sub">Formulario base para padronizar o cadastro no novo frontend Angular.</div>
-  <div class="form-grid">
-    <div class="form-group"><label class="form-label">Nome completo</label><input class="form-input" placeholder="Ex: Joao da Silva" /></div>
-    <div class="form-group"><label class="form-label">CPF</label><input class="form-input" placeholder="000.000.000-00" /></div>
-    <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" placeholder="(00) 00000-0000" /></div>
-    <div class="form-group"><label class="form-label">Cargo</label><select class="form-select"><option>Padeiro</option><option>Caixa</option><option>Supervisor</option></select></div>
+      <form class="employee-form" (ngSubmit)="submitForm()">
+        <div class="employee-form-grid">
+          <div class="form-group">
+            <label class="form-label">Nome completo</label>
+            <input class="form-input" name="nome" [(ngModel)]="form.nome" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">CPF</label>
+            <input class="form-input" name="cpf" [(ngModel)]="form.cpf" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Telefone</label>
+            <input class="form-input" name="telefone" [(ngModel)]="form.telefone" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Endereco</label>
+            <input class="form-input" name="endereco" [(ngModel)]="form.endereco" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Matricula</label>
+            <input class="form-input" name="matricula" [(ngModel)]="form.matricula" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Cargo</label>
+            <input class="form-input" name="cargo" [(ngModel)]="form.cargo" placeholder="Ex: Caixa, Padeiro, Supervisor" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Data de admissao</label>
+            <input class="form-input" name="dataAdmissao" type="date" [(ngModel)]="form.dataAdmissao" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contato de emergencia</label>
+            <input class="form-input" name="contatoEmergencia" [(ngModel)]="form.contatoEmergencia" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Perfil de acesso</label>
+            <select class="form-select" name="role" [(ngModel)]="form.role" required>
+              <option *ngFor="let role of roles" [ngValue]="role">{{ formatRole(role) }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <input class="form-input" name="email" type="email" [(ngModel)]="form.email" required />
+          </div>
+
+          <div class="form-group employee-form-full">
+            <label class="form-label">Senha {{ modalMode === 'edit' ? '(preencha somente para trocar)' : '' }}</label>
+            <input class="form-input" name="senha" type="password" [(ngModel)]="form.senha" [required]="modalMode === 'create'" />
+          </div>
+        </div>
+
+        <div class="employee-modal-actions">
+          <button class="btn-secondary" type="button" (click)="closeModal()">Cancelar</button>
+          <button class="btn-primary" type="submit">{{ modalMode === 'edit' ? 'Salvar alteracoes' : 'Cadastrar funcionario' }}</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>

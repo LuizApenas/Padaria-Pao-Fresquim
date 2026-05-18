@@ -5,7 +5,6 @@ import { ShellComponent } from "./layout/shell/shell.component";
 import { LoginComponent } from "./features/login/login.component";
 import { DashboardComponent } from "./features/dashboard/dashboard.component";
 import { ClientsComponent } from "./features/clients/clients.component";
-import { ProductsComponent } from "./features/products/products.component";
 import { EmployeesComponent } from "./features/employees/employees.component";
 import { SaleComponent } from "./features/sale/sale.component";
 import { HistoryComponent } from "./features/history/history.component";
@@ -29,7 +28,12 @@ export const routes: Routes = [
       { path: "", pathMatch: "full", redirectTo: "dashboard" },
       { path: "dashboard", component: DashboardComponent, data: { pageId: "dashboard" } },
       { path: "clientes", component: ClientsComponent, data: { pageId: "clientes" } },
-      { path: "produtos", component: ProductsComponent, data: { pageId: "produtos" } },
+      {
+        path: "produtos",
+        loadComponent: () =>
+          import("./features/products/products.component").then((module) => module.ProductsComponent),
+        data: { pageId: "produtos" },
+      },
       { path: "funcionarios", component: EmployeesComponent, data: { pageId: "funcionarios" } },
       { path: "vendas/nova", component: SaleComponent, data: { pageId: "nova-venda" } },
       { path: "historico", component: HistoryComponent, data: { pageId: "historico" } },

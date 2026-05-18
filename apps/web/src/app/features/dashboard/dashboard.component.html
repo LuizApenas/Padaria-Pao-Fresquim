@@ -1,4 +1,12 @@
 <div class="dashboard-page">
+  <div *ngIf="isLoading" class="panel empty-state">Carregando dashboard da API...</div>
+
+  <div *ngIf="!isLoading && errorMessage" class="panel empty-state">
+    <div>{{ errorMessage }}</div>
+    <button class="btn-secondary dashboard-retry" type="button" (click)="retry()">Tentar novamente</button>
+  </div>
+
+  <ng-container *ngIf="!isLoading && !errorMessage">
   <div class="stats-grid dashboard-stats">
     <article class="stat-card stat-card-highlight">
       <div class="stat-top">
@@ -9,34 +17,34 @@
           </svg>
         </div>
       </div>
-      <div class="stat-value">{{ formatCurrency(overview.totalSoldToday) }}</div>
-      <div class="stat-sub"><span class="stat-up">↗ +12%</span> vs. ontem</div>
+      <div class="stat-value">{{ formatCurrency(dashboard.totalSoldToday) }}</div>
+      <div class="stat-sub"><span class="stat-up">{{ comparedToYesterdayLabel }}</span> vs. ontem</div>
     </article>
 
     <article class="stat-card">
       <div class="stat-top">
-        <div class="stat-label">Nº DE VENDAS</div>
+        <div class="stat-label">NUMERO DE VENDAS</div>
         <div class="stat-icon stat-icon-slate">
           <svg viewBox="0 0 24 24" fill="none">
             <path d="M4 6h2l2.2 9h8.7l2.1-6H9M10 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2ZM17 19a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" />
           </svg>
         </div>
       </div>
-      <div class="stat-value">{{ overview.salesCount }}</div>
+      <div class="stat-value">{{ dashboard.salesCount }}</div>
       <div class="stat-sub">Vendas confirmadas</div>
     </article>
 
     <article class="stat-card">
       <div class="stat-top">
-        <div class="stat-label">TICKET MÉDIO</div>
+        <div class="stat-label">TICKET MEDIO</div>
         <div class="stat-icon stat-icon-slate">
           <svg viewBox="0 0 24 24" fill="none">
             <path d="M6 4h12v16H6zM9 15v-3M12 15V9M15 15v-5" />
           </svg>
         </div>
       </div>
-      <div class="stat-value">{{ formatCurrency(overview.averageTicket) }}</div>
-      <div class="stat-sub">Por transação</div>
+      <div class="stat-value">{{ formatCurrency(dashboard.averageTicket) }}</div>
+      <div class="stat-sub">Por transacao</div>
     </article>
 
     <article class="stat-card stat-card-warn">
@@ -48,8 +56,8 @@
           </svg>
         </div>
       </div>
-      <div class="stat-value">{{ overview.debtClients }}</div>
-      <div class="stat-sub stat-danger">△ Atenção necessária</div>
+      <div class="stat-value">{{ dashboard.debtClients }}</div>
+      <div class="stat-sub stat-danger">Atencao necessaria</div>
     </article>
   </div>
 
@@ -63,11 +71,33 @@
 
         <div class="period-switch">
           <button class="period-btn" [class.active]="selectedPeriod === 'semana'" type="button" (click)="setPeriod('semana')">SEMANA</button>
-          <button class="period-btn" [class.active]="selectedPeriod === 'mes'" type="button" (click)="setPeriod('mes')">MÊS</button>
+          <button class="period-btn" [class.active]="selectedPeriod === 'mes'" type="button" (click)="setPeriod('mes')">MES</button>
+        </div>
+      </div>
+
+      <div class="performance-summary">
+        <div class="performance-kpi">
+          <span class="performance-kpi-label">Total no periodo</span>
+          <strong>{{ formatCurrency(chartTotal) }}</strong>
+        </div>
+        <div class="performance-kpi">
+          <span class="performance-kpi-label">Media por {{ selectedPeriod === 'semana' ? 'dia' : 'semana' }}</span>
+          <strong>{{ formatCurrency(chartAverage) }}</strong>
+        </div>
+        <div class="performance-kpi performance-kpi-accent">
+          <span class="performance-kpi-label">Melhor {{ selectedPeriod === 'semana' ? 'dia' : 'semana' }}</span>
+          <strong>{{ chartPeak.day }} · {{ formatCurrency(chartPeak.value) }}</strong>
         </div>
       </div>
 
       <div class="bar-chart dashboard-chart">
+        <div class="chart-grid" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
         <div
           *ngFor="let item of chartData; let index = index"
           class="bar-wrap"
@@ -77,6 +107,7 @@
           <div class="bar-tooltip" [class.visible]="hoveredIndex === index">
             {{ formatCurrency(item.value) }}
           </div>
+          <div class="bar-value">{{ formatCurrency(item.value) }}</div>
           <div
             class="bar"
             [class.active]="selectedPeriod === 'semana' ? item.day === 'Sab' : index === 3"
@@ -91,7 +122,7 @@
       <div class="alerts-title">PAINEL DE ALERTAS</div>
 
       <div class="alert-list">
-        <div *ngFor="let alert of alerts; let index = index" class="alert-item" [class.alert-red]="index === 1" [class.alert-yellow]="index === 0" [class.alert-orange]="index === 2">
+        <div *ngFor="let alert of alerts; let index = index" class="alert-item" [class.alert-red]="alert.tone === 'red'" [class.alert-yellow]="alert.tone === 'yellow'" [class.alert-orange]="alert.tone === 'orange'">
           <div class="alert-side"></div>
           <div class="alert-icon">
             <svg *ngIf="index === 0" viewBox="0 0 24 24" fill="none">
@@ -111,14 +142,14 @@
         </div>
       </div>
 
-      <button class="btn-resolve-dashboard" type="button">RESOLVER TUDO</button>
+    <a class="btn-resolve-dashboard" routerLink="/fiado">VER PENDENCIAS</a>
     </aside>
   </div>
 
   <section class="table-panel latest-sales-panel">
     <div class="section-header latest-sales-head">
-      <div class="section-title latest-sales-title">ÚLTIMAS VENDAS</div>
-      <a class="history-link" routerLink="/historico">VER HISTÓRICO COMPLETO</a>
+      <div class="section-title latest-sales-title">ULTIMAS VENDAS</div>
+      <a class="history-link" routerLink="/historico">VER HISTORICO COMPLETO</a>
     </div>
 
     <table class="latest-sales-table">
@@ -144,7 +175,7 @@
             </div>
           </td>
           <td class="product-main">{{ sale.mainProduct }}</td>
-          <td><pf-status-badge [text]="sale.status === 'Pendente' ? 'FIADO' : 'CONCLUÍDA'" [tone]="sale.status === 'Pendente' ? 'warning' : 'success'" /></td>
+          <td><pf-status-badge [text]="sale.status === 'Pendente' ? 'FIADO' : 'CONCLUIDA'" [tone]="sale.status === 'Pendente' ? 'warning' : 'success'" /></td>
           <td class="sale-value">{{ formatCurrency(sale.value) }}</td>
         </tr>
       </tbody>
@@ -152,4 +183,5 @@
 
     <button class="floating-sale-btn" type="button" aria-label="Nova venda">+</button>
   </section>
+  </ng-container>
 </div>
