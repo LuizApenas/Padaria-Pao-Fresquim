@@ -7,45 +7,30 @@
   min-width: 256px;
   background: #f7f9fc;
   border-right: 1px solid #d9e0ea;
-  padding: 18px 14px 12px;
+  padding: 1px 14px 12px;
 }
 
 .sidebar-logo {
+  display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 12px;
-  padding: 0 8px 18px;
+  padding: 0;
+  margin: 0;
   border-bottom: 1px solid #e8edf3;
-  margin-bottom: 10px;
 }
 
-.brand-mark {
-  width: 58px;
-  height: 58px;
-  border-radius: 10px;
-  border: 1px solid #d6b36a;
-  background:
-    radial-gradient(circle at top, rgba(255, 212, 102, 0.6), transparent 45%),
-    linear-gradient(135deg, #7a4b16, #d39b46 55%, #f4d08d);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  color: #fff6dd;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+.brand-logo {
+  width: 110px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0;
+  padding: 0;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.12));
 }
 
-.brand-mark-top,
-.brand-mark-bottom {
-  font-size: 9px;
-  line-height: 1;
-  font-weight: 700;
-}
-
-.brand-mark-main {
-  font-size: 19px;
-  line-height: 1;
-  font-weight: 800;
-  font-style: italic;
+.brand-logo:hover {
+  transform: scale(1.05);
 }
 
 .brand-copy {
@@ -56,8 +41,9 @@
   color: #1f2a3d;
   font-size: 18px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.08rem;
   white-space: nowrap;
+  margin-left: -2rem;
 }
 
 .sidebar-nav {
@@ -236,7 +222,6 @@
   font-weight: 600;
   color: #68778d;
   outline: none;
-  -moz-appearance: textfield;
 }
 
 .zoom-input::-webkit-outer-spin-button,
