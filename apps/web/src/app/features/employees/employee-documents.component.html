@@ -1,0 +1,53 @@
+<div class="employee-ops-page">
+  <div class="employee-ops-header">
+    <div>
+      <div class="employee-ops-title">Documentos</div>
+      <div class="employee-ops-subtitle">{{ employeeName }} · upload de PDF para storage</div>
+    </div>
+    <div class="employee-ops-actions">
+      <a class="btn-secondary" routerLink="/funcionarios">Voltar</a>
+      <a class="btn-secondary" [routerLink]="['/funcionarios', employeeId, 'ponto']">Cartao de ponto</a>
+    </div>
+  </div>
+
+  <div class="documents-panel">
+    <div class="documents-upload">
+      <strong>Enviar novo PDF</strong>
+      <div class="documents-upload-grid">
+        <div class="form-group documents-upload-full">
+          <label class="form-label">Arquivo PDF</label>
+          <input class="form-input" type="file" accept="application/pdf" (change)="onFileSelected($event)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data de entrega</label>
+          <input class="form-input" type="date" [(ngModel)]="dataEntrega" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Observacao</label>
+          <input class="form-input" type="text" [(ngModel)]="observacao" placeholder="Ex: atestado medico" />
+        </div>
+      </div>
+      <button class="btn-primary" type="button" [disabled]="isUploading" (click)="uploadDocument()">
+        {{ isUploading ? 'Enviando...' : 'Enviar para storage' }}
+      </button>
+    </div>
+
+    <div *ngIf="successMessage" class="operations-success documents-list">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="operations-error documents-list">{{ errorMessage }}</div>
+
+    <div class="documents-list">
+      <strong>Documentos enviados</strong>
+      <div *ngIf="isLoading" class="empty-state">Carregando documentos...</div>
+      <div *ngIf="!isLoading && documents.length === 0" class="empty-state">Nenhum documento cadastrado.</div>
+
+      <div *ngFor="let document of documents" class="document-row">
+        <div class="document-meta">
+          <strong>PDF #{{ document.id }}</strong>
+          <span>Entrega: {{ document.dataEntrega | date: 'dd/MM/yyyy' }}</span>
+          <span>{{ document.observacao || 'Sem observacao' }}</span>
+        </div>
+        <button class="btn-secondary" type="button" (click)="openDocument(document)">Abrir PDF</button>
+      </div>
+    </div>
+  </div>
+</div>

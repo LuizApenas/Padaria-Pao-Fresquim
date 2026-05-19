@@ -196,40 +196,20 @@
     <div class="employee-modal operations-modal" (click)="$event.stopPropagation()">
       <div class="employee-modal-head">
         <div>
-          <div class="employee-modal-title">Ponto, ferias e documentos</div>
-          <div class="employee-modal-subtitle">{{ selectedEmployee.nome || selectedEmployee.name }} - API operacional fake para prototipo.</div>
+          <div class="employee-modal-title">Area operacional</div>
+          <div class="employee-modal-subtitle">{{ selectedEmployee.nome || selectedEmployee.name }} � escolha a pagina desejada</div>
         </div>
         <button class="modal-close" type="button" (click)="closeOperations()">x</button>
       </div>
-
-      <div class="employee-form">
-        <div class="operations-actions">
-          <button class="btn-secondary" type="button" (click)="registerPoint('ENTRADA')">Registrar entrada</button>
-          <button class="btn-secondary" type="button" (click)="registerPoint('SAIDA')">Registrar saida</button>
-          <button class="btn-primary" type="button" (click)="generateFakeOperations()">Gerar dados fake</button>
-        </div>
-
-        <div *ngIf="operationsMessage" class="operations-success">{{ operationsMessage }}</div>
-        <div *ngIf="operationsError" class="operations-error">{{ operationsError }}</div>
-
-        <div class="operations-grid">
-          <div class="operations-card">
-            <strong>Registros de ponto</strong>
-            <div *ngIf="isOperationsLoading" class="employee-id">Carregando...</div>
-            <div *ngIf="!isOperationsLoading && pointRecords.length === 0" class="employee-id">Nenhum ponto registrado.</div>
-            <div *ngFor="let record of pointRecords" class="operations-row">
-              <span>{{ record.tipoRegistro }}</span>
-              <strong>{{ record.dataHoraBatida | date: 'dd/MM/yyyy HH:mm' }}</strong>
-            </div>
-          </div>
-
-          <div class="operations-card">
-            <strong>Resumo vinculado</strong>
-            <div class="operations-row"><span>Ferias</span><strong>{{ selectedEmployee.ferias?.length || 0 }}</strong></div>
-            <div class="operations-row"><span>Licencas</span><strong>{{ selectedEmployee.licencas?.length || 0 }}</strong></div>
-            <div class="operations-row"><span>Atestados</span><strong>{{ selectedEmployee.atestados?.length || 0 }}</strong></div>
-          </div>
-        </div>
+      <div class="employee-form operations-hub">
+        <button class="operations-hub-card" type="button" (click)="goToTimecard()">
+          <strong>Cartao de ponto</strong>
+          <span>Ver marcacoes diarias, registrar entrada e saida.</span>
+        </button>
+        <button class="operations-hub-card" type="button" (click)="goToDocuments()">
+          <strong>Documentos</strong>
+          <span>Enviar PDF para storage e consultar arquivos vinculados.</span>
+        </button>
       </div>
     </div>
   </div>

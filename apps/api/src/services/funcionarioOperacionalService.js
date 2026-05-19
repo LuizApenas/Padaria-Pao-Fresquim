@@ -1,4 +1,5 @@
 import { prisma } from "../config/prisma.js";
+import { uploadFuncionarioPdf } from "./funcionarioDocumentosStorageService.js";
 import { AppError } from "../utils/AppError.js";
 import { ensureEnumValue, parseId, requireFields } from "../utils/validation.js";
 
@@ -98,6 +99,34 @@ export async function registrarLicenca(funcionarioId, data) {
       retornoPrevistoEm: data.retornoPrevistoEm ? parseDate(data.retornoPrevistoEm, "retornoPrevistoEm") : null,
       observacao: data.observacao,
     },
+  });
+}
+
+export async function listarAtestados(funcionarioId) {
+  const id = parseId(funcionarioId);
+  await ensureFuncionario(id);
+
+  return prisma.atestado.findMany({
+    where: { funcionarioId: id },
+    orderBy: { dataEntrega: "desc" },
+  });
+}
+
+export async function uploadDocumento(funcionarioId, data) {
+  requireFields(data, ["fileName", "contentBase64", "dataEntrega"]);
+
+  const buffer = Buffer.from(data.contentBase64, "base64");
+
+  if (!buffer.length) {
+    throw new AppError("Conteudo do PDF invalido.", 400);
+  }
+
+  const arquivoUrl = await uploadFuncionarioPdf(funcionarioId, data.fileName, buffer);
+
+  return registrarAtestado(funcionarioId, {
+    arquivoUrl,
+    dataEntrega: data.dataEntrega,
+    observacao: data.observacao,
   });
 }
 

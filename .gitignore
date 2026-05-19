@@ -9,6 +9,7 @@ build/
 coverage/
 apps/api/src/generated/
 apps/api/.runtime/
+!apps/api/.runtime/.gitkeep
 apps/web/.angular/
 *.log
 

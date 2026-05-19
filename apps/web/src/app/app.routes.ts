@@ -6,6 +6,8 @@ import { LoginComponent } from "./features/login/login.component";
 import { DashboardComponent } from "./features/dashboard/dashboard.component";
 import { ClientsComponent } from "./features/clients/clients.component";
 import { EmployeesComponent } from "./features/employees/employees.component";
+import { EmployeeTimecardComponent } from "./features/employees/employee-timecard.component";
+import { EmployeeDocumentsComponent } from "./features/employees/employee-documents.component";
 import { SaleComponent } from "./features/sale/sale.component";
 import { HistoryComponent } from "./features/history/history.component";
 import { DebtsComponent } from "./features/debts/debts.component";
@@ -35,6 +37,16 @@ export const routes: Routes = [
         data: { pageId: "produtos" },
       },
       { path: "funcionarios", component: EmployeesComponent, data: { pageId: "funcionarios" } },
+      {
+        path: "funcionarios/:employeeId/ponto",
+        component: EmployeeTimecardComponent,
+        data: { pageId: "funcionarios" },
+      },
+      {
+        path: "funcionarios/:employeeId/documentos",
+        component: EmployeeDocumentsComponent,
+        data: { pageId: "funcionarios" },
+      },
       { path: "vendas/nova", component: SaleComponent, data: { pageId: "nova-venda" } },
       { path: "historico", component: HistoryComponent, data: { pageId: "historico" } },
       { path: "fiado", component: DebtsComponent, data: { pageId: "fiado" } },

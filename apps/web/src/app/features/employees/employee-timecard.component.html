@@ -1,0 +1,66 @@
+<div class="employee-ops-page">
+  <div class="employee-ops-header">
+    <div>
+      <div class="employee-ops-title">Cartao de ponto</div>
+      <div class="employee-ops-subtitle">{{ employeeName }} · visao diaria de entradas e saidas</div>
+    </div>
+    <div class="employee-ops-actions">
+      <a class="btn-secondary" routerLink="/funcionarios">Voltar</a>
+      <a class="btn-secondary" [routerLink]="['/funcionarios', employeeId, 'documentos']">Documentos</a>
+      <button class="btn-secondary" type="button" (click)="registerPoint('ENTRADA')">Registrar entrada</button>
+      <button class="btn-secondary" type="button" (click)="registerPoint('SAIDA')">Registrar saida</button>
+    </div>
+  </div>
+
+  <div class="employee-ops-actions">
+    <label>
+      Mes
+      <input class="form-input" type="number" min="1" max="12" [(ngModel)]="filterMonth" />
+    </label>
+    <label>
+      Ano
+      <input class="form-input" type="number" min="2020" max="2100" [(ngModel)]="filterYear" />
+    </label>
+    <button class="btn-primary" type="button" (click)="applyFilter()">Filtrar periodo</button>
+  </div>
+
+  <div *ngIf="successMessage" class="operations-success">{{ successMessage }}</div>
+  <div *ngIf="errorMessage" class="operations-error">{{ errorMessage }}</div>
+
+  <div class="timecard-panel">
+    <div *ngIf="isLoading" class="empty-state">Carregando cartao de ponto...</div>
+
+    <div *ngIf="!isLoading && dayRows.length === 0" class="empty-state">
+      Nenhum registro de ponto para o periodo selecionado (mes {{ filterMonth }}/{{ filterYear }}).
+    </div>
+
+    <div *ngIf="!isLoading && dayRows.length > 0" class="timecard-table-wrap">
+      <table class="timecard-table">
+        <thead>
+          <tr>
+            <th>Dia</th>
+            <th>Semana</th>
+            <th>Ent. 1</th>
+            <th>Sai. 1</th>
+            <th>Ent. 2</th>
+            <th>Sai. 2</th>
+            <th>Trabalhadas</th>
+            <th>Ocorrencias</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of dayRows; let index = index" [class.timecard-row-active]="index === 0">
+            <td><span class="timecard-day">{{ row.dateLabel }}</span></td>
+            <td>{{ row.weekday }}</td>
+            <td>{{ row.markings[0] }}</td>
+            <td>{{ row.markings[1] }}</td>
+            <td>{{ row.markings[2] }}</td>
+            <td>{{ row.markings[3] }}</td>
+            <td>{{ row.workedHours }}</td>
+            <td>{{ row.occurrences }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

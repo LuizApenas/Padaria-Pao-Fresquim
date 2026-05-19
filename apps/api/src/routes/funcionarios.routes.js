@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 import { Router } from "express";
 
 import {
@@ -9,18 +11,37 @@ import {
 } from "../services/funcionarioService.js";
 import {
   gerarDadosOperacionaisFake,
+  listarAtestados,
   listarPonto,
   registrarAtestado,
   registrarFerias,
   registrarLicenca,
   registrarPonto,
+  uploadDocumento,
 } from "../services/funcionarioOperacionalService.js";
+import { resolveLocalDocumentoPath } from "../services/funcionarioDocumentosStorageService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ensureAuth, ensureRole } from "../middlewares/auth.js";
+import { AppError } from "../utils/AppError.js";
 
 const funcionariosRoutes = Router();
 
 funcionariosRoutes.use(ensureAuth, ensureRole("PROPRIETARIO"));
+
+funcionariosRoutes.get(
+  "/documentos-arquivo/:funcionarioId/:fileName",
+  asyncHandler(async (request, response) => {
+    const filePath = resolveLocalDocumentoPath(request.params.funcionarioId, request.params.fileName);
+
+    try {
+      const fileBuffer = await readFile(filePath);
+      response.setHeader("Content-Type", "application/pdf");
+      response.status(200).send(fileBuffer);
+    } catch {
+      throw new AppError("Documento nao encontrado.", 404);
+    }
+  }),
+);
 
 funcionariosRoutes.post(
   "/",
@@ -73,6 +94,24 @@ funcionariosRoutes.post(
     const licenca = await registrarLicenca(request.params.id, request.body);
 
     response.status(201).json(licenca);
+  }),
+);
+
+funcionariosRoutes.get(
+  "/:id/atestados",
+  asyncHandler(async (request, response) => {
+    const atestados = await listarAtestados(request.params.id);
+
+    response.status(200).json(atestados);
+  }),
+);
+
+funcionariosRoutes.post(
+  "/:id/documentos",
+  asyncHandler(async (request, response) => {
+    const documento = await uploadDocumento(request.params.id, request.body);
+
+    response.status(201).json(documento);
   }),
 );
 
