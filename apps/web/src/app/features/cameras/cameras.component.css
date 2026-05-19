@@ -31,6 +31,54 @@
   letter-spacing: 0.08em;
 }
 
+.camera-video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  background: #0f172a;
+}
+
+.camera-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.08), rgba(15, 23, 42, 0.62)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.05) 0,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px,
+      transparent 5px
+    );
+}
+
+.camera-frozen .camera-overlay {
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.12), rgba(15, 23, 42, 0.76)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.08) 0,
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+}
+
+.camera-freeze-label {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(248, 113, 113, 0.92);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
 .camera-badge {
   position: absolute;
   left: 1rem;
@@ -48,12 +96,34 @@
   height: 10px;
   border-radius: 999px;
   background: #22c55e;
+  box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.18);
 }
 
 .cam-stat,
 .camera-side {
   display: grid;
   gap: 1rem;
+}
+
+.cam-info {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.68);
+  backdrop-filter: blur(10px);
+}
+
+.cam-title {
+  font-weight: 800;
+}
+
+.cam-code {
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.08em;
 }
 
 .cam-stat {
