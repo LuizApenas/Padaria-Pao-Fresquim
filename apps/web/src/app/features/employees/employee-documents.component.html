@@ -16,7 +16,7 @@
       <div class="documents-upload-grid">
         <div class="form-group documents-upload-full">
           <label class="form-label">Arquivo PDF</label>
-          <input class="form-input" type="file" accept="application/pdf" (change)="onFileSelected($event)" />
+          <input #fileInput class="form-input" type="file" accept="application/pdf" (change)="onFileSelected($event)" />
         </div>
         <div class="form-group">
           <label class="form-label">Data de entrega</label>

@@ -160,7 +160,7 @@ export async function gerarDadosOperacionaisFake(funcionarioId) {
   const nextVacationEnd = new Date(nextVacationStart);
   nextVacationEnd.setDate(nextVacationEnd.getDate() + 14);
 
-  const [entrada, saida, ferias, licenca, atestado] = await prisma.$transaction([
+  const [entrada, saida, ferias, licenca] = await prisma.$transaction([
     prisma.registroPonto.create({
       data: { funcionarioId: funcionario.id, tipoRegistro: "ENTRADA", dataHoraBatida: todayStart },
     }),
@@ -184,15 +184,7 @@ export async function gerarDadosOperacionaisFake(funcionarioId) {
         observacao: "Licenca fake de demonstracao.",
       },
     }),
-    prisma.atestado.create({
-      data: {
-        funcionarioId: funcionario.id,
-        arquivoUrl: "https://example.com/atestados/fake.pdf",
-        dataEntrega: now,
-        observacao: "Atestado fake de demonstracao.",
-      },
-    }),
   ]);
 
-  return { entrada, saida, ferias, licenca, atestado };
+  return { entrada, saida, ferias, licenca };
 }
