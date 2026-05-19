@@ -4,9 +4,13 @@ import { prisma } from "../src/config/prisma.js";
 import { createSupabaseUser } from "../src/services/supabaseAuthService.js";
 import { validateStrongPassword } from "../src/utils/password.js";
 
-const defaultPassword = process.env.SUPABASE_AUTH_SEED_PASSWORD ?? "PaoFresquim@2026!";
+const defaultPassword = process.env.SUPABASE_AUTH_SEED_PASSWORD;
 
 async function main() {
+  if (!defaultPassword) {
+    throw new Error("SUPABASE_AUTH_SEED_PASSWORD precisa estar definido no .env local para criar usuarios Auth.");
+  }
+
   validateStrongPassword(defaultPassword, "SUPABASE_AUTH_SEED_PASSWORD");
 
   const funcionarios = await prisma.funcionario.findMany({
