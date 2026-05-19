@@ -3,6 +3,7 @@ import { ChangeDetectorRef, Component, NgZone, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Employee } from "../../core/models";
 import { EmployeePayload, EmployeesApiService } from "../../core/services/employees-api.service";
+import { EmployeesOperationsApiService, PointRecord } from "../../core/services/employees-operations-api.service";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
 
 type EmployeeRole = EmployeePayload["role"];
@@ -35,6 +36,11 @@ export class EmployeesComponent implements OnInit {
   isLoading = true;
   errorMessage = "";
   isModalOpen = false;
+  selectedEmployee: Employee | null = null;
+  pointRecords: PointRecord[] = [];
+  operationsMessage = "";
+  operationsError = "";
+  isOperationsLoading = false;
   modalMode: "create" | "edit" = "create";
   currentPage = 1;
   pageSize = 10;
@@ -45,6 +51,7 @@ export class EmployeesComponent implements OnInit {
 
   constructor(
     private readonly employeesApiService: EmployeesApiService,
+    private readonly employeesOperationsApiService: EmployeesOperationsApiService,
     private readonly changeDetectorRef: ChangeDetectorRef,
     private readonly ngZone: NgZone,
   ) {}
@@ -176,6 +183,52 @@ export class EmployeesComponent implements OnInit {
     });
   }
 
+  openOperations(employee: Employee): void {
+    this.selectedEmployee = employee;
+    this.loadPointRecords(employee.id);
+  }
+
+  closeOperations(): void {
+    this.selectedEmployee = null;
+    this.pointRecords = [];
+    this.operationsMessage = "";
+    this.operationsError = "";
+  }
+
+  registerPoint(tipoRegistro: "ENTRADA" | "SAIDA"): void {
+    if (!this.selectedEmployee) {
+      return;
+    }
+
+    this.employeesOperationsApiService.registerPoint(this.selectedEmployee.id, tipoRegistro).subscribe({
+      next: () => {
+        this.operationsMessage = `Ponto de ${tipoRegistro.toLowerCase()} registrado.`;
+        this.loadPointRecords(this.selectedEmployee?.id ?? 0);
+        this.loadEmployees();
+      },
+      error: () => {
+        this.operationsError = "Nao foi possivel registrar ponto na API.";
+      },
+    });
+  }
+
+  generateFakeOperations(): void {
+    if (!this.selectedEmployee) {
+      return;
+    }
+
+    this.employeesOperationsApiService.generateFakeOperationalData(this.selectedEmployee.id).subscribe({
+      next: () => {
+        this.operationsMessage = "Dados fake de ponto, ferias, licenca e atestado gerados.";
+        this.loadPointRecords(this.selectedEmployee?.id ?? 0);
+        this.loadEmployees();
+      },
+      error: () => {
+        this.operationsError = "Nao foi possivel gerar dados fake operacionais.";
+      },
+    });
+  }
+
   formatRole(role?: string): string {
     const labels: Record<string, string> = {
       PROPRIETARIO: "Proprietario",
@@ -215,6 +268,27 @@ export class EmployeesComponent implements OnInit {
           this.isLoading = false;
           this.changeDetectorRef.detectChanges();
         });
+      },
+    });
+  }
+
+  private loadPointRecords(employeeId: number): void {
+    if (!employeeId) {
+      return;
+    }
+
+    this.isOperationsLoading = true;
+    this.operationsError = "";
+
+    this.employeesOperationsApiService.listPointRecords(employeeId).subscribe({
+      next: (records) => {
+        this.pointRecords = records;
+        this.isOperationsLoading = false;
+      },
+      error: () => {
+        this.pointRecords = [];
+        this.operationsError = "Nao foi possivel carregar registros de ponto.";
+        this.isOperationsLoading = false;
       },
     });
   }

@@ -22,7 +22,7 @@
       <input class="chat-input" [(ngModel)]="prompt" placeholder="Como foram minhas vendas nesta semana?" />
       <button class="chat-send" type="button" (click)="sendMessage()">Enviar</button>
     </div>
-    <div class="chat-disclaimer">As respostas sao simuladas localmente para este prototipo.</div>
+    <div class="chat-disclaimer">As respostas usam as rotas do chatbot e metricas reais da API quando disponiveis.</div>
   </div>
 
   <div class="chat-sidebar">
@@ -33,18 +33,30 @@
           <div class="sugg-icon">*</div>
           <div>
             <div class="sugg-title">{{ item }}</div>
-            <div class="sugg-sub">Executar analise com dados simulados.</div>
+            <div class="sugg-sub">Consultar metricas pela API.</div>
           </div>
         </button>
       </div>
     </div>
 
     <div class="panel">
+      <div class="panel-title">Metricas diarias</div>
+      <div *ngIf="isLoading" class="docs-card-sub">Carregando metricas...</div>
+      <div *ngIf="!isLoading && errorMessage" class="docs-card-sub">{{ errorMessage }}</div>
+      <div *ngIf="metrics" class="metrics-list">
+        <div><span>Vendas hoje</span><strong>{{ formatCurrency(metrics.totalSoldToday) }}</strong></div>
+        <div><span>Pedidos pendentes</span><strong>{{ metrics.pedidosPendentes }}</strong></div>
+        <div><span>Fiado aberto</span><strong>{{ metrics.debtClients }}</strong></div>
+      </div>
+      <button class="btn-secondary compact" type="button" (click)="retry()">Atualizar</button>
+    </div>
+
+    <div class="panel">
       <div class="panel-title">Documentacao</div>
       <div class="docs-card">
-        <div class="docs-card-title">Como usar a IA</div>
-        <div class="docs-card-sub">Aprenda a fazer perguntas mais precisas.</div>
-        <a class="btn-secondary compact" routerLink="/relatorios">Ver guia</a>
+        <div class="docs-card-title">Fluxos conectados</div>
+        <div class="docs-card-sub">Pedidos somente para clientes cadastrados, coleta via Evolution, fiado/Serasa e metricas do Sr. Joaquim.</div>
+        <a class="btn-secondary compact" routerLink="/configuracoes">Configurar</a>
       </div>
     </div>
   </div>

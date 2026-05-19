@@ -8,6 +8,7 @@ build/
 .turbo/
 coverage/
 apps/api/src/generated/
+apps/api/.runtime/
 apps/web/.angular/
 *.log
 
