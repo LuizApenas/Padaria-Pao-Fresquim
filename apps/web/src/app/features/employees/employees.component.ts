@@ -1,6 +1,7 @@
 import { CommonModule } from "@angular/common";
-import { ChangeDetectorRef, Component, NgZone, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, NgZone, OnInit, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
+import { Router } from "@angular/router";
 import { Employee } from "../../core/models";
 import { EmployeePayload, EmployeesApiService } from "../../core/services/employees-api.service";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
@@ -30,11 +31,14 @@ type EmployeeForm = {
   styleUrl: "./employees.component.css"
 })
 export class EmployeesComponent implements OnInit {
+  private readonly router = inject(Router);
+
   query = "";
   employees: Employee[] = [];
   isLoading = true;
   errorMessage = "";
   isModalOpen = false;
+  selectedEmployee: Employee | null = null;
   modalMode: "create" | "edit" = "create";
   currentPage = 1;
   pageSize = 10;
@@ -174,6 +178,34 @@ export class EmployeesComponent implements OnInit {
       next: () => this.loadEmployees(),
       error: () => this.showPersistenceError("Nao foi possivel excluir o funcionario na API."),
     });
+  }
+
+  openOperations(employee: Employee): void {
+    this.selectedEmployee = employee;
+  }
+
+  closeOperations(): void {
+    this.selectedEmployee = null;
+  }
+
+  goToTimecard(): void {
+    if (!this.selectedEmployee) {
+      return;
+    }
+
+    const employeeId = this.selectedEmployee.id;
+    this.closeOperations();
+    void this.router.navigate(["/funcionarios", employeeId, "ponto"]);
+  }
+
+  goToDocuments(): void {
+    if (!this.selectedEmployee) {
+      return;
+    }
+
+    const employeeId = this.selectedEmployee.id;
+    this.closeOperations();
+    void this.router.navigate(["/funcionarios", employeeId, "documentos"]);
   }
 
   formatRole(role?: string): string {

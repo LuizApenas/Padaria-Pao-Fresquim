@@ -1,0 +1,23 @@
+/* apps/web/src/app/features/employees/employee-documents.component.css */
+:host {
+  display: block;
+}
+
+.operations-success,
+.operations-error {
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  border: 1px solid;
+}
+
+.operations-success {
+  border-color: #bbf7d0;
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.operations-error {
+  border-color: #fecaca;
+  color: #991b1b;
+  background: #fef2f2;
+}

@@ -78,6 +78,11 @@
                   <path d="M4 20h4l10-10-4-4L4 16v4ZM13 7l4 4" />
                 </svg>
               </button>
+              <button class="icon-action" type="button" aria-label="Operacional funcionario" (click)="openOperations(employee)">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 7v5l3 2M5 12a7 7 0 1 0 14 0 7 7 0 0 0-14 0Z" />
+                </svg>
+              </button>
               <button class="icon-action" type="button" aria-label="Excluir funcionario" (click)="deleteEmployee(employee.id)">
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7M7 7l1 13h8l1-13" />
@@ -184,6 +189,28 @@
           <button class="btn-primary" type="submit">{{ modalMode === 'edit' ? 'Salvar alteracoes' : 'Cadastrar funcionario' }}</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div *ngIf="selectedEmployee" class="employee-modal-backdrop" (click)="closeOperations()">
+    <div class="employee-modal operations-modal" (click)="$event.stopPropagation()">
+      <div class="employee-modal-head">
+        <div>
+          <div class="employee-modal-title">Area operacional</div>
+          <div class="employee-modal-subtitle">{{ selectedEmployee.nome || selectedEmployee.name }} � escolha a pagina desejada</div>
+        </div>
+        <button class="modal-close" type="button" (click)="closeOperations()">x</button>
+      </div>
+      <div class="employee-form operations-hub">
+        <button class="operations-hub-card" type="button" (click)="goToTimecard()">
+          <strong>Cartao de ponto</strong>
+          <span>Ver marcacoes diarias, registrar entrada e saida.</span>
+        </button>
+        <button class="operations-hub-card" type="button" (click)="goToDocuments()">
+          <strong>Documentos</strong>
+          <span>Enviar PDF para storage e consultar arquivos vinculados.</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>

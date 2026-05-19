@@ -151,10 +151,12 @@
 
         <div class="admin-chip topbar-divider">
           <div class="admin-info">
-            <div class="admin-name">Administrador</div>
-            <div class="admin-unit">Unidade Matriz</div>
+            <div class="admin-name">{{ userDisplayName }}</div>
+            <div class="admin-unit">{{ userSubtitle }}</div>
+            <div class="admin-email" *ngIf="userEmail">{{ userEmail }}</div>
           </div>
-          <div class="admin-avatar">A</div>
+          <div class="admin-avatar" [attr.title]="userEmail">{{ userInitials }}</div>
+          <button class="logout-btn" type="button" (click)="logout()">Sair</button>
         </div>
       </div>
     </header>

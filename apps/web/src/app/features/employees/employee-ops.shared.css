@@ -1,0 +1,133 @@
+/* apps/web/src/app/features/employees/employee-ops.shared.css */
+.employee-ops-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.employee-ops-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.employee-ops-title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.employee-ops-subtitle {
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+}
+
+.employee-ops-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.timecard-panel,
+.documents-panel {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.timecard-table-wrap {
+  overflow-x: auto;
+}
+
+.timecard-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 920px;
+}
+
+.timecard-table th,
+.timecard-table td {
+  padding: 0.75rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+.timecard-table th {
+  background: #f8fafc;
+  color: #526176;
+  font-weight: 700;
+}
+
+.timecard-day {
+  font-weight: 700;
+  color: #1f2a3d;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  display: inline-block;
+}
+
+.timecard-row-active td {
+  background: #ecfdf3;
+}
+
+.documents-upload {
+  display: grid;
+  gap: 1rem;
+  padding: 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.documents-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.documents-upload-full {
+  grid-column: 1 / -1;
+}
+
+.documents-list {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.2rem;
+}
+
+.document-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+
+.document-meta {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.document-meta strong {
+  color: #1f2a3d;
+}
+
+.document-meta span {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 720px) {
+  .employee-ops-header {
+    flex-direction: column;
+  }
+
+  .documents-upload-grid {
+    grid-template-columns: 1fr;
+  }
+}

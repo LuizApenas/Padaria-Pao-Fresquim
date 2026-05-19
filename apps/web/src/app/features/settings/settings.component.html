@@ -1,32 +1,72 @@
 <div class="page-header">
   <div>
-    <div class="page-title">Configuracoes</div>
-    <div class="page-subtitle">Ajustes operacionais, seguranca e automacoes do ambiente administrativo.</div>
+    <div class="page-title">Configuracoes do chatbot</div>
+    <div class="page-subtitle">Evolution API, webhook, avisos de coleta, fiado e metricas para o proprietario.</div>
   </div>
-  <button class="btn-primary" type="button">Salvar preferencias</button>
+  <button class="btn-primary" type="button" [disabled]="isSaving" (click)="saveSettings()">
+    {{ isSaving ? "Salvando..." : "Salvar configuracoes" }}
+  </button>
 </div>
 
-<div class="row col-2">
+<div *ngIf="isLoading" class="panel">Carregando configuracoes do chatbot...</div>
+<div *ngIf="!isLoading && errorMessage" class="panel settings-error">{{ errorMessage }}</div>
+<div *ngIf="!isLoading && message" class="panel settings-success">{{ message }}</div>
+
+<div *ngIf="!isLoading" class="row col-2">
   <div class="panel">
-    <div class="panel-title">Preferencias do sistema</div>
-    <div class="catalog-list">
-      <div *ngFor="let setting of settings; let index = index; trackBy: trackByTitle" class="settings-item">
-        <div>
-          <strong>{{ setting.title }}</strong>
-          <div class="client-time">{{ setting.description }}</div>
-        </div>
-        <button class="toggle" [class.on]="setting.enabled" type="button" [attr.aria-label]="setting.title" (click)="toggleSetting(index)"></button>
+    <div class="panel-title">Integracao Evolution</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">URL de disparo</label>
+        <input class="form-input" name="evolutionApiUrl" [(ngModel)]="settings.evolutionApiUrl" placeholder="https://evolution.exemplo.com/message/sendText/Instancia" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">API Key Evolution</label>
+        <input class="form-input" name="evolutionApiKey" [(ngModel)]="settings.evolutionApiKey" placeholder="apikey do header" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Path de envio</label>
+        <input class="form-input" name="evolutionDispatchPath" [(ngModel)]="settings.evolutionDispatchPath" placeholder="/message/sendText" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Token do webhook</label>
+        <input class="form-input" name="webhookToken" [(ngModel)]="settings.webhookToken" placeholder="token para colar na Evolution" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">WhatsApp do Sr. Joaquim</label>
+        <input class="form-input" name="ownerPhone" [(ngModel)]="settings.ownerPhone" placeholder="5599999999999" />
+      </div>
+      <div class="form-group settings-full">
+        <label class="form-label">URL do webhook para colar na Evolution</label>
+        <input class="form-input" [value]="webhookUrl" readonly />
       </div>
     </div>
   </div>
 
   <div class="panel">
-    <div class="panel-title">Dados da unidade</div>
-    <div class="form-grid">
-      <div class="form-group"><label class="form-label">Nome da unidade</label><input class="form-input" value="Matriz" readonly /></div>
-      <div class="form-group"><label class="form-label">E-mail corporativo</label><input class="form-input" value="arthur@email.com" readonly /></div>
-      <div class="form-group"><label class="form-label">Perfil atual</label><input class="form-input" value="Administrador" readonly /></div>
-      <div class="form-group"><label class="form-label">Modo</label><input class="form-input" value="Angular standalone" readonly /></div>
+    <div class="panel-title">Rotas ativas do chatbot</div>
+    <div class="catalog-list">
+      <div class="settings-item">
+        <div>
+          <strong>Avisar pedido pronto</strong>
+          <div class="client-time">Envia mensagem quando o pedido estiver pronto para coleta.</div>
+        </div>
+        <button class="toggle" [class.on]="settings.orderReadyNotificationsEnabled" type="button" (click)="settings.orderReadyNotificationsEnabled = !settings.orderReadyNotificationsEnabled"></button>
+      </div>
+      <div class="settings-item">
+        <div>
+          <strong>Aviso de fiado e Serasa</strong>
+          <div class="client-time">Dispara cobranca avisando risco de envio ao Serasa.</div>
+        </div>
+        <button class="toggle" [class.on]="settings.debtWarningsEnabled" type="button" (click)="settings.debtWarningsEnabled = !settings.debtWarningsEnabled"></button>
+      </div>
+      <div class="settings-item">
+        <div>
+          <strong>Metricas diarias do proprietario</strong>
+          <div class="client-time">Libera resumo diario para o Sr. Joaquim.</div>
+        </div>
+        <button class="toggle" [class.on]="settings.dailyMetricsEnabled" type="button" (click)="settings.dailyMetricsEnabled = !settings.dailyMetricsEnabled"></button>
+      </div>
     </div>
   </div>
 </div>

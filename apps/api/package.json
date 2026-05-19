@@ -14,7 +14,9 @@
     "prisma:validate": "prisma validate",
     "prisma:seed": "node prisma/seed.js",
     "storage:setup": "node scripts/setup-storage-produtos.js",
-    "auth:seed": "node scripts/seed-auth-users.js"
+    "auth:seed": "node scripts/seed-auth-users.js",
+    "ponto:seed": "node scripts/seed-ponto-historico.js",
+    "documentos:cleanup-teste": "node scripts/cleanup-documentos-teste.js"
   },
   "devDependencies": {
     "nodemon": "^3.1.14",

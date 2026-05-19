@@ -74,6 +74,12 @@ export class EmployeesApiService {
     return this.http.delete<void>(`${API_BASE_URL}/api/funcionarios/${employeeId}`);
   }
 
+  getEmployee(employeeId: number): Observable<Employee> {
+    return this.http
+      .get<Employee>(`${API_BASE_URL}/api/funcionarios/${employeeId}`, { headers: NO_CACHE_HEADERS })
+      .pipe(map((employee) => this.normalizeEmployee(employee)));
+  }
+
   normalizeEmployee(employee: Employee): Employee {
     const nome = employee.nome ?? employee.name;
     const cargo = employee.cargo ?? employee.role;

@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { authRoutes } from "./auth.routes.js";
+import { chatbotRoutes } from "./chatbot.routes.js";
 import { clientesRoutes } from "./clientes.routes.js";
 import { fiadoRoutes } from "./fiado.routes.js";
 import { funcionariosRoutes } from "./funcionarios.routes.js";
@@ -20,6 +21,7 @@ router.get("/health", (_request, response) => {
 });
 
 router.use("/auth", authRoutes);
+router.use("/chatbot", chatbotRoutes);
 router.use("/clientes", clientesRoutes);
 router.use("/produtos", produtosRoutes);
 router.use("/funcionarios", funcionariosRoutes);
