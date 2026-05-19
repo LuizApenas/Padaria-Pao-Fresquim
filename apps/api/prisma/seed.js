@@ -4,9 +4,15 @@ import bcrypt from "bcryptjs";
 
 import { prisma } from "../src/config/prisma.js";
 
+const defaultFuncionarioPassword = process.env.SUPABASE_AUTH_SEED_PASSWORD;
+
+if (!defaultFuncionarioPassword) {
+  throw new Error("SUPABASE_AUTH_SEED_PASSWORD precisa estar definido no .env local para executar o seed.");
+}
+
 // Cria os usuários base do sistema com senha hash para não gravar senha pura no banco.
 async function seedFuncionarios() {
-  const senhaHash = await bcrypt.hash("PaoFresquim@2026!", 10);
+  const senhaHash = await bcrypt.hash(defaultFuncionarioPassword, 10);
 
   // Conjunto mínimo de perfis para validar autenticação e permissões futuramente.
   const funcionarios = [
