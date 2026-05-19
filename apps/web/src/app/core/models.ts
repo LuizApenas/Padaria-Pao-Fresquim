@@ -99,7 +99,7 @@ export interface CreateSaleItemPayload {
 }
 
 export interface CreateSalePayload {
-  funcionarioId: number;
+  funcionarioId?: number;
   clienteId?: number | null;
   formaPagamento: string;
   status?: string;

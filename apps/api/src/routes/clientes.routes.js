@@ -8,11 +8,15 @@ import {
   updateCliente,
 } from "../services/clienteService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { ensureAuth, ensureRole } from "../middlewares/auth.js";
 
 const clientesRoutes = Router();
 
+clientesRoutes.use(ensureAuth);
+
 clientesRoutes.post(
   "/",
+  ensureRole("PROPRIETARIO", "ATENDENTE"),
   asyncHandler(async (request, response) => {
     const cliente = await createCliente(request.body);
 
@@ -22,6 +26,7 @@ clientesRoutes.post(
 
 clientesRoutes.get(
   "/",
+  ensureRole("PROPRIETARIO", "ATENDENTE"),
   asyncHandler(async (request, response) => {
     const clientes = await listClientes(request.query);
 
@@ -31,6 +36,7 @@ clientesRoutes.get(
 
 clientesRoutes.get(
   "/:id",
+  ensureRole("PROPRIETARIO", "ATENDENTE"),
   asyncHandler(async (request, response) => {
     const cliente = await getClienteById(request.params.id);
 
@@ -40,6 +46,7 @@ clientesRoutes.get(
 
 clientesRoutes.put(
   "/:id",
+  ensureRole("PROPRIETARIO", "ATENDENTE"),
   asyncHandler(async (request, response) => {
     const cliente = await updateCliente(request.params.id, request.body);
 
@@ -49,6 +56,7 @@ clientesRoutes.put(
 
 clientesRoutes.delete(
   "/:id",
+  ensureRole("PROPRIETARIO"),
   asyncHandler(async (request, response) => {
     await deleteCliente(request.params.id);
 

@@ -10,11 +10,15 @@ import {
   updateProduto,
 } from "../services/produtoService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { ensureAuth, ensureRole } from "../middlewares/auth.js";
 
 const produtosRoutes = Router();
 
+produtosRoutes.use(ensureAuth);
+
 produtosRoutes.post(
   "/",
+  ensureRole("PROPRIETARIO", "PADEIRO"),
   asyncHandler(async (request, response) => {
     const produto = await createProduto(request.body);
 
@@ -24,6 +28,7 @@ produtosRoutes.post(
 
 produtosRoutes.get(
   "/",
+  ensureRole("PROPRIETARIO", "ATENDENTE", "PADEIRO"),
   asyncHandler(async (request, response) => {
     const produtos = await listProdutos(request.query);
 
@@ -33,6 +38,7 @@ produtosRoutes.get(
 
 produtosRoutes.get(
   "/categorias",
+  ensureRole("PROPRIETARIO", "ATENDENTE", "PADEIRO"),
   asyncHandler(async (_request, response) => {
     const categorias = await listProdutoCategorias();
 
@@ -42,6 +48,7 @@ produtosRoutes.get(
 
 produtosRoutes.get(
   "/codigo/:codigoBarras",
+  ensureRole("PROPRIETARIO", "ATENDENTE", "PADEIRO"),
   asyncHandler(async (request, response) => {
     const produto = await getProdutoByCodigoBarras(request.params.codigoBarras);
 
@@ -51,6 +58,7 @@ produtosRoutes.get(
 
 produtosRoutes.get(
   "/:id",
+  ensureRole("PROPRIETARIO", "ATENDENTE", "PADEIRO"),
   asyncHandler(async (request, response) => {
     const produto = await getProdutoById(request.params.id);
 
@@ -60,6 +68,7 @@ produtosRoutes.get(
 
 produtosRoutes.put(
   "/:id",
+  ensureRole("PROPRIETARIO", "PADEIRO"),
   asyncHandler(async (request, response) => {
     const produto = await updateProduto(request.params.id, request.body);
 
@@ -69,6 +78,7 @@ produtosRoutes.put(
 
 produtosRoutes.delete(
   "/:id",
+  ensureRole("PROPRIETARIO"),
   asyncHandler(async (request, response) => {
     await deleteProduto(request.params.id);
 

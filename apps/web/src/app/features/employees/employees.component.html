@@ -168,7 +168,14 @@
 
           <div class="form-group employee-form-full">
             <label class="form-label">Senha {{ modalMode === 'edit' ? '(preencha somente para trocar)' : '' }}</label>
-            <input class="form-input" name="senha" type="password" [(ngModel)]="form.senha" [required]="modalMode === 'create'" />
+            <input
+              class="form-input"
+              name="senha"
+              type="password"
+              [(ngModel)]="form.senha"
+              placeholder="Minimo 10, Aa, numero e especial"
+              [required]="modalMode === 'create'"
+            />
           </div>
         </div>
 

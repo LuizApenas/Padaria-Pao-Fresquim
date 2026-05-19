@@ -6,8 +6,11 @@ import {
   getRelatorioVendas,
 } from "../services/relatorioService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { ensureAuth, ensureRole } from "../middlewares/auth.js";
 
 const relatoriosRoutes = Router();
+
+relatoriosRoutes.use(ensureAuth, ensureRole("PROPRIETARIO"));
 
 relatoriosRoutes.get(
   "/vendas",

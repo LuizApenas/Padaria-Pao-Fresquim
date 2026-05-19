@@ -136,6 +136,11 @@ export class EmployeesComponent implements OnInit {
       return;
     }
 
+    if (this.form.senha.trim() && !this.isStrongPassword(this.form.senha.trim())) {
+      this.showPersistenceError("A senha deve ter minimo 10 caracteres, maiuscula, minuscula, numero e especial.");
+      return;
+    }
+
     const payload = this.toPayload();
 
     if (this.modalMode === "edit" && this.form.id !== null) {
@@ -263,6 +268,10 @@ export class EmployeesComponent implements OnInit {
     ];
 
     return requiredValues.every((value) => value.trim().length > 0) && (this.modalMode === "edit" || this.form.senha.trim().length > 0);
+  }
+
+  private isStrongPassword(password: string): boolean {
+    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$/.test(password);
   }
 
   private toDateInput(date?: string): string {

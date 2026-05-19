@@ -4,22 +4,53 @@
     <div class="page-subtitle">Centro de operacoes de seguranca em tempo real.</div>
   </div>
   <div class="toolbar">
-    <button class="btn-secondary" type="button">Parar todos</button>
-    <button class="btn-primary" type="button">Tentar reconectar</button>
+    <button class="btn-secondary" type="button" (click)="freezeAll()">
+      {{ isFrozen ? "Feeds congelados" : "Parar todos" }}
+    </button>
+    <button class="btn-primary" type="button" (click)="reconnectAll()">Tentar reconectar</button>
   </div>
 </div>
 
 <div class="cameras-grid">
-  <div class="camera-main">
-    <div class="camera-feed">CAMERA LOJA</div>
-    <div class="camera-badge"><span class="cam-live-dot"></span> Camera loja | online</div>
+  <div class="camera-main" [class.camera-frozen]="isFrozen">
+    <video
+      #cameraVideo
+      class="camera-video"
+      autoplay
+      loop
+      muted
+      playsinline
+      preload="metadata"
+      [attr.aria-label]="cameraFeeds[0].title"
+      [muted]="true"
+    >
+      <source [src]="cameraFeeds[0].url" type="video/mp4" />
+    </video>
+    <div class="camera-overlay"></div>
+    <div *ngIf="isFrozen" class="camera-freeze-label">FRAME CONGELADO</div>
+    <div class="camera-badge"><span class="cam-live-dot"></span> {{ cameraFeeds[0].title }} | {{ cameraFeeds[0].status }}</div>
   </div>
 
   <div class="camera-side">
-    <div class="camera-second">
-      <div class="camera-feed-sm">COZINHA</div>
+    <div class="camera-second" *ngFor="let feed of sideCameraFeeds" [class.camera-frozen]="isFrozen">
+      <video
+        #cameraVideo
+        class="camera-video"
+        autoplay
+        loop
+        muted
+        playsinline
+        preload="metadata"
+        [attr.aria-label]="feed.title"
+        [muted]="true"
+      >
+        <source [src]="feed.url" type="video/mp4" />
+      </video>
+      <div class="camera-overlay"></div>
+      <div *ngIf="isFrozen" class="camera-freeze-label">FRAME CONGELADO</div>
       <div class="cam-info">
-        <div class="cam-title">Camera cozinha</div>
+        <div class="cam-title">{{ feed.title }}</div>
+        <div class="cam-code">{{ feed.label }}</div>
       </div>
     </div>
 

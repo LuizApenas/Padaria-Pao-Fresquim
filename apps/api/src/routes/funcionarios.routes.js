@@ -8,8 +8,11 @@ import {
   updateFuncionario,
 } from "../services/funcionarioService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { ensureAuth, ensureRole } from "../middlewares/auth.js";
 
 const funcionariosRoutes = Router();
+
+funcionariosRoutes.use(ensureAuth, ensureRole("PROPRIETARIO"));
 
 funcionariosRoutes.post(
   "/",
