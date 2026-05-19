@@ -1,9 +1,9 @@
 import { CommonModule } from "@angular/common";
 import { ChangeDetectorRef, Component, NgZone, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { FileUploader } from "@fundamental-ngx/ui5-webcomponents/file-uploader";
 import { Product } from "../../core/models";
 import { ProductsApiService } from "../../core/services/products-api.service";
+import { StorageService } from "../../core/services/storage.service";
 import { formatCurrency } from "../../core/utils/format";
 
 type ProductForm = {
@@ -18,7 +18,7 @@ type ProductForm = {
 @Component({
   selector: "pf-products",
   standalone: true,
-  imports: [CommonModule, FormsModule, FileUploader],
+  imports: [CommonModule, FormsModule],
   templateUrl: "./products.component.html",
   styleUrl: "./products.component.css"
 })
@@ -30,6 +30,8 @@ export class ProductsComponent implements OnInit {
   products: Product[] = [];
   isLoading = true;
   errorMessage = "";
+  persistenceMessage = "";
+  formErrorMessage = "";
   categories = ["Todos", "Paes", "Frios", "Bebidas", "Mercearia"];
   productCategories = ["Paes", "Frios", "Bebidas", "Mercearia"];
   readonly formatCurrency = formatCurrency;
@@ -38,6 +40,7 @@ export class ProductsComponent implements OnInit {
 
   constructor(
     private readonly productsApiService: ProductsApiService,
+    private readonly storageService: StorageService,
     private readonly changeDetectorRef: ChangeDetectorRef,
     private readonly ngZone: NgZone,
   ) {}
@@ -48,7 +51,9 @@ export class ProductsComponent implements OnInit {
   }
 
   get filteredProducts() {
-    const filtered = this.products.filter((product) => this.category === "Todos" || product.categoria === this.category);
+    const filtered = this.products.filter(
+      (product) => this.category === "Todos" || (product.categoria ?? product.category) === this.category
+    );
 
     if (this.sortBy === "preco") {
       return [...filtered].sort((a, b) => Number(a.precoBase) - Number(b.precoBase));
@@ -86,6 +91,7 @@ export class ProductsComponent implements OnInit {
   openCreateModal(): void {
     this.modalMode = "create";
     this.form = this.getEmptyForm();
+    this.formErrorMessage = "";
     this.isModalOpen = true;
   }
 
@@ -99,15 +105,19 @@ export class ProductsComponent implements OnInit {
       precoBase: product.precoBase ?? product.price,
       imagemUrl: product.imagemUrl ?? "",
     };
+    this.formErrorMessage = "";
     this.isModalOpen = true;
   }
 
   closeModal(): void {
     this.isModalOpen = false;
     this.form = this.getEmptyForm();
+    this.formErrorMessage = "";
   }
 
   submitForm(): void {
+    this.formErrorMessage = "";
+
     const normalizedProduct: Product = {
       id: this.form.id ?? this.generateNextId(),
       nome: this.form.nome.trim(),
@@ -124,38 +134,70 @@ export class ProductsComponent implements OnInit {
     };
 
     if (!normalizedProduct.nome || !normalizedProduct.codigoBarras) {
+      this.formErrorMessage = "Preencha nome e codigo de barras antes de salvar.";
+      return;
+    }
+
+    const duplicateSku = this.products.some(
+      (product) => product.id !== normalizedProduct.id && (product.codigoBarras ?? product.sku) === normalizedProduct.codigoBarras
+    );
+
+    if (duplicateSku) {
+      this.formErrorMessage = "Ja existe um produto cadastrado com esse codigo de barras.";
       return;
     }
 
     if (this.modalMode === "edit" && this.form.id !== null) {
       this.productsApiService.updateProduct(normalizedProduct).subscribe({
         next: (updatedProduct) => {
-          this.products = this.products.map((product) => (product.id === this.form.id ? updatedProduct : product));
+          this.products = this.mergeProducts(this.products, this.storageService.upsertProduct(updatedProduct));
+          this.persistCategoriesFromProducts();
           this.closeModal();
+          this.persistenceMessage = "Produto atualizado com sucesso.";
         },
-        error: () => this.showPersistenceError("Nao foi possivel atualizar o produto na API."),
+        error: () => {
+          this.products = this.storageService.upsertProduct(normalizedProduct);
+          this.persistCategoriesFromProducts();
+          this.closeModal();
+          this.persistenceMessage = "Produto atualizado no armazenamento local.";
+        },
       });
     } else {
       this.productsApiService.createProduct(normalizedProduct).subscribe({
         next: (createdProduct) => {
-          this.products = [createdProduct, ...this.products];
+          this.products = this.mergeProducts(this.products, this.storageService.upsertProduct(createdProduct));
+          this.persistCategoriesFromProducts();
           this.closeModal();
+          this.persistenceMessage = "Produto cadastrado com sucesso.";
         },
-        error: () => this.showPersistenceError("Nao foi possivel cadastrar o produto na API."),
+        error: () => {
+          this.products = this.storageService.upsertProduct(normalizedProduct);
+          this.persistCategoriesFromProducts();
+          this.closeModal();
+          this.persistenceMessage = "Produto cadastrado no armazenamento local.";
+        },
       });
     }
   }
 
   deleteProduct(productId: number): void {
     this.productsApiService.deleteProduct(productId).subscribe({
-      next: () => this.removeProductLocally(productId),
-      error: () => this.showPersistenceError("Nao foi possivel excluir o produto na API."),
+      next: () => {
+        this.storageService.deleteProduct(productId);
+        this.removeProductLocally(productId);
+        this.persistenceMessage = "Produto removido com sucesso.";
+      },
+      error: () => {
+        this.products = this.storageService.deleteProduct(productId);
+        this.persistCategoriesFromProducts();
+        this.persistenceMessage = "Produto removido do armazenamento local.";
+      },
     });
   }
 
   onImageSelect(event: Event): void {
-    const uploader = event.target as EventTarget & { files?: FileList | null };
-    const file = uploader.files?.item(0);
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.item(0);
 
     if (!file) {
       return;
@@ -186,20 +228,25 @@ export class ProductsComponent implements OnInit {
   private loadProducts(): void {
     this.isLoading = true;
     this.errorMessage = "";
+    this.persistenceMessage = "";
     this.changeDetectorRef.detectChanges();
+
+    const localProducts = this.storageService.getProducts();
 
     this.productsApiService.listProducts().subscribe({
       next: (products) => {
         this.ngZone.run(() => {
-          this.products = products.map((product) => this.productsApiService.normalizeProduct(product));
+          this.products = this.mergeProducts(products, localProducts);
+          this.persistCategoriesFromProducts();
           this.isLoading = false;
           this.changeDetectorRef.detectChanges();
         });
       },
       error: () => {
         this.ngZone.run(() => {
-          this.products = [];
-          this.errorMessage = "API de produtos indisponivel. Nao ha fallback mockado nesta tela.";
+          this.products = localProducts;
+          this.persistCategoriesFromProducts();
+          this.errorMessage = "API de produtos indisponivel no momento. Exibindo o catalogo salvo localmente.";
           this.isLoading = false;
           this.changeDetectorRef.detectChanges();
         });
@@ -232,15 +279,43 @@ export class ProductsComponent implements OnInit {
           this.changeDetectorRef.detectChanges();
         });
       },
-      error: () => undefined,
+      error: () => {
+        this.persistCategoriesFromProducts();
+      },
     });
   }
 
   private removeProductLocally(productId: number): void {
     this.products = this.products.filter((product) => product.id !== productId);
+    this.persistCategoriesFromProducts();
   }
 
   private showPersistenceError(message: string): void {
-    this.errorMessage = message;
+    this.formErrorMessage = message;
+  }
+
+  private mergeProducts(primaryProducts: Product[], secondaryProducts: Product[]): Product[] {
+    const productMap = new Map<number, Product>();
+
+    [...secondaryProducts, ...primaryProducts]
+      .map((product) => this.productsApiService.normalizeProduct(product))
+      .forEach((product) => {
+        productMap.set(product.id, product);
+      });
+
+    return Array.from(productMap.values()).sort((a, b) => b.id - a.id);
+  }
+
+  private persistCategoriesFromProducts(): void {
+    const dynamicCategories = Array.from(
+      new Set(
+        this.products
+          .map((product) => product.categoria ?? product.category)
+          .filter((category): category is string => Boolean(category?.trim()))
+      )
+    );
+
+    this.productCategories = dynamicCategories.length ? dynamicCategories : ["Paes", "Frios", "Bebidas", "Mercearia"];
+    this.categories = ["Todos", ...this.productCategories];
   }
 }

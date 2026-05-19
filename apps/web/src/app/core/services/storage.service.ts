@@ -66,13 +66,57 @@ export class StorageService {
   getProducts(): Product[] {
     const products = this.readJson<Product[] | null>(PRODUCTS_KEY, null);
     if (products) {
-      return products;
+      return products.map((product) => this.normalizeProduct(product));
     }
-    this.writeJson(PRODUCTS_KEY, initialProducts);
-    return initialProducts;
+    const normalizedProducts = initialProducts.map((product) => this.normalizeProduct(product));
+    this.writeJson(PRODUCTS_KEY, normalizedProducts);
+    return normalizedProducts;
   }
 
   saveProducts(products: Product[]): void {
-    this.writeJson(PRODUCTS_KEY, products);
+    this.writeJson(PRODUCTS_KEY, products.map((product) => this.normalizeProduct(product)));
+  }
+
+  upsertProduct(product: Product): Product[] {
+    const products = this.getProducts();
+    const normalizedProduct = this.normalizeProduct(product);
+    const existingIndex = products.findIndex((item) => item.id === normalizedProduct.id);
+
+    if (existingIndex >= 0) {
+      products[existingIndex] = normalizedProduct;
+    } else {
+      products.unshift(normalizedProduct);
+    }
+
+    this.saveProducts(products);
+    return products;
+  }
+
+  deleteProduct(productId: number): Product[] {
+    const products = this.getProducts().filter((product) => product.id !== productId);
+    this.saveProducts(products);
+    return products;
+  }
+
+  private normalizeProduct(product: Product): Product {
+    const nome = product.nome ?? product.name ?? "";
+    const categoria = product.categoria ?? product.category ?? "Paes";
+    const codigoBarras = product.codigoBarras ?? product.sku ?? "";
+    const precoBase = Number(product.precoBase ?? product.price ?? 0);
+
+    return {
+      ...product,
+      nome,
+      categoria,
+      codigoBarras,
+      precoBase,
+      imagemUrl: product.imagemUrl ?? null,
+      name: nome,
+      category: categoria,
+      sku: codigoBarras,
+      stock: Number(product.stock ?? 0),
+      unit: product.unit ?? "un",
+      price: precoBase,
+    };
   }
 }

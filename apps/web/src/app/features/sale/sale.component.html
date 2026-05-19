@@ -5,7 +5,7 @@
       <input class="scanner-input" placeholder="Escaneie o codigo ou digite o nome do produto..." [(ngModel)]="search" />
     </div>
 
-    <div *ngIf="isLoading" class="panel empty-state">Carregando clientes e produtos da API...</div>
+    <div *ngIf="isLoading" class="panel empty-state">Carregando clientes e sincronizando o catalogo de produtos...</div>
 
     <div *ngIf="!isLoading && errorMessage" class="panel sale-fallback-note">
       <div>{{ errorMessage }}</div>
@@ -46,6 +46,11 @@
     <div class="panel">
       <div class="panel-title">Catalogo rapido</div>
       <div class="catalog-list">
+        <div *ngIf="!catalog.length" class="empty-state">
+          <div class="empty-text">Nenhum produto encontrado</div>
+          <div class="empty-sub">Os produtos cadastrados localmente tambem aparecem aqui para a venda.</div>
+        </div>
+
         <div *ngFor="let product of catalog" class="catalog-item">
           <div>
             <strong>{{ product.nome || product.name }}</strong>
@@ -96,7 +101,7 @@
     <div class="payment-panel sale-contract-note">
       <div class="payment-label">Status da integracao</div>
       <div class="client-time">
-        Clientes, produtos e fechamento de venda usam API. O operador e identificado pelo token Supabase Auth no backend.
+        Produtos usam catalogo sincronizado com fallback local. Se a API cair, voce ainda consegue vender com os itens cadastrados no navegador.
       </div>
     </div>
 

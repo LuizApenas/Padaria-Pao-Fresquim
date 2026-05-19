@@ -33,6 +33,10 @@
     </div>
   </div>
 
+  <div *ngIf="persistenceMessage" class="products-feedback products-feedback-success">
+    {{ persistenceMessage }}
+  </div>
+
   <div class="products-grid">
     <div *ngIf="isLoading" class="empty-state">Carregando produtos da API...</div>
 
@@ -98,12 +102,16 @@
       <div class="product-modal-head">
         <div>
           <div class="product-modal-title">{{ modalMode === 'edit' ? 'Editar Produto' : 'Novo Produto' }}</div>
-          <div class="product-modal-subtitle">Campos alinhados ao contrato do backend: nome, categoria, codigo de barras, preco base e imagem.</div>
+          <div class="product-modal-subtitle">Preencha os dados do item e, se quiser, envie uma imagem do seu computador.</div>
         </div>
         <button class="modal-close" type="button" (click)="closeModal()">x</button>
       </div>
 
       <form class="product-form" (ngSubmit)="submitForm()">
+        <div *ngIf="formErrorMessage" class="products-feedback products-feedback-error">
+          {{ formErrorMessage }}
+        </div>
+
         <div class="product-form-grid">
           <div class="form-group">
             <label class="form-label">Nome</label>
@@ -128,20 +136,23 @@
           </div>
 
           <div class="form-group product-form-full">
-            <label class="form-label">Imagem do produto (URL)</label>
+            <label class="form-label">Imagem do produto (URL opcional)</label>
             <input class="form-input" name="imagemUrl" type="url" [(ngModel)]="form.imagemUrl" />
           </div>
 
           <div class="form-group product-form-full">
             <label class="form-label">Upload de imagem</label>
             <div class="product-upload">
-              <ui5-file-uploader
-                accept="image/*"
-                placeholder="Selecione uma imagem do produto"
-                [maxFileSize]="1"
-                (ui5Change)="onImageSelect($event)"
-              ></ui5-file-uploader>
-              <span class="upload-helper">Fundamental NGX UI5 FileUploader ativo. Nesta etapa, a imagem vira preview local; o upload real entra quando ligarmos o storage.</span>
+              <label class="upload-field" for="product-image-upload">
+                <span>Selecionar imagem</span>
+                <input
+                  id="product-image-upload"
+                  type="file"
+                  accept="image/*"
+                  (change)="onImageSelect($event)"
+                />
+              </label>
+              <span class="upload-helper">A imagem e convertida para preview local e salva junto com o produto no navegador.</span>
             </div>
             <img *ngIf="form.imagemUrl" class="product-upload-preview" [src]="form.imagemUrl" alt="Preview do produto" />
           </div>

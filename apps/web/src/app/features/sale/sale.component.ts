@@ -6,6 +6,7 @@ import { Client, Product } from "../../core/models";
 import { ClientsApiService } from "../../core/services/clients-api.service";
 import { ProductsApiService } from "../../core/services/products-api.service";
 import { SalesApiService } from "../../core/services/sales-api.service";
+import { StorageService } from "../../core/services/storage.service";
 import { formatCurrency } from "../../core/utils/format";
 
 @Component({
@@ -26,6 +27,7 @@ export class SaleComponent implements OnInit {
   isLoading = true;
   isSubmitting = false;
   errorMessage = "";
+  statusMessage = "";
 
   readonly formatCurrency = formatCurrency;
 
@@ -34,6 +36,7 @@ export class SaleComponent implements OnInit {
     private readonly clientsApiService: ClientsApiService,
     private readonly productsApiService: ProductsApiService,
     private readonly salesApiService: SalesApiService,
+    private readonly storageService: StorageService,
   ) {}
 
   ngOnInit(): void {
@@ -92,6 +95,7 @@ export class SaleComponent implements OnInit {
 
     this.isSubmitting = true;
     this.errorMessage = "";
+    this.statusMessage = "";
 
     this.salesApiService.createSale({
       clienteId: this.selectedClientId ? Number(this.selectedClientId) : null,
@@ -107,8 +111,23 @@ export class SaleComponent implements OnInit {
         this.router.navigateByUrl("/historico");
       },
       error: () => {
+        const selectedClient = this.clients.find((client) => String(client.id) === this.selectedClientId);
+        this.storageService.appendSale({
+          id: `#VEN-${Date.now()}`,
+          datetime: new Intl.DateTimeFormat("pt-BR", {
+            dateStyle: "short",
+            timeStyle: "short",
+          }).format(new Date()),
+          client: selectedClient?.nome ?? selectedClient?.name ?? "Cliente balcao",
+          mainProduct: this.cart.map((item) => item.name).join(", "),
+          payment: this.payment,
+          value: this.subtotal - this.discount > 0 ? this.subtotal - this.discount : 0,
+          status: "Concluida",
+        });
+
         this.isSubmitting = false;
-        this.errorMessage = "Nao foi possivel finalizar a venda na API.";
+        this.statusMessage = "Venda salva localmente enquanto a API estiver indisponivel.";
+        this.router.navigateByUrl("/historico");
       },
     });
   }
@@ -116,9 +135,11 @@ export class SaleComponent implements OnInit {
   private loadDependencies(): void {
     this.isLoading = true;
     this.errorMessage = "";
+    this.statusMessage = "";
 
     let pending = 2;
     let hasApiFailure = false;
+    const localProducts = this.storageService.getProducts();
 
     const finish = () => {
       pending -= 1;
@@ -127,7 +148,7 @@ export class SaleComponent implements OnInit {
         this.isLoading = false;
 
         if (hasApiFailure) {
-          this.errorMessage = "API de clientes/produtos indisponivel. Nao ha fallback mockado na tela de venda.";
+          this.errorMessage = "API de clientes ou produtos indisponivel. O catalogo local continua disponivel para registrar a venda.";
         }
       }
     };
@@ -146,15 +167,27 @@ export class SaleComponent implements OnInit {
 
     this.productsApiService.listProducts().subscribe({
       next: (products) => {
-        this.products = products;
+        this.products = this.mergeProducts(products, localProducts);
         finish();
       },
       error: () => {
         hasApiFailure = true;
-        this.products = [];
+        this.products = localProducts;
         finish();
       },
     });
+  }
+
+  private mergeProducts(primaryProducts: Product[], secondaryProducts: Product[]): Product[] {
+    const productMap = new Map<number, Product>();
+
+    [...secondaryProducts, ...primaryProducts]
+      .map((product) => this.productsApiService.normalizeProduct(product))
+      .forEach((product) => {
+        productMap.set(product.id, product);
+      });
+
+    return Array.from(productMap.values()).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   }
 
   private toFormaPagamento(payment: string): string {

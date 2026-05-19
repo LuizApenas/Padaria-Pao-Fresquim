@@ -101,6 +101,25 @@
   align-items: start;
 }
 
+.products-feedback {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.products-feedback-success {
+  background: #e9fbf2;
+  border: 1px solid #bae6cd;
+  color: #0f7a53;
+}
+
+.products-feedback-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b42318;
+}
+
 .product-card {
   overflow: hidden;
   border-radius: 8px;
@@ -374,8 +393,24 @@
   gap: 0.55rem;
 }
 
-.product-upload ui5-file-uploader {
-  width: 100%;
+.upload-field {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 44px;
+  padding: 0.8rem 1rem;
+  border: 1px dashed #c8d4e3;
+  border-radius: 12px;
+  background: #f8fbff;
+  color: #314056;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.upload-field input {
+  display: none;
 }
 
 .upload-helper {
