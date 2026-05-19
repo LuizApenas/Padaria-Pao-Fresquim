@@ -7,18 +7,19 @@
     </div>
 
     <div class="login-credentials">
-      <strong>{{ loginEmail }}</strong>
-      <strong>{{ loginPassword }}</strong>
+      <strong>Supabase Auth</strong>
+      <span>Use o e-mail do funcionario cadastrado.</span>
     </div>
 
+    <ng-container *ngIf="!isResetMode; else resetPasswordForm">
     <div class="login-field">
       <label class="login-label" for="email">Usuario</label>
-      <input class="login-input" id="email" name="email" type="email" [(ngModel)]="email" placeholder="arthur@email.com" />
+      <input class="login-input" id="email" name="email" type="email" [(ngModel)]="email" placeholder="joaquim@paofresquim.com" />
     </div>
 
     <div class="login-field">
       <label class="login-label" for="password">Senha</label>
-      <input class="login-input" id="password" name="password" type="password" [(ngModel)]="password" placeholder="1234" />
+      <input class="login-input" id="password" name="password" type="password" [(ngModel)]="password" placeholder="Senha do Supabase Auth" />
     </div>
 
     <div class="login-row">
@@ -29,11 +30,26 @@
       <span class="login-forgot">Esqueceu a senha?</span>
     </div>
 
-    <button class="btn-login" type="submit">Entrar no sistema</button>
+    <button class="btn-login" type="submit" [disabled]="isSubmitting">{{ isSubmitting ? "Entrando..." : "Entrar no sistema" }}</button>
+    <button class="btn-login secondary-login-action" type="button" [disabled]="isSubmitting" (click)="requestPasswordReset()">Redefinir senha</button>
     <div *ngIf="error" class="error-box">{{ error }}</div>
+    <div *ngIf="success" class="success-box">{{ success }}</div>
+    </ng-container>
+
+    <ng-template #resetPasswordForm>
+      <div class="login-field">
+        <label class="login-label" for="newPassword">Nova senha</label>
+        <input class="login-input" id="newPassword" name="newPassword" type="password" [(ngModel)]="newPassword" placeholder="Minimo 10, Aa, numero e especial" />
+      </div>
+      <button class="btn-login" type="button" [disabled]="isSubmitting" (click)="updatePassword()">
+        {{ isSubmitting ? "Atualizando..." : "Salvar nova senha" }}
+      </button>
+      <div *ngIf="error" class="error-box">{{ error }}</div>
+      <div *ngIf="success" class="success-box">{{ success }}</div>
+    </ng-template>
 
     <div class="login-support">
-      Total vendido hoje: <strong>{{ totalSoldToday }}</strong>
+      Login validado pelo Supabase Auth e vinculado ao cadastro de funcionario.
     </div>
     <div class="login-security">
       <span>Problemas com o acesso?</span>

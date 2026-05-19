@@ -94,7 +94,6 @@ export class SaleComponent implements OnInit {
     this.errorMessage = "";
 
     this.salesApiService.createSale({
-      funcionarioId: 1,
       clienteId: this.selectedClientId ? Number(this.selectedClientId) : null,
       formaPagamento: this.toFormaPagamento(this.payment),
       status: "CONCLUIDA",

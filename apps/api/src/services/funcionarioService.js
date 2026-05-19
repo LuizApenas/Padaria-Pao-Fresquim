@@ -2,7 +2,9 @@ import bcrypt from "bcryptjs";
 
 import { prisma } from "../config/prisma.js";
 import { Role } from "../domain/enums.js";
+import { createSupabaseUser } from "./supabaseAuthService.js";
 import { AppError } from "../utils/AppError.js";
+import { validateStrongPassword } from "../utils/password.js";
 import { ensureEnumValue, parseId, requireFields } from "../utils/validation.js";
 
 const funcionarioInclude = {
@@ -69,6 +71,7 @@ async function buildFuncionarioData(data, { partial = false } = {}) {
   }
 
   if (data.senha) {
+    validateStrongPassword(data.senha);
     funcionarioData.senhaHash = await bcrypt.hash(data.senha, 10);
   }
 
@@ -76,6 +79,18 @@ async function buildFuncionarioData(data, { partial = false } = {}) {
 }
 
 export async function createFuncionario(data) {
+  validateStrongPassword(data.senha);
+
+  await createSupabaseUser({
+    email: data.email,
+    password: data.senha,
+    metadata: {
+      nome: data.nome,
+      role: data.role,
+      cargo: data.cargo,
+    },
+  });
+
   const funcionario = await prisma.funcionario.create({
     data: await buildFuncionarioData(data),
     include: funcionarioInclude,

@@ -79,6 +79,22 @@
   padding: 0.85rem 1rem;
 }
 
+.secondary-login-action {
+  margin-top: 0.7rem;
+  background: #eef3f8;
+  color: #17233a;
+}
+
+.success-box {
+  margin-top: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
 .error-box {
   padding: 0.85rem 1rem;
   border-radius: 12px;

@@ -9,6 +9,7 @@ build/
 coverage/
 apps/api/src/generated/
 apps/web/.angular/
+*.log
 
 .env
 .env.*

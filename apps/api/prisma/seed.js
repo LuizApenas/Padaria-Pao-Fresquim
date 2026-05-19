@@ -6,7 +6,7 @@ import { prisma } from "../src/config/prisma.js";
 
 // Cria os usuários base do sistema com senha hash para não gravar senha pura no banco.
 async function seedFuncionarios() {
-  const senhaHash = await bcrypt.hash("123456", 10);
+  const senhaHash = await bcrypt.hash("PaoFresquim@2026!", 10);
 
   // Conjunto mínimo de perfis para validar autenticação e permissões futuramente.
   const funcionarios = [

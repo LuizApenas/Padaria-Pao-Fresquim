@@ -9,11 +9,15 @@ import {
   updateContaFiado,
 } from "../services/fiadoService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { ensureAuth, ensureRole } from "../middlewares/auth.js";
 
 const fiadoRoutes = Router();
 
+fiadoRoutes.use(ensureAuth);
+
 fiadoRoutes.get(
   "/",
+  ensureRole("PROPRIETARIO", "ATENDENTE"),
   asyncHandler(async (_request, response) => {
     const contas = await listContasFiado();
 
@@ -23,6 +27,7 @@ fiadoRoutes.get(
 
 fiadoRoutes.post(
   "/",
+  ensureRole("PROPRIETARIO", "ATENDENTE"),
   asyncHandler(async (request, response) => {
     const conta = await createContaFiado(request.body);
 
@@ -32,6 +37,7 @@ fiadoRoutes.post(
 
 fiadoRoutes.get(
   "/:clienteId",
+  ensureRole("PROPRIETARIO", "ATENDENTE"),
   asyncHandler(async (request, response) => {
     const conta = await getContaFiadoByClienteId(request.params.clienteId);
 
@@ -41,6 +47,7 @@ fiadoRoutes.get(
 
 fiadoRoutes.put(
   "/:clienteId",
+  ensureRole("PROPRIETARIO"),
   asyncHandler(async (request, response) => {
     const conta = await updateContaFiado(request.params.clienteId, request.body);
 
@@ -50,6 +57,7 @@ fiadoRoutes.put(
 
 fiadoRoutes.post(
   "/:clienteId/cobranca",
+  ensureRole("PROPRIETARIO", "ATENDENTE"),
   asyncHandler(async (request, response) => {
     const conta = await registrarCobrancaFiado(request.params.clienteId);
 
@@ -59,6 +67,7 @@ fiadoRoutes.post(
 
 fiadoRoutes.delete(
   "/:clienteId",
+  ensureRole("PROPRIETARIO"),
   asyncHandler(async (request, response) => {
     await deleteContaFiado(request.params.clienteId);
 

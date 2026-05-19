@@ -1,27 +1,86 @@
-import { Injectable } from "@angular/core";
-import { LOGIN_EMAIL, LOGIN_PASSWORD } from "../mock-data";
+import { Injectable, inject } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { Observable, tap } from "rxjs";
 
-const AUTH_KEY = "pao-fresquim-auth";
+const API_BASE_URL = "http://localhost:3333";
+const TOKEN_KEY = "pao-fresquim-auth-token";
+const REFRESH_TOKEN_KEY = "pao-fresquim-auth-refresh-token";
+const USER_KEY = "pao-fresquim-auth-user";
+
+export type AuthUser = {
+  id: number | null;
+  nome: string;
+  email: string;
+  role: "PROPRIETARIO" | "ATENDENTE" | "PADEIRO";
+  cargo: string;
+  supabaseUserId?: string;
+};
+
+export type LoginResponse = {
+  token: string;
+  refreshToken?: string;
+  expiresIn?: number;
+  usuario: AuthUser;
+};
 
 @Injectable({ providedIn: "root" })
 export class AuthService {
+  private readonly http = inject(HttpClient);
+
   isAuthenticated(): boolean {
-    return localStorage.getItem(AUTH_KEY) === "true";
+    return Boolean(this.getToken());
   }
 
-  login(email: string, password: string): boolean {
-    const valid =
-      email.trim().toLowerCase() === LOGIN_EMAIL &&
-      password.trim() === LOGIN_PASSWORD;
+  login(email: string, senha: string): Observable<LoginResponse> {
+    return this.http
+      .post<LoginResponse>(`${API_BASE_URL}/api/auth/login`, { email, senha })
+      .pipe(tap((response) => this.persistSession(response)));
+  }
 
-    if (valid) {
-      localStorage.setItem(AUTH_KEY, "true");
+  requestPasswordReset(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${API_BASE_URL}/api/auth/password/recover`, {
+      email,
+      redirectTo: `${window.location.origin}/login`,
+    });
+  }
+
+  updatePassword(token: string, senha: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${API_BASE_URL}/api/auth/password/update`, {
+      token,
+      senha,
+    });
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem(TOKEN_KEY);
+  }
+
+  getUser(): AuthUser | null {
+    const rawUser = localStorage.getItem(USER_KEY);
+
+    if (!rawUser) {
+      return null;
     }
 
-    return valid;
+    try {
+      return JSON.parse(rawUser) as AuthUser;
+    } catch {
+      return null;
+    }
   }
 
   logout(): void {
-    localStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  }
+
+  private persistSession(response: LoginResponse): void {
+    localStorage.setItem(TOKEN_KEY, response.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(response.usuario));
+
+    if (response.refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
+    }
   }
 }
