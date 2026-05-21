@@ -1,19 +1,16 @@
 # apps/api/Dockerfile
-# Build context: repository root (Padaria/)
-# EasyPanel: Dockerfile path = apps/api/Dockerfile | Port = 3333
+# Build context: apps/api/
+# EasyPanel: Dockerfile path = apps/api/Dockerfile | Port = 3334
 
 FROM node:22-alpine AS build
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-COPY apps/api/package.json ./apps/api/package.json
+COPY package.json ./
 
-RUN npm ci --workspace @padaria/api
+RUN npm install
 
-COPY apps/api ./apps/api
-
-WORKDIR /app/apps/api
+COPY . .
 
 RUN npx prisma generate
 
@@ -23,15 +20,15 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY package.json package-lock.json ./
-COPY apps/api/package.json ./apps/api/package.json
+COPY package.json ./
 
-RUN npm ci --workspace @padaria/api --omit=dev
+RUN npm install --omit=dev
 
-COPY apps/api ./apps/api
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 
-WORKDIR /app/apps/api
+COPY src ./src
+COPY prisma ./prisma
+COPY scripts ./scripts
 
 RUN mkdir -p .runtime/documentos
 

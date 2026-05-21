@@ -1,31 +1,28 @@
 # apps/web/Dockerfile
-# Build context: repository root (Padaria/)
+# Build context: apps/web/
 # EasyPanel: Dockerfile path = apps/web/Dockerfile | Port = 80
-# Build arg API_URL = public URL of the API (e.g. https://api.seudominio.com)
+# Build arg API_URL = URL publica da API (ex: https://api.seudominio.com)
 
 FROM node:22-alpine AS build
 
 WORKDIR /app
 
-ARG API_URL=http://localhost:3333
+ARG API_URL=http://localhost:3334
 
-COPY package.json package-lock.json ./
-COPY apps/web/package.json ./apps/web/package.json
+COPY package.json ./
 
-RUN npm ci --workspace @padaria/web
+RUN npm install
 
-COPY apps/web ./apps/web
-
-WORKDIR /app/apps/web
+COPY . .
 
 RUN sed -i "s|__API_URL__|${API_URL}|g" src/environments/environment.prod.ts
 
-RUN npm run build
+RUN npx ng build --configuration=production
 
 FROM nginx:1.27-alpine AS runner
 
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/apps/web/dist/padaria-web/browser /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist/padaria-web/browser /usr/share/nginx/html
 
 EXPOSE 80
 
