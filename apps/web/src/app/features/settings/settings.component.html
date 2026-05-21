@@ -3,7 +3,7 @@
 <div class="page-header">
   <div>
     <div class="page-title">Configuracoes do chatbot</div>
-    <div class="page-subtitle">Evolution API, webhook, avisos de coleta, fiado e metricas para o proprietario.</div>
+    <div class="page-subtitle">Evolution API, avisos de coleta, fiado e metricas para o proprietario.</div>
   </div>
   <div class="settings-header-actions">
     <a class="btn-secondary" routerLink="/configuracoes/chatbot-fluxo">Ver fluxo e prompt do chatbot</a>
@@ -32,10 +32,6 @@
       <div class="form-group">
         <label class="form-label">Path de envio</label>
         <input class="form-input" name="evolutionDispatchPath" [(ngModel)]="settings.evolutionDispatchPath" placeholder="/message/sendText" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Token do webhook</label>
-        <input class="form-input" name="webhookToken" [(ngModel)]="settings.webhookToken" placeholder="token para colar na Evolution" />
       </div>
       <div class="form-group">
         <label class="form-label">WhatsApp do Sr. Joaquim</label>

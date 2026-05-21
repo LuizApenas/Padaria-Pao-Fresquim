@@ -1,5 +1,5 @@
 // apps/api/src/services/chatbotSettingsService.js
-// Persiste configuracoes do chatbot (Evolution, webhook, toggles de avisos e metricas) em arquivo local.
+// Persiste configuracoes do chatbot (Evolution, toggles de avisos e metricas) em arquivo local.
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
@@ -20,7 +20,6 @@ const DEFAULT_SETTINGS = {
   evolutionApiUrl: "",
   evolutionApiKey: "",
   evolutionDispatchPath: "/message/sendText",
-  webhookToken: "",
   ownerPhone: SEED_PROPRIETARIO_OWNER_PHONE_E164,
   orderReadyNotificationsEnabled: true,
   debtWarningsEnabled: true,
@@ -74,7 +73,6 @@ function sanitizeSettings(settings) {
     evolutionApiUrl: settings.evolutionApiUrl ?? "",
     evolutionApiKey: settings.evolutionApiKey ?? "",
     evolutionDispatchPath: settings.evolutionDispatchPath ?? "/message/sendText",
-    webhookToken: settings.webhookToken ?? "",
     ownerPhone,
     orderReadyNotificationsEnabled: Boolean(settings.orderReadyNotificationsEnabled),
     debtWarningsEnabled: Boolean(settings.debtWarningsEnabled),
@@ -129,7 +127,6 @@ export async function updateChatbotSettings(data) {
     evolutionApiUrl: data.evolutionApiUrl,
     evolutionApiKey: data.evolutionApiKey,
     evolutionDispatchPath: data.evolutionDispatchPath,
-    webhookToken: data.webhookToken,
     ownerPhone: data.ownerPhone,
     orderReadyNotificationsEnabled: data.orderReadyNotificationsEnabled,
     debtWarningsEnabled: data.debtWarningsEnabled,

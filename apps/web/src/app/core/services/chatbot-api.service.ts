@@ -15,7 +15,6 @@ export type ChatbotSettings = {
   evolutionApiUrl: string;
   evolutionApiKey: string;
   evolutionDispatchPath: string;
-  webhookToken: string;
   ownerPhone: string;
   orderReadyNotificationsEnabled: boolean;
   debtWarningsEnabled: boolean;

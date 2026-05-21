@@ -4,7 +4,6 @@
 import { Router } from "express";
 
 import { ensureAuth, ensureRole } from "../middlewares/auth.js";
-import { ensureEvolutionWebhook } from "../middlewares/evolutionWebhook.js";
 import {
   avisarPedidoPronto,
   consultarClienteChatbot,
@@ -23,10 +22,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const chatbotRoutes = Router();
 
-// Rotas publicas protegidas por token do webhook Evolution (sem JWT de usuario).
+// Rotas publicas chamadas diretamente pela Evolution (sem JWT de usuario).
 chatbotRoutes.post(
   "/webhook/evolution",
-  ensureEvolutionWebhook,
   asyncHandler(async (request, response) => {
     const result = await handleEvolutionWebhook(request.body);
 
@@ -36,7 +34,6 @@ chatbotRoutes.post(
 
 chatbotRoutes.post(
   "/clientes/consultar",
-  ensureEvolutionWebhook,
   asyncHandler(async (request, response) => {
     const cliente = await consultarClienteChatbot(request.body);
 
@@ -46,7 +43,6 @@ chatbotRoutes.post(
 
 chatbotRoutes.post(
   "/pedidos",
-  ensureEvolutionWebhook,
   asyncHandler(async (request, response) => {
     const pedido = await criarPedidoChatbot(request.body);
 
@@ -56,7 +52,6 @@ chatbotRoutes.post(
 
 chatbotRoutes.post(
   "/pedidos/:id/consultar",
-  ensureEvolutionWebhook,
   asyncHandler(async (request, response) => {
     const pedido = await consultarPedidoChatbot(request.params.id, request.body);
 

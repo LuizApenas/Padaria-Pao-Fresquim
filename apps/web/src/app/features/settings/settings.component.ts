@@ -23,7 +23,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
     evolutionApiUrl: "",
     evolutionApiKey: "",
     evolutionDispatchPath: "/message/sendText",
-    webhookToken: "",
     ownerPhone: "5511999990001",
     orderReadyNotificationsEnabled: true,
     debtWarningsEnabled: true,
@@ -65,9 +64,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   get webhookUrl(): string {
     const apiBase = API_BASE_URL.replace(/\/+$/, "");
-    const token = encodeURIComponent(this.settings.webhookToken || "TOKEN_DO_PAINEL");
 
-    return `${apiBase}/api/chatbot/webhook/evolution?token=${token}`;
+    return `${apiBase}/api/chatbot/webhook/evolution`;
   }
 
   loadSettings(): void {

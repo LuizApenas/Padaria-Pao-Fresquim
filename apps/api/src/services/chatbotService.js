@@ -1192,7 +1192,7 @@ export function getChatbotDocumentacao() {
       "Avisos Evolution (pedido pronto, fiado/Serasa) respeitam toggles em chatbot-config.json.",
     ],
     flowSteps: [
-      "1. Mensagem chega pelo painel (POST /mensagens, funcionario autenticado) ou webhook Evolution (validacao de token).",
+      "1. Mensagem chega pelo painel (POST /mensagens, funcionario autenticado) ou webhook Evolution.",
       "2. Texto e limitado, sanitizado e verificado contra padroes de prompt injection.",
       "3. resolveChatbotSender identifica FUNCIONARIO (front) ou CLIENTE (telefone/CPF no WhatsApp).",
       "4. Worker carrega metricas (se permitido) e produtos ativos; monta buildSystemPrompt.",
