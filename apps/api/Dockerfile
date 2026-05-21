@@ -12,7 +12,7 @@ RUN npm install --ignore-scripts
 
 COPY . .
 
-RUN npx prisma generate
+RUN DATABASE_URL=postgresql://dummy DIRECT_URL=postgresql://dummy npx prisma generate
 
 FROM node:22-alpine AS runner
 
