@@ -10,6 +10,8 @@ import { AuthService, AuthUser } from "../../core/services/auth.service";
 import { ZoomService } from "../../core/services/zoom.service";
 import { NAV_ITEMS, getPageMeta, resolvePageIdFromUrl } from "../../core/navigation";
 
+const SIDEBAR_STORAGE_KEY = "pf_sidebar_collapsed";
+
 @Component({
   selector: "pf-shell",
   standalone: true,
@@ -17,8 +19,6 @@ import { NAV_ITEMS, getPageMeta, resolvePageIdFromUrl } from "../../core/navigat
   templateUrl: "./shell.component.html",
   styleUrl: "./shell.component.css"
 })
-const SIDEBAR_STORAGE_KEY = "pf_sidebar_collapsed";
-
 export class ShellComponent {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
