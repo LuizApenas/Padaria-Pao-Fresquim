@@ -1,29 +1,36 @@
 import { CommonModule } from "@angular/common";
 import { Component, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
+import { MenuItem } from "primeng/api";
+import { Breadcrumb } from "primeng/breadcrumb";
 import { filter, map, startWith } from "rxjs";
+import { BREADCRUMB_HOME, buildBreadcrumbTrail } from "../../core/breadcrumb.builder";
 import { AuthService, AuthUser } from "../../core/services/auth.service";
 import { ZoomService } from "../../core/services/zoom.service";
-import { NAV_ITEMS, getPageMeta } from "../../core/navigation";
+import { NAV_ITEMS, getPageMeta, resolvePageIdFromUrl } from "../../core/navigation";
 
 @Component({
   selector: "pf-shell",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, Breadcrumb],
   templateUrl: "./shell.component.html",
   styleUrl: "./shell.component.css"
 })
+const SIDEBAR_STORAGE_KEY = "pf_sidebar_collapsed";
+
 export class ShellComponent {
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly authService = inject(AuthService);
   private readonly zoomService = inject(ZoomService);
 
   readonly navItems = NAV_ITEMS;
   readonly zoom = this.zoomService.zoom;
+  readonly breadcrumbHome = BREADCRUMB_HOME;
   currentPage = getPageMeta("dashboard");
+  breadcrumbItems: MenuItem[] = buildBreadcrumbTrail("/dashboard", "dashboard");
   zoomInput = String(this.zoom());
+  sidebarCollapsed = localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1";
 
   constructor() {
     this.router.events
@@ -31,16 +38,33 @@ export class ShellComponent {
         filter((event) => event instanceof NavigationEnd),
         startWith(null),
         map(() => {
-          let active = this.route.firstChild;
-          while (active?.firstChild) {
-            active = active.firstChild;
+          // Walk router state snapshot for reliable data access (works with lazy routes)
+          let node = this.router.routerState.snapshot.root;
+          let pageId: string | undefined;
+          while (node) {
+            if (node.data["pageId"]) pageId = node.data["pageId"] as string;
+            if (!node.firstChild) break;
+            node = node.firstChild;
           }
-          return getPageMeta(active?.snapshot.data["pageId"]);
+
+          const url = this.router.url;
+          const resolvedPageId = pageId ?? resolvePageIdFromUrl(url);
+
+          return {
+            page: getPageMeta(resolvedPageId),
+            trail: buildBreadcrumbTrail(url, resolvedPageId),
+          };
         })
       )
-      .subscribe((page) => {
+      .subscribe(({ page, trail }) => {
         this.currentPage = page;
+        this.breadcrumbItems = trail;
       });
+  }
+
+  toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, this.sidebarCollapsed ? "1" : "0");
   }
 
   setPresetZoom(value: number): void {

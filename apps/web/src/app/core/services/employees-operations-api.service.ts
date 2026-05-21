@@ -8,7 +8,7 @@ const NO_CACHE_HEADERS = new HttpHeaders({
   Pragma: "no-cache",
 });
 
-const API_BASE_URL = "http://localhost:3333";
+import { API_BASE_URL } from "../config/api-base-url";
 
 export type PointRecord = {
   id: number;

@@ -114,7 +114,7 @@ export class ProductsComponent implements OnInit {
       categoria: this.form.categoria,
       codigoBarras: this.form.codigoBarras.trim(),
       precoBase: Number(this.form.precoBase),
-      imagemUrl: this.form.imagemUrl.trim() || null,
+      imagemUrl: this.resolveImagemUrlForApi(this.form.imagemUrl),
       name: this.form.nome.trim(),
       category: this.form.categoria,
       sku: this.form.codigoBarras.trim(),
@@ -205,6 +205,16 @@ export class ProductsComponent implements OnInit {
         });
       },
     });
+  }
+
+  private resolveImagemUrlForApi(value: string): string | null {
+    const trimmed = value.trim();
+
+    if (!trimmed || trimmed.startsWith("data:")) {
+      return null;
+    }
+
+    return trimmed;
   }
 
   private getEmptyForm(): ProductForm {

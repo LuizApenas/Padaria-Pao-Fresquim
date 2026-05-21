@@ -1,0 +1,87 @@
+<!-- apps/web/src/app/features/chatbot-fluxo/chatbot-fluxo.component.html -->
+<div class="fluxo-page feature-page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Fluxo e prompt do chatbot</div>
+      <div class="page-subtitle">
+        System prompt, regras de negocio e passos do atendimento (Groq + worker + Evolution).
+      </div>
+    </div>
+    <a class="btn-secondary" routerLink="/configuracoes">Voltar para configuracoes</a>
+  </div>
+
+  <div *ngIf="isLoading" class="panel">Carregando documentacao...</div>
+  <div *ngIf="!isLoading && errorMessage" class="panel fluxo-error">{{ errorMessage }}</div>
+
+  <ng-container *ngIf="!isLoading && doc">
+    <nav class="tab-nav" role="tablist">
+      <button
+        *ngFor="let tab of tabs"
+        class="tab-btn"
+        [class.active]="activeTab === tab.id"
+        (click)="setTab(tab.id)"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeTab === tab.id"
+      >
+        {{ tab.label }}
+      </button>
+    </nav>
+
+    <div class="tab-content" *ngIf="activeTab === 'overview'">
+      <div class="panel fluxo-meta">
+        <div class="fluxo-meta-row">
+          <span>Versao</span>
+          <strong>{{ doc.version }}</strong>
+        </div>
+        <div class="fluxo-meta-row">
+          <span>Modelo Groq</span>
+          <strong>{{ doc.groqModel }}</strong>
+        </div>
+        <div class="fluxo-meta-row">
+          <span>Canais</span>
+          <strong>{{ doc.channels.join(", ") }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" *ngIf="activeTab === 'prompt'">
+      <div class="panel">
+        <div class="panel-title">System prompt (exemplo)</div>
+        <p class="fluxo-note">{{ doc.systemPromptNote }}</p>
+        <pre class="fluxo-prompt">{{ doc.systemPrompt }}</pre>
+      </div>
+    </div>
+
+    <div class="tab-content" *ngIf="activeTab === 'rules'">
+      <div class="row col-2">
+        <div class="panel">
+          <div class="panel-title">Regras de negocio</div>
+          <ul class="fluxo-list">
+            <li *ngFor="let rule of doc.rules">{{ rule }}</li>
+          </ul>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Intencoes e ferramentas</div>
+          <div class="fluxo-tags">
+            <span *ngFor="let intent of doc.intents" class="fluxo-tag">{{ intent }}</span>
+          </div>
+          <div class="fluxo-subtitle">Ferramentas do worker</div>
+          <div class="fluxo-tags">
+            <span *ngFor="let tool of doc.workerTools" class="fluxo-tag fluxo-tag--tool">{{ tool }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" *ngIf="activeTab === 'flow'">
+      <div class="panel">
+        <div class="panel-title">Passos do fluxo</div>
+        <ol class="fluxo-steps">
+          <li *ngFor="let step of doc.flowSteps">{{ step }}</li>
+        </ol>
+      </div>
+    </div>
+  </ng-container>
+</div>

@@ -1,4 +1,5 @@
-<div class="dashboard-page">
+<!-- apps/web/src/app/features/dashboard/dashboard.component.html -->
+<div class="dashboard-page feature-page">
   <div *ngIf="isLoading" class="panel empty-state">Carregando dashboard da API...</div>
 
   <div *ngIf="!isLoading && errorMessage" class="panel empty-state">
@@ -86,36 +87,11 @@
         </div>
         <div class="performance-kpi performance-kpi-accent">
           <span class="performance-kpi-label">Melhor {{ selectedPeriod === 'semana' ? 'dia' : 'semana' }}</span>
-          <strong>{{ chartPeak.day }} · {{ formatCurrency(chartPeak.value) }}</strong>
+          <strong>{{ chartPeak.label }} · {{ formatCurrency(chartPeak.value) }}</strong>
         </div>
       </div>
 
-      <div class="bar-chart dashboard-chart">
-        <div class="chart-grid" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-
-        <div
-          *ngFor="let item of chartData; let index = index"
-          class="bar-wrap"
-          (mouseenter)="setHoveredIndex(index)"
-          (mouseleave)="setHoveredIndex(null)"
-        >
-          <div class="bar-tooltip" [class.visible]="hoveredIndex === index">
-            {{ formatCurrency(item.value) }}
-          </div>
-          <div class="bar-value">{{ formatCurrency(item.value) }}</div>
-          <div
-            class="bar"
-            [class.active]="selectedPeriod === 'semana' ? item.day === 'Sab' : index === 3"
-            [style.height.px]="getBarHeight(item.value)"
-          ></div>
-          <div class="bar-label">{{ item.day | uppercase }}</div>
-        </div>
-      </div>
+      <pf-sales-chart class="dashboard-chart" [points]="chartPoints" />
     </section>
 
     <aside class="alerts-panel dashboard-alerts">

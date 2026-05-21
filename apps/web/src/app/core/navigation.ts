@@ -11,9 +11,34 @@ export const NAV_ITEMS: PageMeta[] = [
   { id: "relatorios", label: "Relatorios", path: "/relatorios", icon: "R", placeholder: "Buscar relatorios..." },
   { id: "cameras", label: "Cameras", path: "/cameras", icon: "M", placeholder: "Pesquisar cameras ou logs..." },
   { id: "chatbot", label: "Chatbot", path: "/chatbot", icon: "AI", placeholder: "Buscar no sistema..." },
-  { id: "configuracoes", label: "Configuracoes", path: "/configuracoes", icon: "CFG", placeholder: "Buscar configuracoes..." }
+  { id: "configuracoes", label: "Configuracoes", path: "/configuracoes", icon: "CFG", placeholder: "Buscar configuracoes..." },
+  {
+    id: "chatbot-fluxo",
+    label: "Fluxo chatbot",
+    path: "/configuracoes/chatbot-fluxo",
+    icon: "FL",
+    placeholder: "Buscar fluxo e prompt do chatbot...",
+    parentId: "configuracoes",
+  },
 ];
 
 export function getPageMeta(pageId: string | undefined): PageMeta {
   return NAV_ITEMS.find((item) => item.id === pageId) ?? NAV_ITEMS[0];
 }
+
+/** Resolves page id from the browser URL when route data is missing on the active snapshot. */
+export function resolvePageIdFromUrl(url: string): string | undefined {
+  const pathname = url.split(/[?#]/)[0].replace(/\/$/, "") || "/";
+
+  if (pathname.includes("/configuracoes/chatbot-fluxo")) {
+    return "chatbot-fluxo";
+  }
+
+  const sorted = [...NAV_ITEMS].sort((a, b) => b.path.length - a.path.length);
+  const match = sorted.find(
+    (item) => pathname === item.path || pathname.startsWith(`${item.path}/`),
+  );
+
+  return match?.id;
+}
+

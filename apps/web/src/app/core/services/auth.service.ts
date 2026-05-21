@@ -1,8 +1,7 @@
 import { Injectable, inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { Observable, tap } from "rxjs";
-
-const API_BASE_URL = "http://localhost:3333";
+import { API_BASE_URL } from "../config/api-base-url";
 const TOKEN_KEY = "pao-fresquim-auth-token";
 const REFRESH_TOKEN_KEY = "pao-fresquim-auth-refresh-token";
 const USER_KEY = "pao-fresquim-auth-user";

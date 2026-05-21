@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Observable } from "rxjs";
 import { timeout } from "rxjs/operators";
 
-const API_BASE_URL = "http://localhost:3333";
+import { API_BASE_URL } from "../config/api-base-url";
 const NO_CACHE_HEADERS = new HttpHeaders({
   "Cache-Control": "no-cache",
   Pragma: "no-cache",

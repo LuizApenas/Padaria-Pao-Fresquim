@@ -57,3 +57,37 @@ export function ensurePositiveInteger(value, fieldName) {
 export function toMoney(value) {
   return Number(value).toFixed(2);
 }
+
+// Accepts only http(s) URLs for product images; rejects base64 data URLs.
+export function normalizeImagemUrl(value, { fieldName = "imagemUrl" } = {}) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const url = String(value).trim();
+
+  if (!url) {
+    return null;
+  }
+
+  if (/^data:/i.test(url)) {
+    throw new AppError(
+      `${fieldName} nao aceita imagem em base64. Envie uma URL http(s) ou cadastre sem imagem.`,
+      400,
+    );
+  }
+
+  let parsedUrl;
+
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    throw new AppError(`${fieldName} deve ser uma URL http(s) valida.`, 400);
+  }
+
+  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+    throw new AppError(`${fieldName} deve usar o protocolo http ou https.`, 400);
+  }
+
+  return url;
+}

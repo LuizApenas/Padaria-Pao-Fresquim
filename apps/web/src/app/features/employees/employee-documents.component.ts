@@ -20,7 +20,7 @@ import {
   EmployeesOperationsApiService,
 } from "../../core/services/employees-operations-api.service";
 
-const API_BASE_URL = "http://localhost:3333";
+import { API_BASE_URL } from "../../core/config/api-base-url";
 
 @Component({
   selector: "pf-employee-documents",

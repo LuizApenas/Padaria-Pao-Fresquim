@@ -2,14 +2,19 @@ import { CommonModule } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
 import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
+import { RouterLink } from "@angular/router";
 import { NavigationEnd, Router } from "@angular/router";
 import { Subscription, filter } from "rxjs";
-import { ChatbotApiService, ChatbotSettings } from "../../core/services/chatbot-api.service";
+import {
+  API_BASE_URL,
+  ChatbotApiService,
+  ChatbotSettings,
+} from "../../core/services/chatbot-api.service";
 
 @Component({
   selector: "pf-settings",
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: "./settings.component.html",
   styleUrl: "./settings.component.css"
 })
@@ -19,15 +24,20 @@ export class SettingsComponent implements OnInit, OnDestroy {
     evolutionApiKey: "",
     evolutionDispatchPath: "/message/sendText",
     webhookToken: "",
-    ownerPhone: "",
+    ownerPhone: "5511999990001",
     orderReadyNotificationsEnabled: true,
     debtWarningsEnabled: true,
     dailyMetricsEnabled: true,
+    messageBufferMs: 2500,
   };
+  testMessage = "Teste de integracao Evolution - Padaria Pao Fresquim.";
   isLoading = true;
   isSaving = false;
+  isSendingTest = false;
   message = "";
   errorMessage = "";
+  testMessageResult = "";
+  testMessageError = "";
   private readonly routeSubscription: Subscription;
 
   constructor(
@@ -54,7 +64,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   get webhookUrl(): string {
-    return `${window.location.origin.replace(/\/+$/, "")}/api/chatbot/webhook/evolution?token=${encodeURIComponent(this.settings.webhookToken || "TOKEN_DO_PAINEL")}`;
+    const apiBase = API_BASE_URL.replace(/\/+$/, "");
+    const token = encodeURIComponent(this.settings.webhookToken || "TOKEN_DO_PAINEL");
+
+    return `${apiBase}/api/chatbot/webhook/evolution?token=${token}`;
   }
 
   loadSettings(): void {
@@ -79,6 +92,41 @@ export class SettingsComponent implements OnInit, OnDestroy {
         });
       },
     });
+  }
+
+  sendTestMessage(): void {
+    this.isSendingTest = true;
+    this.testMessageResult = "";
+    this.testMessageError = "";
+    this.changeDetectorRef.detectChanges();
+
+    this.chatbotApiService
+      .sendTestMessage({
+        phone: this.settings.ownerPhone || undefined,
+        message: this.testMessage.trim() || undefined,
+      })
+      .subscribe({
+        next: (result) => {
+          this.ngZone.run(() => {
+            const payload = result as { skipped?: boolean; reason?: string };
+            this.testMessageResult = payload?.skipped
+              ? `Disparo ignorado: ${payload.reason ?? "URL Evolution nao configurada."}`
+              : "Mensagem de teste enviada pela Evolution.";
+            this.isSendingTest = false;
+            this.changeDetectorRef.detectChanges();
+          });
+        },
+        error: (error: HttpErrorResponse) => {
+          this.ngZone.run(() => {
+            this.testMessageError =
+              error.error?.message ||
+              error.message ||
+              "Nao foi possivel enviar a mensagem de teste.";
+            this.isSendingTest = false;
+            this.changeDetectorRef.detectChanges();
+          });
+        },
+      });
   }
 
   saveSettings(): void {

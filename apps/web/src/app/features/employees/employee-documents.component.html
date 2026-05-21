@@ -1,10 +1,11 @@
-<div class="employee-ops-page">
-  <div class="employee-ops-header">
+<!-- apps/web/src/app/features/employees/employee-documents.component.html -->
+<div class="employee-ops-page feature-page">
+  <div class="page-header employee-ops-header">
     <div>
-      <div class="employee-ops-title">Documentos</div>
-      <div class="employee-ops-subtitle">{{ employeeName }} · upload de PDF para storage</div>
+      <div class="page-title">Documentos</div>
+      <div class="page-subtitle">{{ employeeName }} · upload de PDF para storage</div>
     </div>
-    <div class="employee-ops-actions">
+    <div class="toolbar employee-ops-actions">
       <a class="btn-secondary" routerLink="/funcionarios">Voltar</a>
       <a class="btn-secondary" [routerLink]="['/funcionarios', employeeId, 'ponto']">Cartao de ponto</a>
     </div>

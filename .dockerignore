@@ -1,0 +1,19 @@
+# Padaria/.dockerignore
+node_modules
+**/node_modules
+**/dist
+**/.angular
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.gitignore
+.cursor
+**/*.md
+!apps/api/README.md
+!apps/web/README.md
+apps/api/.runtime
+**/.runtime
+**/coverage
+**/*.log
+**/terminals

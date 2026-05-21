@@ -1,8 +1,41 @@
+﻿:host {
+  display: block;
+}
+
+.settings-page {
+  display: grid;
+  gap: var(--page-gap);
+}
+
+.settings-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.row.col-2 {
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.panel {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.form-grid {
+  gap: 1rem;
+}
+
 .toggle {
   position: relative;
   width: 54px;
   height: 30px;
   border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #e2e8f0;
+  flex-shrink: 0;
 }
 
 .toggle::after {
@@ -30,13 +63,46 @@
 .settings-error {
   border-color: #fecaca;
   color: #991b1b;
+  background: #fef2f2;
 }
 
 .settings-success {
   border-color: #bbf7d0;
   color: #166534;
+  background: #f0fdf4;
 }
 
 .settings-full {
   grid-column: 1 / -1;
+}
+
+.settings-textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.catalog-list {
+  gap: 0.85rem;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  justify-content: space-between;
+}
+
+@media (max-width: 900px) {
+  .row.col-2 {
+    grid-template-columns: 1fr;
+  }
 }

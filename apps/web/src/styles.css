@@ -6,7 +6,7 @@
   --sidebar-bg: #0d1117;
   --sidebar-active: #182230;
   --sidebar-text: #94a3b8;
-  --bg: #f2f5f8;
+  --bg: #eef2f6;
   --surface: #ffffff;
   --surface-muted: #f8fafc;
   --border: #dbe3ee;
@@ -19,6 +19,9 @@
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
+  --page-gap: 1.75rem;
+  --card-gap: 1.25rem;
+  --section-gap: 1.5rem;
 }
 
 *,
@@ -34,9 +37,12 @@ body {
 
 body {
   margin: 0;
-  font-family: Inter, "Segoe UI", sans-serif;
-  background: var(--bg);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background:
+    radial-gradient(circle at top right, rgba(26, 107, 69, 0.06), transparent 32%),
+    var(--bg);
   color: var(--text);
+  line-height: 1.5;
 }
 
 button,
@@ -72,8 +78,8 @@ a {
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 1.25rem 1.125rem;
+  gap: 1rem;
+  padding: 1.25rem 1rem;
   border-bottom: 1px solid #1f2937;
 }
 
@@ -103,16 +109,16 @@ a {
 
 .sidebar-nav {
   flex: 1;
-  padding: 0.85rem 0;
+  padding: 1rem 0;
   overflow: auto;
+  scrollbar-width: thin;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.8rem 1.15rem;
-  margin: 0.15rem 0;
+  padding: 0.75rem 1.25rem;
   color: var(--sidebar-text);
   border-left: 3px solid transparent;
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -202,13 +208,11 @@ a {
 .pdv-actions,
 .pdv-finalize-area,
 .historic-filters,
-.chat-input-area,
 .catalog-item,
-.settings-item,
 .total-breakdown {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .topbar-right {
@@ -269,18 +273,25 @@ a {
 }
 
 .page {
-  padding: 1.5rem;
+  padding: 1.35rem 2rem 1.75rem;
+}
+
+.feature-page {
+  display: grid;
+  gap: var(--page-gap);
 }
 
 .page-header {
   justify-content: space-between;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  gap: 1rem 1.25rem;
 }
 
 .page-title {
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #13213a;
 }
 
 .page-subtitle,
@@ -315,7 +326,32 @@ a {
 .tip-card,
 .log-panel,
 .payment-panel {
-  padding: 1.2rem;
+  padding: 1.5rem;
+}
+
+.stat-card {
+  padding: 1.25rem 1.5rem;
+}
+
+.stat-row-item {
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.stat-row-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.stat-row-value {
+  margin-top: 0.45rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .panel-title,
@@ -340,7 +376,7 @@ a {
 }
 
 .stat-value {
-  margin-top: 0.45rem;
+  margin-top: 0.5rem;
   font-size: 1.5rem;
   font-weight: 800;
 }
@@ -389,7 +425,7 @@ a {
 .products-grid,
 .row.col-2 {
   display: grid;
-  gap: 1rem;
+  gap: var(--card-gap);
 }
 
 .form-grid {
@@ -398,12 +434,19 @@ a {
 
 .form-group {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.5rem;
 }
 
 .stats-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-bottom: 1.5rem;
+  gap: var(--card-gap);
+}
+
+.stats-row,
+.fiado-stats,
+.cam-stats-row,
+.employee-stats {
+  gap: var(--card-gap);
 }
 
 .stats-row,
@@ -414,6 +457,8 @@ a {
 
 .row.col-2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--page-gap);
+  align-items: start;
 }
 
 .table-panel table {
@@ -430,7 +475,7 @@ a {
 
 .table-panel th,
 .table-panel td {
-  padding: 0.95rem 0.8rem;
+  padding: 1rem 0.9rem;
   border-bottom: 1px solid var(--border);
   text-align: left;
   vertical-align: top;
@@ -461,14 +506,19 @@ a {
 .section-head,
 .search-row,
 .catalog-list,
+.log-list,
 .suggestions-panel,
 .docs-panel {
   display: grid;
-  gap: 1rem;
+  gap: var(--card-gap);
+}
+
+.log-panel {
+  display: grid;
+  gap: var(--section-gap);
 }
 
 .catalog-item,
-.settings-item,
 .top-product-item,
 .alert-item,
 .sale-item,

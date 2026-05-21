@@ -2,20 +2,133 @@
   display: contents;
 }
 
+.page-breadcrumb-bar {
+  display: grid;
+  gap: 0.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.page-current-title {
+  margin: 0;
+  color: #13213a;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+:host ::ng-deep .pf-breadcrumb.p-breadcrumb {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+}
+
+:host ::ng-deep .pf-breadcrumb .p-breadcrumb-list {
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+:host ::ng-deep .pf-breadcrumb .p-breadcrumb-item-link,
+:host ::ng-deep .pf-breadcrumb .p-breadcrumb-item-label {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+:host ::ng-deep .pf-breadcrumb .p-breadcrumb-item-link:hover {
+  color: #1a6b45;
+}
+
+:host ::ng-deep .pf-breadcrumb .p-breadcrumb-item:last-child .p-breadcrumb-item-label {
+  color: #1a6b45;
+}
+
+:host ::ng-deep .pf-breadcrumb .p-breadcrumb-home-item .p-breadcrumb-item-link {
+  color: #1a6b45;
+}
+
+:host ::ng-deep .pf-breadcrumb .p-breadcrumb-separator {
+  color: #94a3b8;
+}
+
 .sidebar {
   width: 256px;
   min-width: 256px;
   background: #f7f9fc;
   border-right: 1px solid #d9e0ea;
   padding: 1px 14px 12px;
+  transition: width 0.22s ease, min-width 0.22s ease, padding 0.22s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.sidebar.collapsed {
+  width: 56px;
+  min-width: 56px;
+  padding: 1px 6px 12px;
+}
+
+.sidebar.collapsed .nav-label,
+.sidebar.collapsed .sidebar-logo .brand-logo {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-logo {
+  justify-content: center;
+  padding: 0.6rem 0;
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 0.75rem 0;
+  gap: 0;
+}
+
+.sidebar.collapsed .nav-new-sale {
+  padding: 0.75rem 0;
+  justify-content: center;
+  gap: 0;
+}
+
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #d9e0ea;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  position: absolute;
+  right: -14px;
+  top: 72px;
+  z-index: 10;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-toggle:hover {
+  background: #e8f5ef;
+  color: #1a6b45;
+}
+
+.sidebar-toggle svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .sidebar-logo {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0;
-  margin: 0;
   border-bottom: 1px solid #e8edf3;
 }
 
@@ -48,14 +161,13 @@
 
 .sidebar-nav {
   padding: 6px 0 14px;
-  gap: 4px;
   display: flex;
   flex-direction: column;
 }
 
 .nav-item {
-  gap: 12px;
-  padding: 13px 12px;
+  gap: 0.75rem;
+  padding: 0.75rem;
   margin: 0;
   color: #4a5970;
   border-left: 0;
@@ -73,6 +185,17 @@
   color: #0b7b5c;
   background: #e8f5ef;
   border-left-color: transparent;
+}
+
+.nav-subitem {
+  padding-left: 2.25rem;
+  font-size: 13px;
+}
+
+.nav-subitem .nav-glyph {
+  min-width: 16px;
+  width: 16px;
+  height: 16px;
 }
 
 .nav-glyph {
@@ -118,16 +241,13 @@
   background: #162033;
 }
 
-.main {
-  transform-origin: top left;
-}
 
 .topbar {
-  height: 60px;
-  padding: 0 28px;
+  height: 64px;
+  padding: 0 2rem;
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 1rem;
   background: #ffffff;
   border-bottom: 1px solid #e4ebf2;
 }
@@ -180,13 +300,13 @@
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 1rem;
 }
 
 .topbar-zoom {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 0.75rem;
   padding-right: 8px;
   color: #526176;
 }
@@ -207,8 +327,8 @@
 .zoom-custom {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding-left: 14px;
+  gap: 0.5rem;
+  padding-left: 1rem;
   border-left: 1px solid #dde5ee;
 }
 
@@ -252,15 +372,15 @@
 .topbar-divider {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-left: 18px;
+  gap: 0.75rem;
+  padding-left: 1rem;
   border-left: 1px solid #e3eaf2;
 }
 
 .admin-chip {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .admin-info {

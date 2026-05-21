@@ -1,8 +1,11 @@
 <div class="chat-layout">
   <div class="chat-main panel">
-    <div class="chat-messages">
-      <ng-container *ngFor="let message of messages; let index = index">
-        <div *ngIf="message.role === 'user'; else botMessage" class="chat-msg-user">{{ message.message }}</div>
+    <div #messagesViewport class="chat-messages">
+      <ng-container *ngFor="let message of messages">
+        <div *ngIf="message.role === 'user'; else botMessage" class="chat-msg-user">
+          {{ message.message }}
+        </div>
+
         <ng-template #botMessage>
           <div class="chat-msg-bot">
             <div class="chat-bot-row">
@@ -18,20 +21,31 @@
     </div>
 
     <div class="chat-input-area">
-      <span class="chat-tag">Valor AI</span>
-      <input class="chat-input" [(ngModel)]="prompt" placeholder="Como foram minhas vendas nesta semana?" />
-      <button class="chat-send" type="button" (click)="sendMessage()">Enviar</button>
+      <span class="chat-tag">Assistente</span>
+      <input
+        class="chat-input flex-1"
+        [(ngModel)]="prompt"
+        (keydown.enter)="handlePromptKeydown($event)"
+        placeholder="Ex.: vendas de maio, pedido para cliente 11999999999..."
+        aria-label="Mensagem para o assistente"
+      />
+      <button class="chat-send" type="button" [disabled]="isResponding" (click)="sendMessage()">
+        {{ isResponding ? "..." : "Enviar" }}
+      </button>
     </div>
-    <div class="chat-disclaimer">As respostas usam as rotas do chatbot e metricas reais da API quando disponiveis.</div>
+
+    <div class="chat-disclaimer">
+      Groq LLM com regras de seguranca; pedidos exigem cliente cadastrado e validacao no backend.
+    </div>
   </div>
 
-  <div class="chat-sidebar">
-    <div class="panel">
+  <aside class="chat-sidebar" aria-label="Painel do assistente">
+    <div class="panel sidebar-card">
       <div class="panel-title">Sugestoes rapidas</div>
-      <div class="catalog-list">
-        <button *ngFor="let item of ['Vendas de hoje', 'Clientes inadimplentes', 'Resumo do dia', 'Produtos mais vendidos']" class="suggestion-item" type="button" (click)="sendMessage(item)">
+      <div class="catalog-list suggestions-list">
+        <button *ngFor="let item of quickSuggestions" class="suggestion-item" type="button" (click)="sendMessage(item)">
           <div class="sugg-icon">*</div>
-          <div>
+          <div class="sugg-copy">
             <div class="sugg-title">{{ item }}</div>
             <div class="sugg-sub">Consultar metricas pela API.</div>
           </div>
@@ -39,25 +53,77 @@
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-title">Metricas diarias</div>
-      <div *ngIf="isLoading" class="docs-card-sub">Carregando metricas...</div>
-      <div *ngIf="!isLoading && errorMessage" class="docs-card-sub">{{ errorMessage }}</div>
-      <div *ngIf="metrics" class="metrics-list">
-        <div><span>Vendas hoje</span><strong>{{ formatCurrency(metrics.totalSoldToday) }}</strong></div>
-        <div><span>Pedidos pendentes</span><strong>{{ metrics.pedidosPendentes }}</strong></div>
-        <div><span>Fiado aberto</span><strong>{{ metrics.debtClients }}</strong></div>
+    <div class="panel sidebar-card">
+      <div class="sidebar-card-head">
+        <div class="panel-title">Metricas diarias</div>
+        <button class="btn-secondary compact" type="button" (click)="retry()">Atualizar</button>
       </div>
-      <button class="btn-secondary compact" type="button" (click)="retry()">Atualizar</button>
+      <div *ngIf="isLoading" class="sidebar-muted">Carregando metricas...</div>
+      <div *ngIf="!isLoading && errorMessage" class="sidebar-muted sidebar-error">{{ errorMessage }}</div>
+      <div *ngIf="metrics" class="metrics-list">
+        <div class="metrics-row">
+          <span>Vendas hoje</span>
+          <strong>{{ formatCurrency(metrics.totalSoldToday) }}</strong>
+        </div>
+        <div class="metrics-row">
+          <span>Pedidos pendentes</span>
+          <strong>{{ metrics.pedidosPendentes }}</strong>
+        </div>
+        <div class="metrics-row">
+          <span>Fiado aberto</span>
+          <strong>{{ metrics.debtClients }}</strong>
+        </div>
+      </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-title">Documentacao</div>
-      <div class="docs-card">
-        <div class="docs-card-title">Fluxos conectados</div>
-        <div class="docs-card-sub">Pedidos somente para clientes cadastrados, coleta via Evolution, fiado/Serasa e metricas do Sr. Joaquim.</div>
-        <a class="btn-secondary compact" routerLink="/configuracoes">Configurar</a>
+    <div class="panel sidebar-card expandable-card" id="chatbot-weekly-metrics">
+      <button class="expand-trigger" type="button" (click)="toggleWeeklyMetrics()">
+        <span class="panel-title">Metricas semanais</span>
+        <span class="expand-chevron" [class.open]="weeklyExpanded">&rsaquo;</span>
+      </button>
+      <div *ngIf="weeklyExpanded" class="expand-body">
+        <div *ngIf="weeklyLoading" class="sidebar-muted">Carregando semana...</div>
+        <div *ngIf="weeklyError" class="sidebar-muted sidebar-error">{{ weeklyError }}</div>
+        <div *ngIf="weeklyMetrics" class="metrics-list">
+          <div class="metrics-row">
+            <span>Total vendido</span>
+            <strong>{{ formatCurrency(weeklyMetrics.totalSold) }}</strong>
+          </div>
+          <div class="metrics-row">
+            <span>Vendas</span>
+            <strong>{{ weeklyMetrics.salesCount }}</strong>
+          </div>
+          <div class="metrics-row">
+            <span>Ticket medio</span>
+            <strong>{{ formatCurrency(weeklyMetrics.averageTicket) }}</strong>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+
+    <div class="panel sidebar-card expandable-card" id="chatbot-monthly-metrics">
+      <button class="expand-trigger" type="button" (click)="toggleMonthlyMetrics()">
+        <span class="panel-title">Metricas mensais</span>
+        <span class="expand-chevron" [class.open]="monthlyExpanded">&rsaquo;</span>
+      </button>
+      <div *ngIf="monthlyExpanded" class="expand-body">
+        <div *ngIf="monthlyLoading" class="sidebar-muted">Carregando mes...</div>
+        <div *ngIf="monthlyError" class="sidebar-muted sidebar-error">{{ monthlyError }}</div>
+        <div *ngIf="monthlyMetrics" class="metrics-list">
+          <div class="metrics-row">
+            <span>Total vendido</span>
+            <strong>{{ formatCurrency(monthlyMetrics.totalSold) }}</strong>
+          </div>
+          <div class="metrics-row">
+            <span>Vendas</span>
+            <strong>{{ monthlyMetrics.salesCount }}</strong>
+          </div>
+          <div class="metrics-row">
+            <span>Ticket medio</span>
+            <strong>{{ formatCurrency(monthlyMetrics.averageTicket) }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
 </div>

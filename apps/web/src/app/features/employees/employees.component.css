@@ -41,12 +41,8 @@
   line-height: 1;
 }
 
-.stats-row {
-  margin-bottom: 1rem;
-}
-
 .stat-row-item {
-  padding: 1rem 1.1rem;
+  padding: 1.25rem;
   border-radius: 14px;
   background: var(--surface);
   border: 1px solid var(--border);

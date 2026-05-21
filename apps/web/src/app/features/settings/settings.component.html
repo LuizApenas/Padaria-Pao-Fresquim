@@ -1,11 +1,16 @@
+﻿<!-- apps/web/src/app/features/settings/settings.component.html -->
+<div class="settings-page feature-page">
 <div class="page-header">
   <div>
     <div class="page-title">Configuracoes do chatbot</div>
     <div class="page-subtitle">Evolution API, webhook, avisos de coleta, fiado e metricas para o proprietario.</div>
   </div>
-  <button class="btn-primary" type="button" [disabled]="isSaving" (click)="saveSettings()">
+  <div class="settings-header-actions">
+    <a class="btn-secondary" routerLink="/configuracoes/chatbot-fluxo">Ver fluxo e prompt do chatbot</a>
+    <button class="btn-primary" type="button" [disabled]="isSaving" (click)="saveSettings()">
     {{ isSaving ? "Salvando..." : "Salvar configuracoes" }}
-  </button>
+    </button>
+  </div>
 </div>
 
 <div *ngIf="isLoading" class="panel">Carregando configuracoes do chatbot...</div>
@@ -34,11 +39,35 @@
       </div>
       <div class="form-group">
         <label class="form-label">WhatsApp do Sr. Joaquim</label>
-        <input class="form-input" name="ownerPhone" [(ngModel)]="settings.ownerPhone" placeholder="5599999999999" />
+        <input class="form-input" name="ownerPhone" [(ngModel)]="settings.ownerPhone" placeholder="5511999990001" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Buffer de mensagens (ms)</label>
+        <input
+          class="form-input"
+          type="number"
+          name="messageBufferMs"
+          [(ngModel)]="settings.messageBufferMs"
+          min="500"
+          max="15000"
+          placeholder="2500"
+        />
+        <div class="client-time">Aguarda este tempo apos a ultima mensagem do cliente antes de responder no WhatsApp.</div>
       </div>
       <div class="form-group settings-full">
         <label class="form-label">URL do webhook para colar na Evolution</label>
         <input class="form-input" [value]="webhookUrl" readonly />
+      </div>
+      <div class="form-group settings-full">
+        <label class="form-label">Mensagem de teste</label>
+        <textarea class="form-input settings-textarea" [(ngModel)]="testMessage" rows="2"></textarea>
+      </div>
+      <div *ngIf="testMessageResult" class="settings-full settings-success">{{ testMessageResult }}</div>
+      <div *ngIf="testMessageError" class="settings-full settings-error">{{ testMessageError }}</div>
+      <div class="settings-actions settings-full">
+        <button class="btn-secondary" type="button" [disabled]="isSendingTest" (click)="sendTestMessage()">
+          {{ isSendingTest ? "Enviando..." : "Enviar teste" }}
+        </button>
       </div>
     </div>
   </div>
@@ -69,4 +98,5 @@
       </div>
     </div>
   </div>
+</div>
 </div>

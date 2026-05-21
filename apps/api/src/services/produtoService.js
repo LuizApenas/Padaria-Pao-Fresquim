@@ -2,6 +2,7 @@ import { prisma } from "../config/prisma.js";
 import { AppError } from "../utils/AppError.js";
 import {
   ensurePositiveNumber,
+  normalizeImagemUrl,
   parseId,
   requireFields,
   toMoney,
@@ -34,9 +35,12 @@ function buildProdutoData(data, { partial = false } = {}) {
     codigoBarras: data.codigoBarras,
     nome: data.nome,
     categoria: data.categoria,
-    imagemUrl: data.imagemUrl,
     ativo: data.ativo,
   };
+
+  if (data.imagemUrl !== undefined) {
+    produtoData.imagemUrl = normalizeImagemUrl(data.imagemUrl);
+  }
 
   if (data.precoBase !== undefined) {
     produtoData.precoBase = toMoney(ensurePositiveNumber(data.precoBase, "precoBase"));

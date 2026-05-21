@@ -1,0 +1,63 @@
+# Padaria/docker-compose.yml
+# Reference for VPS / EasyPanel. Adjust domains, secrets and URLs before production.
+#
+# Usage (local test):
+#   cp apps/api/.env.example apps/api/.env   # fill secrets
+#   docker compose up --build
+#
+# Web build needs the public API URL:
+#   API_URL=https://api.seudominio.com docker compose up --build
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: padaria-api
+    restart: unless-stopped
+    ports:
+      - "3334:3333"
+    environment:
+      NODE_ENV: production
+      PORT: "3333"
+      DATABASE_URL: ${DATABASE_URL}
+      DIRECT_URL: ${DIRECT_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_STORAGE_BUCKET_PRODUTOS: ${SUPABASE_STORAGE_BUCKET_PRODUTOS:-produtos}
+      SUPABASE_STORAGE_BUCKET_FUNCIONARIOS: ${SUPABASE_STORAGE_BUCKET_FUNCIONARIOS:-}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4200,http://localhost:8080}
+    volumes:
+      - api_runtime:/app/apps/api/.runtime
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3333/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        API_URL: ${API_URL:-http://localhost:3333}
+    container_name: padaria-web
+    restart: unless-stopped
+    ports:
+      - "83:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  api_runtime:

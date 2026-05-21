@@ -4,7 +4,7 @@ import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
 import { Product } from "../models";
 
-const API_BASE_URL = "http://localhost:3333";
+import { API_BASE_URL } from "../config/api-base-url";
 
 export type PaginatedProductsResponse = {
   data: Product[];

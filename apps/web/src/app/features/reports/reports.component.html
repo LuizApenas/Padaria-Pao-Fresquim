@@ -1,58 +1,250 @@
+<!-- apps/web/src/app/features/reports/reports.component.html -->
+
+<div class="reports-page feature-page">
 <div class="page-header">
+
   <div>
+
     <div class="page-title">Relatorios</div>
-    <div class="page-subtitle">KPIs consolidados, top produtos e vendas por periodo vindos da API.</div>
+
+    <div class="page-subtitle">KPIs, volume de vendas e top produtos por periodo.</div>
+
   </div>
-  <div class="toolbar report-toolbar">
-    <input class="form-input" type="date" [(ngModel)]="dataInicio" aria-label="Data inicial" />
-    <input class="form-input" type="date" [(ngModel)]="dataFim" aria-label="Data final" />
-    <button class="btn-primary" type="button" (click)="applyFilters()">Gerar relatorio</button>
-  </div>
+
 </div>
 
-<div *ngIf="isLoading" class="panel empty-state">Carregando relatorio da API...</div>
 
-<div *ngIf="!isLoading && errorMessage" class="panel empty-state">
-  <div>{{ errorMessage }}</div>
-  <button class="btn-secondary retry-button" type="button" (click)="retry()">Tentar novamente</button>
+
+<div class="report-controls">
+
+  <div class="preset-tabs">
+
+    <button
+
+      *ngFor="let p of presets"
+
+      class="preset-tab"
+
+      [class.active]="activePreset === p.id"
+
+      type="button"
+
+      (click)="applyPreset(p.id)"
+
+    >{{ p.label }}</button>
+
+  </div>
+
+
+
+  <div class="custom-filter" [class.open]="activePreset === 'custom'">
+
+    <input class="form-input date-input" type="date" [(ngModel)]="dataInicio" aria-label="Data inicial" />
+
+    <span class="date-sep">→</span>
+
+    <input class="form-input date-input" type="date" [(ngModel)]="dataFim" aria-label="Data final" />
+
+    <button class="btn-primary compact" type="button" (click)="applyCustom()">Gerar</button>
+
+  </div>
+
 </div>
+
+
+
+<div *ngIf="isLoading" class="panel state-panel">
+
+  <div class="state-spinner"></div>
+
+  <span>Carregando relatorio...</span>
+
+</div>
+
+
+
+<div *ngIf="!isLoading && errorMessage" class="panel state-panel state-error">
+
+  <span>{{ errorMessage }}</span>
+
+  <button class="btn-secondary compact" type="button" (click)="retry()">Tentar novamente</button>
+
+</div>
+
+
 
 <ng-container *ngIf="!isLoading && !errorMessage">
-  <div class="stats-grid">
-    <div class="stat-card"><div class="stat-label">Total vendido</div><div class="stat-value">{{ formatCurrency(report.totalSold) }}</div></div>
-    <div class="stat-card"><div class="stat-label">Numero de vendas</div><div class="stat-value">{{ report.totalOrders }}</div></div>
-    <div class="stat-card"><div class="stat-label">Ticket medio</div><div class="stat-value">{{ formatCurrency(report.averageTicket) }}</div></div>
-    <div class="stat-card"><div class="stat-label">Crescimento</div><div class="stat-value">{{ growthLabel }}</div></div>
-  </div>
 
-  <div class="row col-2">
-    <div class="panel">
-      <div class="panel-title">Volume de vendas diario</div>
-      <div class="panel-sub">Desempenho acumulado no periodo selecionado</div>
-      <div class="bar-chart" *ngIf="report.dailySales.length; else noDailySales">
-        <div *ngFor="let item of report.dailySales; let index = index" class="bar-wrap">
-          <div class="bar" [class.active]="index >= report.dailySales.length / 2" [style.height.px]="getBarHeight(item.value)"></div>
-          <div class="bar-label">{{ item.day }}</div>
-          <div class="bar-value">{{ item.orders }}</div>
-        </div>
-      </div>
-      <ng-template #noDailySales>
-        <div class="empty-state">Nenhuma venda no periodo.</div>
-      </ng-template>
+
+
+  <div class="kpi-strip">
+
+    <div class="kpi-card">
+
+      <div class="kpi-label">Total vendido</div>
+
+      <div class="kpi-value">{{ formatCurrency(report.totalSold) }}</div>
+
     </div>
 
-    <div class="panel">
-      <div class="panel-title">Top produtos</div>
-      <div class="panel-sub">Itens com melhor saida no periodo</div>
-      <div *ngFor="let product of report.topProducts; let index = index" class="top-product-item">
-        <div class="top-rank">{{ index + 1 }}</div>
+    <div class="kpi-divider"></div>
+
+    <div class="kpi-card">
+
+      <div class="kpi-label">Numero de vendas</div>
+
+      <div class="kpi-value">{{ report.totalOrders }}</div>
+
+    </div>
+
+    <div class="kpi-divider"></div>
+
+    <div class="kpi-card">
+
+      <div class="kpi-label">Ticket medio</div>
+
+      <div class="kpi-value">{{ formatCurrency(report.averageTicket) }}</div>
+
+    </div>
+
+    <div class="kpi-divider"></div>
+
+    <div class="kpi-card">
+
+      <div class="kpi-label">Crescimento</div>
+
+      <div class="kpi-value kpi-growth" [class.pos]="growthPositive" [class.neg]="growthNegative">
+
+        {{ growthLabel }}
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="reports-grid">
+
+
+
+    <div class="panel chart-panel">
+
+      <div class="chart-panel-header">
+
         <div>
-          <div class="top-product-name">{{ product.name }}</div>
-          <div class="top-product-revenue">{{ formatCurrency(product.revenue) }}</div>
+
+          <div class="panel-title">Volume de vendas</div>
+
+          <div class="panel-sub">{{ chartSubtitle }}</div>
+
         </div>
-        <div class="top-product-sales">{{ product.sales }} un.</div>
+
+        <div class="chart-header-actions">
+
+          <div class="chart-view-tabs" role="tablist" aria-label="Visualizacao do grafico">
+
+            <button
+
+              *ngFor="let view of chartViews"
+
+              class="chart-view-tab"
+
+              type="button"
+
+              role="tab"
+
+              [attr.aria-selected]="chartView === view.id"
+
+              [class.active]="chartView === view.id"
+
+              (click)="setChartView(view.id)"
+
+            >{{ view.label }}</button>
+
+          </div>
+
+          <div class="chart-legend">
+
+            <span class="legend-dot"></span><span>Receita (R$)</span>
+
+          </div>
+
+        </div>
+
       </div>
-      <div *ngIf="report.topProducts.length === 0" class="empty-state">Sem produtos vendidos no periodo.</div>
+
+
+
+      <pf-sales-chart class="reports-sales-chart" [points]="chartBars" />
+
     </div>
+
+
+
+    <div class="panel products-panel">
+
+      <div class="panel-title">Top produtos</div>
+
+      <div class="panel-sub">Itens com melhor saida no periodo</div>
+
+
+
+      <div class="products-list" *ngIf="report.topProducts.length; else noProducts">
+
+        <div *ngFor="let product of report.topProducts; let index = index" class="product-row">
+
+          <div
+
+            class="prod-rank"
+
+            [class.gold]="index === 0"
+
+            [class.silver]="index === 1"
+
+            [class.bronze]="index === 2"
+
+          >{{ index + 1 }}</div>
+
+
+
+          <div class="prod-info">
+
+            <div class="prod-name">{{ product.name }}</div>
+
+            <div class="prod-bar-wrap">
+
+              <div class="prod-bar-fill" [style.width.%]="getProductBarWidth(product.sales)"></div>
+
+            </div>
+
+            <div class="prod-revenue">{{ formatCurrency(product.revenue) }}</div>
+
+          </div>
+
+
+
+          <div class="prod-units">{{ product.sales }}<small>un.</small></div>
+
+        </div>
+
+      </div>
+
+
+
+      <ng-template #noProducts>
+
+        <div class="empty-state">Sem produtos vendidos neste periodo.</div>
+
+      </ng-template>
+
+    </div>
+
+
+
   </div>
+
 </ng-container>
+</div>
+

@@ -1,0 +1,8 @@
+<div class="sales-chart-wrap">
+  <div class="sales-chart-canvas">
+    <canvas #canvas aria-label="Grafico de vendas"></canvas>
+    <div *ngIf="!points.length" class="sales-chart-empty-overlay">
+      Sem dados de vendas no periodo.
+    </div>
+  </div>
+</div>

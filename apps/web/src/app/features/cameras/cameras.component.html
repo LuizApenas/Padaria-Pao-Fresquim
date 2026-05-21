@@ -1,3 +1,5 @@
+<!-- apps/web/src/app/features/cameras/cameras.component.html -->
+<div class="cameras-page feature-page">
 <div class="page-header">
   <div>
     <div class="page-title">Monitoramento</div>
@@ -79,12 +81,20 @@
 
   <div class="log-panel">
     <div class="log-header">Log de eventos</div>
-    <div *ngFor="let log of logs" class="log-item">
-      <div class="log-time">{{ log.time }}</div>
-      <div class="log-msg">{{ log.message }}</div>
-      <div class="log-tag" [class.log-critical]="log.tone === 'danger'" [class.log-system]="log.tone === 'success'" [class.log-info]="log.tone === 'info'">
-        {{ log.tone.toUpperCase() }}
+    <div class="log-list">
+      <div *ngFor="let log of logs" class="log-item">
+        <div class="log-time">{{ log.time }}</div>
+        <div class="log-msg">{{ log.message }}</div>
+        <div
+          class="log-tag"
+          [class.log-critical]="log.tone === 'danger'"
+          [class.log-system]="log.tone === 'success'"
+          [class.log-info]="log.tone === 'info'"
+        >
+          {{ log.tone.toUpperCase() }}
+        </div>
       </div>
     </div>
   </div>
+</div>
 </div>

@@ -1,32 +1,94 @@
+// apps/api/src/services/chatbotSettingsService.js
+// Persiste configuracoes do chatbot (Evolution, webhook, toggles de avisos e metricas) em arquivo local.
+
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
+import { prisma } from "../config/prisma.js";
+import {
+  LEGACY_CHATBOT_OWNER_PHONE_PLACEHOLDER,
+  SEED_PROPRIETARIO_EMAIL,
+  SEED_PROPRIETARIO_OWNER_PHONE_E164,
+  normalizePhoneToE164,
+} from "../constants/seedDefaults.js";
+
+// Arquivo JSON local (nao versionado) com credenciais Evolution e flags de negocio.
 const SETTINGS_PATH = resolve(process.cwd(), ".runtime", "chatbot-config.json");
 
+// Valores padrao quando o arquivo ainda nao existe.
 const DEFAULT_SETTINGS = {
   evolutionApiUrl: "",
   evolutionApiKey: "",
   evolutionDispatchPath: "/message/sendText",
   webhookToken: "",
-  ownerPhone: "",
+  ownerPhone: SEED_PROPRIETARIO_OWNER_PHONE_E164,
   orderReadyNotificationsEnabled: true,
   debtWarningsEnabled: true,
   dailyMetricsEnabled: true,
+  // Debounce do webhook WhatsApp: aguarda N ms apos a ultima mensagem antes de responder.
+  messageBufferMs: 2500,
 };
 
+function isLegacyOwnerPhonePlaceholder(phone = "") {
+  const digits = String(phone).replace(/\D/g, "");
+  const legacyDigits = LEGACY_CHATBOT_OWNER_PHONE_PLACEHOLDER.replace(/\D/g, "");
+
+  return digits === legacyDigits;
+}
+
+// Prefere telefone do proprietario seedado no banco; cai no valor do seed/constants.
+async function resolveDefaultOwnerPhone() {
+  const envOverride = process.env.CHATBOT_DEFAULT_OWNER_PHONE?.trim();
+
+  if (envOverride) {
+    return normalizePhoneToE164(envOverride);
+  }
+
+  try {
+    const proprietario = await prisma.funcionario.findFirst({
+      where: {
+        role: "PROPRIETARIO",
+        ativo: true,
+        email: SEED_PROPRIETARIO_EMAIL,
+      },
+      select: { telefone: true },
+      orderBy: { id: "asc" },
+    });
+
+    if (proprietario?.telefone) {
+      return normalizePhoneToE164(proprietario.telefone);
+    }
+  } catch {
+    // DB may be unavailable during early startup; keep seed fallback.
+  }
+
+  return SEED_PROPRIETARIO_OWNER_PHONE_E164;
+}
+
+// Garante tipos corretos e strings vazias em vez de undefined.
 function sanitizeSettings(settings) {
+  const ownerPhoneRaw = settings.ownerPhone ?? "";
+  const ownerPhone = ownerPhoneRaw ? normalizePhoneToE164(ownerPhoneRaw) : "";
+
   return {
     evolutionApiUrl: settings.evolutionApiUrl ?? "",
     evolutionApiKey: settings.evolutionApiKey ?? "",
     evolutionDispatchPath: settings.evolutionDispatchPath ?? "/message/sendText",
     webhookToken: settings.webhookToken ?? "",
-    ownerPhone: settings.ownerPhone ?? "",
+    ownerPhone,
     orderReadyNotificationsEnabled: Boolean(settings.orderReadyNotificationsEnabled),
     debtWarningsEnabled: Boolean(settings.debtWarningsEnabled),
     dailyMetricsEnabled: Boolean(settings.dailyMetricsEnabled),
+    messageBufferMs: Number(settings.messageBufferMs) > 0 ? Number(settings.messageBufferMs) : 2500,
   };
 }
 
+async function persistSettings(settings) {
+  await mkdir(dirname(SETTINGS_PATH), { recursive: true });
+  await writeFile(SETTINGS_PATH, JSON.stringify(settings, null, 2));
+}
+
+// Le configuracoes do disco; falha silenciosa retorna apenas DEFAULT_SETTINGS.
 export async function getChatbotSettings() {
   let persisted = {};
 
@@ -36,12 +98,30 @@ export async function getChatbotSettings() {
     persisted = {};
   }
 
-  return sanitizeSettings({
+  let settings = sanitizeSettings({
     ...DEFAULT_SETTINGS,
     ...persisted,
   });
+
+  const defaultOwnerPhone = await resolveDefaultOwnerPhone();
+  let needsPersist = false;
+
+  if (isLegacyOwnerPhonePlaceholder(settings.ownerPhone) || !settings.ownerPhone) {
+    settings = {
+      ...settings,
+      ownerPhone: defaultOwnerPhone,
+    };
+    needsPersist = true;
+  }
+
+  if (needsPersist) {
+    await persistSettings(settings);
+  }
+
+  return settings;
 }
 
+// Mescla payload do painel com configuracao atual e persiste em .runtime/chatbot-config.json.
 export async function updateChatbotSettings(data) {
   const current = await getChatbotSettings();
   const next = sanitizeSettings({
@@ -54,10 +134,10 @@ export async function updateChatbotSettings(data) {
     orderReadyNotificationsEnabled: data.orderReadyNotificationsEnabled,
     debtWarningsEnabled: data.debtWarningsEnabled,
     dailyMetricsEnabled: data.dailyMetricsEnabled,
+    messageBufferMs: data.messageBufferMs,
   });
 
-  await mkdir(dirname(SETTINGS_PATH), { recursive: true });
-  await writeFile(SETTINGS_PATH, JSON.stringify(next, null, 2));
+  await persistSettings(next);
 
   return next;
 }

@@ -4,7 +4,7 @@ import { Observable } from "rxjs";
 import { map, timeout } from "rxjs/operators";
 import { Debtor } from "../models";
 
-const API_BASE_URL = "http://localhost:3333";
+import { API_BASE_URL } from "../config/api-base-url";
 const NO_CACHE_HEADERS = new HttpHeaders({
   "Cache-Control": "no-cache",
   Pragma: "no-cache",

@@ -1,11 +1,11 @@
 // apps/api/scripts/seed-ponto-historico.js
-// Generates historical clock-in records for active employees (01/05 to 18/05).
+// Generates historical clock-in records for active employees (01/05 to 31/05).
 import "dotenv/config";
 
 import { prisma } from "../src/config/prisma.js";
 
 const PERIOD_START = { year: 2026, month: 5, day: 1 };
-const PERIOD_END = { year: 2026, month: 5, day: 18 };
+const PERIOD_END = { year: 2026, month: 5, day: 31 };
 
 const SHIFT_BY_ROLE = {
   PADEIRO: { entrada: [5, 30], saida: [14, 0] },
@@ -116,7 +116,7 @@ async function main() {
         diasUteis: days.length,
         removidosNoPeriodo: deleted.count,
         registrosCriados: created,
-        periodo: "01/05/2026 a 18/05/2026",
+        periodo: "01/05/2026 a 31/05/2026",
       },
       null,
       2,

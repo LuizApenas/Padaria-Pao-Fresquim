@@ -1,10 +1,11 @@
-<div class="employee-ops-page">
-  <div class="employee-ops-header">
+<!-- apps/web/src/app/features/employees/employee-timecard.component.html -->
+<div class="employee-ops-page feature-page">
+  <div class="page-header employee-ops-header">
     <div>
-      <div class="employee-ops-title">Cartao de ponto</div>
-      <div class="employee-ops-subtitle">{{ employeeName }} · visao diaria de entradas e saidas</div>
+      <div class="page-title">Cartao de ponto</div>
+      <div class="page-subtitle">{{ employeeName }} · visao diaria de entradas e saidas</div>
     </div>
-    <div class="employee-ops-actions">
+    <div class="toolbar employee-ops-actions">
       <a class="btn-secondary" routerLink="/funcionarios">Voltar</a>
       <a class="btn-secondary" [routerLink]="['/funcionarios', employeeId, 'documentos']">Documentos</a>
       <button class="btn-secondary" type="button" (click)="registerPoint('ENTRADA')">Registrar entrada</button>
@@ -12,7 +13,7 @@
     </div>
   </div>
 
-  <div class="employee-ops-actions">
+  <div class="panel employee-ops-toolbar">
     <label>
       Mes
       <input class="form-input" type="number" min="1" max="12" [(ngModel)]="filterMonth" />

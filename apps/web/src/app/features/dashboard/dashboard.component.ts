@@ -5,6 +5,12 @@ import { Sale } from "../../core/models";
 import { DashboardReport, DailySalesReport, ReportsApiService } from "../../core/services/reports-api.service";
 import { SalesApiService } from "../../core/services/sales-api.service";
 import { formatCurrency } from "../../core/utils/format";
+import {
+  aggregateDailyByWeek,
+  dailyToChartPoints,
+  SalesChartPoint,
+} from "../../core/utils/sales-chart-aggregation";
+import { SalesChartComponent } from "../../shared/sales-chart/sales-chart.component";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
 
 type DashboardAlert = {
@@ -16,7 +22,7 @@ type DashboardAlert = {
 @Component({
   selector: "pf-dashboard",
   standalone: true,
-  imports: [CommonModule, RouterLink, StatusBadgeComponent],
+  imports: [CommonModule, RouterLink, StatusBadgeComponent, SalesChartComponent],
   templateUrl: "./dashboard.component.html",
   styleUrl: "./dashboard.component.css"
 })
@@ -35,7 +41,6 @@ export class DashboardComponent implements OnInit {
   errorMessage = "";
   readonly formatCurrency = formatCurrency;
   selectedPeriod: "semana" | "mes" = "semana";
-  hoveredIndex: number | null = null;
 
   constructor(
     private readonly reportsApiService: ReportsApiService,
@@ -68,8 +73,12 @@ export class DashboardComponent implements OnInit {
     ];
   }
 
-  get chartData(): DailySalesReport[] {
-    return this.selectedPeriod === "semana" ? this.weekSales : this.monthSales;
+  get chartPoints(): SalesChartPoint[] {
+    if (this.selectedPeriod === "semana") {
+      return dailyToChartPoints(this.weekSales);
+    }
+
+    return aggregateDailyByWeek(this.monthSales);
   }
 
   get chartSubtitle(): string {
@@ -79,23 +88,23 @@ export class DashboardComponent implements OnInit {
   }
 
   get chartTotal(): number {
-    return this.chartData.reduce((sum, item) => sum + item.value, 0);
+    return this.chartPoints.reduce((sum, item) => sum + item.value, 0);
   }
 
   get chartAverage(): number {
-    if (!this.chartData.length) {
+    if (!this.chartPoints.length) {
       return 0;
     }
 
-    return Number((this.chartTotal / this.chartData.length).toFixed(2));
+    return Number((this.chartTotal / this.chartPoints.length).toFixed(2));
   }
 
-  get chartPeak(): DailySalesReport {
-    if (!this.chartData.length) {
-      return { date: "", day: "-", value: 0, orders: 0 };
+  get chartPeak(): SalesChartPoint {
+    if (!this.chartPoints.length) {
+      return { key: "", label: "-", value: 0, orders: 0 };
     }
 
-    return this.chartData.reduce((highest, current) =>
+    return this.chartPoints.reduce((highest, current) =>
       current.value > highest.value ? current : highest,
     );
   }
@@ -112,17 +121,6 @@ export class DashboardComponent implements OnInit {
 
   setPeriod(period: "semana" | "mes"): void {
     this.selectedPeriod = period;
-    this.hoveredIndex = null;
-  }
-
-  setHoveredIndex(index: number | null): void {
-    this.hoveredIndex = index;
-  }
-
-  getBarHeight(value: number): number {
-    const max = Math.max(...this.chartData.map((item) => item.value), 1);
-    const normalized = (value / max) * 220;
-    return normalized < 72 ? 72 : normalized;
   }
 
   getInitials(name: string): string {
@@ -154,6 +152,8 @@ export class DashboardComponent implements OnInit {
           }
 
           this.changeDetectorRef.detectChanges();
+          // Chart.js needs a second pass after async data binds to the chart component.
+          setTimeout(() => this.changeDetectorRef.detectChanges(), 0);
         });
       }
     };

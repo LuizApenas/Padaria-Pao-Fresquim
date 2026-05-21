@@ -53,7 +53,15 @@ export const routes: Routes = [
       { path: "relatorios", component: ReportsComponent, data: { pageId: "relatorios" } },
       { path: "cameras", component: CamerasComponent, data: { pageId: "cameras" } },
       { path: "chatbot", component: ChatbotComponent, data: { pageId: "chatbot" } },
-      { path: "configuracoes", component: SettingsComponent, data: { pageId: "configuracoes" } }
+      { path: "configuracoes", component: SettingsComponent, data: { pageId: "configuracoes" } },
+      {
+        path: "configuracoes/chatbot-fluxo",
+        loadComponent: () =>
+          import("./features/chatbot-fluxo/chatbot-fluxo.component").then(
+            (module) => module.ChatbotFluxoComponent,
+          ),
+        data: { pageId: "chatbot-fluxo" },
+      },
     ]
   },
   { path: "**", redirectTo: "" }

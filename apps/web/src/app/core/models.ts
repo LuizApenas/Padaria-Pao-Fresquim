@@ -4,6 +4,8 @@ export interface PageMeta {
   path: string;
   icon: string;
   placeholder: string;
+  /** When set, item is rendered indented under the parent nav entry in the shell sidebar. */
+  parentId?: string;
 }
 
 export interface Client {

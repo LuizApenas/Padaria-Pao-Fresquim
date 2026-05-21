@@ -64,7 +64,24 @@ function getPrismaErrorCode(error) {
   return null;
 }
 
+function isPayloadTooLargeError(error) {
+  return (
+    error?.type === "entity.too.large" ||
+    error?.status === 413 ||
+    error?.statusCode === 413 ||
+    error?.name === "PayloadTooLargeError"
+  );
+}
+
 export function errorHandler(error, _request, response, _next) {
+  if (isPayloadTooLargeError(error)) {
+    return response.status(413).json(
+      buildErrorResponse(
+        "Corpo da requisicao muito grande. Nao envie imagens em base64; use uma URL http(s) ou cadastre sem imagem.",
+      ),
+    );
+  }
+
   // Trata erros gerados manualmente pela própria aplicação.
   if (error instanceof AppError) {
     return response

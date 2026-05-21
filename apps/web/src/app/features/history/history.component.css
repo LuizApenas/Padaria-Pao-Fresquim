@@ -1,17 +1,12 @@
-.historic-filters {
+﻿.historic-filters {
   display: flex;
   align-items: end;
   gap: 1rem;
-  margin-bottom: 1rem;
   flex-wrap: wrap;
 }
 
-.history-stats {
-  margin-bottom: 1rem;
-}
-
 .history-stats .stat-card {
-  padding: 1rem 1.1rem;
+  padding: 1.25rem;
 }
 
 .retry-button {

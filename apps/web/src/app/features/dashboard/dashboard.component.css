@@ -99,7 +99,10 @@
 }
 
 .performance-panel {
-  padding: 1.8rem 1.9rem 1.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 1.5rem 1.6rem 1.35rem;
   border-radius: 14px;
   background:
     radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 26%),
@@ -111,7 +114,7 @@
   align-items: start;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .performance-title,
@@ -148,8 +151,8 @@
 .performance-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.9rem;
-  margin-bottom: 1.3rem;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .performance-kpi {
@@ -181,91 +184,17 @@
 }
 
 .dashboard-chart {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  align-items: end;
-  gap: 0.9rem;
-  min-height: 320px;
-  padding: 1.2rem 0.2rem 0;
-  overflow: visible;
-}
-
-.chart-grid {
-  position: absolute;
-  inset: 0 0 1.45rem 0;
-  display: grid;
-  grid-template-rows: repeat(4, 1fr);
-  pointer-events: none;
-}
-
-.chart-grid span {
-  border-top: 1px dashed #dbe5f0;
-}
-
-.bar-wrap {
-  position: relative;
-  z-index: 1;
-  min-width: 0;
-  height: 100%;
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  align-items: end;
-  justify-items: center;
-  gap: 0.55rem;
-}
-
-.bar-tooltip {
-  position: absolute;
-  top: -2.25rem;
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  opacity: 0;
-  pointer-events: none;
-  white-space: nowrap;
-  padding: 0.45rem 0.65rem;
-  border-radius: 8px;
-  background: #13213a;
-  color: #ffffff;
-  font-size: 0.78rem;
-  font-weight: 700;
-  transition: opacity 0.16s ease, transform 0.16s ease;
-}
-
-.bar-tooltip.visible {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.bar-value {
-  color: #8a97ab;
-  font-size: 0.72rem;
-  font-weight: 800;
-}
-
-.bar {
+  display: block;
   width: 100%;
-  max-width: 56px;
-  align-self: end;
-  border-radius: 18px 18px 8px 8px;
-  background: linear-gradient(180deg, #dbe5f2, #cfd9e7);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
-}
-
-.bar.active {
-  background: linear-gradient(180deg, #21b47a, #0e7a51);
-  box-shadow: 0 14px 24px rgba(14, 122, 81, 0.18);
-}
-
-.bar-label {
-  color: #334155;
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  flex: 1;
+  min-height: 320px;
+  margin-top: 0.25rem;
 }
 
 .dashboard-alerts {
-  padding: 1.75rem 1.45rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.35rem 1.25rem;
   border-radius: 12px;
   background: #0f1b2f;
   border: 0;
@@ -276,12 +205,14 @@
   color: #ffffff;
   font-size: 1.05rem;
   font-weight: 500;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
 }
 
 .alert-list {
   display: grid;
-  gap: 0.95rem;
+  gap: 0.85rem;
+  flex: 1;
 }
 
 .alert-item {
@@ -349,8 +280,10 @@
 }
 
 .btn-resolve-dashboard {
-  margin-top: 1.55rem;
+  margin-top: auto;
+  padding-top: 1.25rem;
   width: 100%;
+  flex-shrink: 0;
   border: 0;
   border-radius: 10px;
   padding: 1rem;
@@ -486,19 +419,6 @@
   }
 
   .dashboard-chart {
-    gap: 0.45rem;
-    min-height: 260px;
-  }
-
-  .bar {
-    max-width: 36px;
-  }
-
-  .bar-value {
-    font-size: 0.65rem;
-  }
-
-  .bar-label {
-    font-size: 0.7rem;
+    min-height: 240px;
   }
 }

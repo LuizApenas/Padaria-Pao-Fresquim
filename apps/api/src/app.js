@@ -12,8 +12,16 @@ export function createApp() {
 
   // Middleware de segurança com headers HTTP básicos.
   app.use(helmet());
-  // Libera o consumo da API por outros domínios durante o desenvolvimento.
-  app.use(cors());
+  const corsOrigin = process.env.CORS_ORIGIN?.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  app.use(
+    cors({
+      origin: corsOrigin?.length ? corsOrigin : true,
+      credentials: true,
+    }),
+  );
   // Habilita leitura de JSON no corpo das requisições.
   app.use(express.json());
   // Registra logs HTTP no terminal para facilitar depuração.

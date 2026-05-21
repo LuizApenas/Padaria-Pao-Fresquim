@@ -1,34 +1,59 @@
+// apps/web/src/app/features/chatbot/chatbot.component.ts
 import { CommonModule } from "@angular/common";
-import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { NavigationEnd, Router, RouterLink } from "@angular/router";
+import { NavigationEnd, Router } from "@angular/router";
 import { Subscription, filter } from "rxjs";
 import { ChatMessage } from "../../core/models";
-import { ChatbotApiService, ChatbotDailyMetrics } from "../../core/services/chatbot-api.service";
+import {
+  ChatbotApiService,
+  ChatbotDailyMetrics,
+  ChatbotPeriodMetrics,
+} from "../../core/services/chatbot-api.service";
 import { formatCurrency } from "../../core/utils/format";
+import { ChatbotPeriod, parsePeriodFromMessage } from "./chatbot-period.utils";
 
 @Component({
   selector: "pf-chatbot",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: "./chatbot.component.html",
-  styleUrl: "./chatbot.component.css"
+  styleUrl: "./chatbot.component.css",
 })
 export class ChatbotComponent implements OnInit, OnDestroy {
+  @ViewChild("messagesViewport")
+  private messagesViewport?: ElementRef<HTMLElement>;
+
   prompt = "";
   messages: ChatMessage[] = [
     {
       role: "assistant",
-      title: "Valor AI",
-      message: "Chatbot integrado as rotas de pedidos, fiado, Evolution e metricas diarias.",
-      meta: "API",
+      title: "Assistente",
+      message:
+        "Assistente com Groq LLM, regras de seguranca e dados reais da API. Posso ajudar com metricas e pedidos de clientes cadastrados.",
+      meta: "Sistema protegido",
     },
   ];
   metrics: ChatbotDailyMetrics | null = null;
+  weeklyMetrics: ChatbotPeriodMetrics | null = null;
+  monthlyMetrics: ChatbotPeriodMetrics | null = null;
+  weeklyExpanded = false;
+  monthlyExpanded = false;
+  weeklyLoading = false;
+  monthlyLoading = false;
+  weeklyError = "";
+  monthlyError = "";
   isLoading = true;
+  isResponding = false;
   errorMessage = "";
   private readonly routeSubscription: Subscription;
   readonly formatCurrency = formatCurrency;
+  readonly quickSuggestions = [
+    "Vendas de hoje",
+    "Vendas de maio",
+    "Resumo da semana",
+    "Clientes inadimplentes",
+  ];
 
   constructor(
     private readonly chatbotApiService: ChatbotApiService,
@@ -54,20 +79,193 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   }
 
   sendMessage(content = this.prompt.trim()): void {
-    if (!content) {
+    if (!content || this.isResponding) {
       return;
     }
 
+    const previousMessages = this.messages;
     this.messages = [
       ...this.messages,
-      { role: "user", title: "Arthur", message: content, meta: "Agora" },
-      { role: "assistant", title: "Valor AI", message: this.generateChatResponse(content), meta: "API" },
+      { role: "user", title: "Voce", message: content, meta: "Agora" },
     ];
     this.prompt = "";
+    this.renderAndScrollMessages();
+
+    const period = parsePeriodFromMessage(content);
+
+    if (period) {
+      this.replyWithPeriod(content, period);
+      return;
+    }
+
+    this.isResponding = true;
+    this.renderAndScrollMessages();
+
+    this.chatbotApiService.sendMessage({
+      message: content,
+      messages: previousMessages.map((message) => ({
+        role: message.role,
+        message: message.message,
+      })),
+    }).subscribe({
+      next: (response) => {
+        this.ngZone.run(() => {
+          this.appendAssistantMessage(response.reply, response.source === "groq" ? "Groq" : response.intent);
+          this.isResponding = false;
+          this.renderAndScrollMessages();
+        });
+      },
+      error: () => {
+        this.ngZone.run(() => {
+          this.appendAssistantMessage(this.generateDailyResponse(content), "Fallback local");
+          this.isResponding = false;
+          this.renderAndScrollMessages();
+        });
+      },
+    });
+  }
+
+  handlePromptKeydown(event: Event): void {
+    const keyboardEvent = event as KeyboardEvent;
+
+    if (keyboardEvent.shiftKey || this.isResponding) {
+      return;
+    }
+
+    keyboardEvent.preventDefault();
+    this.sendMessage();
   }
 
   retry(): void {
     this.loadMetrics();
+  }
+
+  toggleWeeklyMetrics(): void {
+    this.weeklyExpanded = !this.weeklyExpanded;
+
+    if (this.weeklyExpanded && !this.weeklyMetrics && !this.weeklyLoading) {
+      this.loadWeeklyMetrics();
+    }
+  }
+
+  toggleMonthlyMetrics(): void {
+    this.monthlyExpanded = !this.monthlyExpanded;
+
+    if (this.monthlyExpanded && !this.monthlyMetrics && !this.monthlyLoading) {
+      this.loadMonthlyMetrics();
+    }
+  }
+
+  private loadWeeklyMetrics(): void {
+    const today = new Date();
+    const start = new Date(today);
+    start.setDate(today.getDate() - 6);
+    const fmt = (date: Date) => date.toISOString().slice(0, 10);
+
+    this.weeklyLoading = true;
+    this.weeklyError = "";
+    this.changeDetectorRef.detectChanges();
+
+    this.chatbotApiService.getPeriodMetrics(fmt(start), fmt(today)).subscribe({
+      next: (metrics) => {
+        this.ngZone.run(() => {
+          this.weeklyMetrics = metrics;
+          this.weeklyLoading = false;
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+      error: () => {
+        this.ngZone.run(() => {
+          this.weeklyError = "Nao foi possivel carregar metricas semanais.";
+          this.weeklyLoading = false;
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+    });
+  }
+
+  private loadMonthlyMetrics(): void {
+    const today = new Date();
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    const fmt = (date: Date) => date.toISOString().slice(0, 10);
+
+    this.monthlyLoading = true;
+    this.monthlyError = "";
+    this.changeDetectorRef.detectChanges();
+
+    this.chatbotApiService.getPeriodMetrics(fmt(start), fmt(today)).subscribe({
+      next: (metrics) => {
+        this.ngZone.run(() => {
+          this.monthlyMetrics = metrics;
+          this.monthlyLoading = false;
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+      error: () => {
+        this.ngZone.run(() => {
+          this.monthlyError = "Nao foi possivel carregar metricas mensais.";
+          this.monthlyLoading = false;
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+    });
+  }
+
+  private replyWithPeriod(question: string, period: ChatbotPeriod): void {
+    this.isResponding = true;
+    this.renderAndScrollMessages();
+
+    this.chatbotApiService.getPeriodMetrics(period.dataInicio, period.dataFim).subscribe({
+      next: (metrics) => {
+        this.ngZone.run(() => {
+          this.appendAssistantMessage(
+            this.generatePeriodResponse(question, metrics, period.label),
+            period.label,
+          );
+          this.isResponding = false;
+          this.renderAndScrollMessages();
+        });
+      },
+      error: () => {
+        this.ngZone.run(() => {
+          this.appendAssistantMessage(
+            `Nao consegui consultar ${period.label}. Verifique login e se a API esta online.`,
+            "Erro",
+          );
+          this.isResponding = false;
+          this.renderAndScrollMessages();
+        });
+      },
+    });
+  }
+
+  private appendAssistantMessage(message: string, meta: string): void {
+    this.messages = [
+      ...this.messages,
+      { role: "assistant", title: "Assistente", message, meta },
+    ];
+  }
+
+  private renderAndScrollMessages(): void {
+    this.changeDetectorRef.detectChanges();
+    this.scrollMessagesToBottom();
+  }
+
+  private scrollMessagesToBottom(): void {
+    this.ngZone.runOutsideAngular(() => {
+      window.requestAnimationFrame(() => {
+        const element = this.messagesViewport?.nativeElement;
+
+        if (!element) {
+          return;
+        }
+
+        element.scrollTo({
+          top: element.scrollHeight,
+          behavior: "smooth",
+        });
+      });
+    });
   }
 
   private loadMetrics(): void {
@@ -94,31 +292,83 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     });
   }
 
-  private generateChatResponse(input: string): string {
+  private generateDailyResponse(input: string): string {
     const normalized = input.toLowerCase();
 
     if (!this.metrics) {
-      return "Ainda nao consegui consultar a API do chatbot. Verifique autenticacao e backend.";
+      return "Ainda nao consegui consultar a API. Verifique autenticacao e backend.";
     }
 
+    return this.buildResponseFromMetrics(input, {
+      totalSold: this.metrics.totalSoldToday,
+      salesCount: this.metrics.salesCount,
+      averageTicket: this.metrics.averageTicket,
+      debtClients: this.metrics.debtClients,
+      pedidosPendentes: this.metrics.pedidosPendentes,
+      topProducts: this.metrics.topProducts,
+    }, "hoje");
+  }
+
+  private generatePeriodResponse(
+    input: string,
+    metrics: ChatbotPeriodMetrics,
+    periodLabel: string,
+  ): string {
+    return this.buildResponseFromMetrics(
+      input,
+      {
+        totalSold: metrics.totalSold,
+        salesCount: metrics.salesCount,
+        averageTicket: metrics.averageTicket,
+        debtClients: metrics.debtClients,
+        pedidosPendentes: metrics.pedidosPendentes,
+        topProducts: metrics.topProducts,
+      },
+      periodLabel,
+    );
+  }
+
+  private buildResponseFromMetrics(
+    input: string,
+    metrics: {
+      totalSold: number;
+      salesCount: number;
+      averageTicket: number;
+      debtClients: number;
+      pedidosPendentes: number;
+      topProducts: Array<{ name: string; sales: number }>;
+    },
+    periodLabel: string,
+  ): string {
+    const normalized = input.toLowerCase();
+
     if (normalized.includes("inadimpl") || normalized.includes("fiado") || normalized.includes("deve")) {
-      return `Hoje existem ${this.metrics.debtClients} cliente(s) com fiado em aberto. A rota administrativa permite disparar aviso de Serasa por cliente.`;
+      return `Em ${periodLabel}, o sistema registra ${metrics.debtClients} cliente(s) com fiado em aberto no momento.`;
     }
 
     if (normalized.includes("pedido") || normalized.includes("coleta") || normalized.includes("pronto")) {
-      return `Ha ${this.metrics.pedidosPendentes} pedido(s) pendente(s). Quando um pedido ficar pronto, a API envia a notificacao pela Evolution.`;
-    }
-
-    if (normalized.includes("venda") || normalized.includes("hoje") || normalized.includes("dia")) {
-      return `Hoje foram ${this.metrics.salesCount} venda(s), totalizando ${formatCurrency(this.metrics.totalSoldToday)} com ticket medio de ${formatCurrency(this.metrics.averageTicket)}.`;
+      return `Em ${periodLabel}, ha ${metrics.pedidosPendentes} pedido(s) pendente(s) no periodo consultado.`;
     }
 
     if (normalized.includes("produto")) {
-      const products = this.metrics.topProducts.map((item) => `${item.name} (${item.sales})`).join(", ");
+      const products = metrics.topProducts.map((item) => `${item.name} (${item.sales})`).join(", ");
 
-      return products ? `Produtos em destaque hoje: ${products}.` : "Ainda nao ha produtos vendidos no periodo consultado.";
+      return products
+        ? `Produtos em destaque em ${periodLabel}: ${products}.`
+        : `Nao ha produtos vendidos em ${periodLabel}.`;
     }
 
-    return "Posso consultar pedidos, fiado, avisos de coleta e metricas diarias pelas novas rotas do chatbot.";
+    if (
+      normalized.includes("venda") ||
+      normalized.includes("resumo") ||
+      normalized.includes("hoje") ||
+      normalized.includes("dia") ||
+      normalized.includes("mes") ||
+      normalized.includes("semana")
+    ) {
+      return `Em ${periodLabel}: ${metrics.salesCount} venda(s), total de ${formatCurrency(metrics.totalSold)} e ticket medio de ${formatCurrency(metrics.averageTicket)}.`;
+    }
+
+    return `Consigo responder sobre vendas, produtos, fiado e pedidos usando dados reais. Tente "vendas de maio" ou "resumo da semana".`;
   }
 }

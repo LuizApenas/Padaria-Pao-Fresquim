@@ -15,16 +15,28 @@ Substituir o controle manual da padaria por um sistema digital com foco em:
 
 ## Escopo Atual
 
-- **Fase 1:** backend + banco de dados
-- **Status atual:** estrutura inicial da API, schema do Prisma, seed, `/health` e error handling global
-- **Frontend:** ainda não iniciado nesta etapa
+- **Backend:** API REST completa (clientes, produtos, vendas, fiado, funcionários, ponto, documentos, chatbot/Evolution)
+- **Frontend:** portal Angular (dashboard, PDV, relatórios com visão diária/semanal/mensal, chatbot, configurações)
+- **Auth:** Supabase Auth + perfis (proprietário, atendente, padeiro)
+- **Seeds:** `npm run prisma:seed` (base) e `npm run maio:seed` (dados de maio/2026)
+
+## Deploy (Docker / EasyPanel)
+
+Dois Dockerfiles na raiz do monorepo (contexto de build = pasta `Padaria/`):
+
+- **API:** `apps/api/Dockerfile` — porta `3333`
+- **Web:** `apps/web/Dockerfile` — porta `80`, build arg `API_URL`
+
+Guia completo: [`docs/deploy-easypanel.md`](./docs/deploy-easypanel.md)
+
+Teste local: `docker compose up --build` (defina `API_URL`, `DATABASE_URL`, etc.).
 
 ## Stack do Projeto
 
 - **Backend:** Node.js + Express + Prisma + PostgreSQL + REST
 - **Banco:** PostgreSQL / Supabase
-- **Frontend futuro:** React
-- **Integrações futuras:** Serasa, NF-e, WhatsApp e e-mail
+- **Frontend:** Angular (standalone) + CSS variables
+- **Integrações:** Evolution API (WhatsApp), storage Supabase (PDFs)
 
 ## Estrutura Atual
 
@@ -92,7 +104,9 @@ Resumo:
 4. Execute `npm run prisma:db:push`.
 5. Execute `npm run prisma:seed`.
 6. Suba a API com `npm run dev:api` ou `npm run start:api`.
-7. Teste em `http://localhost:3333/health`.
+7. Suba o front com `npm run dev:web` (portal em `http://localhost:4200`).
+8. Teste a API em `http://localhost:3333/health`.
+9. Opcional: `npm run maio:seed` para popular vendas e ponto de maio/2026.
 
 ## Documentação de Referência
 

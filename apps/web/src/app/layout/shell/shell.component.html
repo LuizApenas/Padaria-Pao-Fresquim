@@ -1,5 +1,5 @@
-<div class="erp-shell">
-  <aside class="sidebar">
+<div class="erp-shell" [class.sidebar-is-collapsed]="sidebarCollapsed">
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
     <div class="sidebar-logo">
       <img src="assets/logo.png" alt="Logo Pão FresQUIM" class="brand-logo">
       <!-- <div class="brand-copy">
@@ -12,6 +12,7 @@
       <a
         *ngFor="let item of navItems"
         class="nav-item"
+        [class.nav-subitem]="item.parentId"
         routerLinkActive="active"
         [routerLink]="item.path"
       >
@@ -65,15 +66,25 @@
               d="M12 8.5A3.5 3.5 0 1 1 8.5 12 3.5 3.5 0 0 1 12 8.5ZM19 12l2-1-1-3-2 .2a7.3 7.3 0 0 0-1.2-1.2l.2-2-3-1-1 2a7.3 7.3 0 0 0-2 0l-1-2-3 1 .2 2A7.3 7.3 0 0 0 6 8.2L4 8l-1 3 2 1a7.3 7.3 0 0 0 0 2l-2 1 1 3 2-.2a7.3 7.3 0 0 0 1.2 1.2l-.2 2 3 1 1-2a7.3 7.3 0 0 0 2 0l1 2 3-1-.2-2a7.3 7.3 0 0 0 1.2-1.2l2 .2 1-3-2-1a7.3 7.3 0 0 0 0-2Z"
             />
           </svg>
+          <svg *ngIf="item.id === 'chatbot-fluxo'" viewBox="0 0 24 24" fill="none">
+            <path d="M7 4h10v16H7zM9 8h6M9 12h6M9 16h4M5 6h2M5 10h2M5 14h2" />
+          </svg>
         </span>
-        <span>{{ item.label }}</span>
+        <span class="nav-label">{{ item.label }}</span>
       </a>
     </nav>
 
     <a class="nav-new-sale" routerLink="/vendas/nova">
       <span>+</span>
-      <span>NOVA VENDA</span>
+      <span class="nav-label">NOVA VENDA</span>
     </a>
+
+    <button class="sidebar-toggle" type="button" (click)="toggleSidebar()" [attr.aria-label]="sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path *ngIf="!sidebarCollapsed" d="M15 18l-6-6 6-6"/>
+        <path *ngIf="sidebarCollapsed"  d="M9 18l6-6-6-6"/>
+      </svg>
+    </button>
   </aside>
 
   <main class="main" [style.zoom]="zoomScale">
@@ -162,6 +173,14 @@
     </header>
 
     <section class="page">
+      <div class="page-breadcrumb-bar">
+        <p-breadcrumb
+          class="pf-breadcrumb"
+          [home]="breadcrumbHome"
+          [model]="breadcrumbItems"
+        />
+        <h1 class="page-current-title">{{ currentPage.label }}</h1>
+      </div>
       <router-outlet></router-outlet>
     </section>
   </main>
