@@ -8,6 +8,8 @@ import {
   ChatbotDocumentacao,
 } from "../../core/services/chatbot-api.service";
 
+type TabId = 'overview' | 'prompt' | 'rules' | 'flow';
+
 @Component({
   selector: "pf-chatbot-fluxo",
   standalone: true,
@@ -15,8 +17,6 @@ import {
   templateUrl: "./chatbot-fluxo.component.html",
   styleUrl: "./chatbot-fluxo.component.css",
 })
-type TabId = 'overview' | 'prompt' | 'rules' | 'flow';
-
 export class ChatbotFluxoComponent implements OnInit {
   doc: ChatbotDocumentacao | null = null;
   isLoading = true;
