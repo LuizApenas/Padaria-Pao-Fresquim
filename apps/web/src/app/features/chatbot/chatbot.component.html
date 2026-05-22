@@ -9,8 +9,9 @@
         <ng-template #botMessage>
           <div class="chat-msg-bot">
             <div class="chat-bot-row">
-              <div class="chat-bot-avatar">AI</div>
-              <div>
+              <div class="chat-bot-avatar" aria-hidden="true">🥖</div>
+              <div class="chat-bot-content">
+                <div class="chat-bot-name">Fresca <span class="chat-bot-tag">Assistente da padaria</span></div>
                 <div class="chat-bot-bubble">{{ message.message }}</div>
                 <div class="chat-meta">{{ message.meta }}</div>
               </div>
@@ -35,7 +36,7 @@
     </div>
 
     <div class="chat-disclaimer">
-      Groq LLM com regras de seguranca; pedidos exigem cliente cadastrado e validacao no backend.
+      Fresca usa dados reais da padaria. Pedidos exigem cliente cadastrado e validacao da equipe.
     </div>
   </div>
 

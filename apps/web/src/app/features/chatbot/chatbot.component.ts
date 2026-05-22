@@ -28,10 +28,10 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   messages: ChatMessage[] = [
     {
       role: "assistant",
-      title: "Assistente",
+      title: "Fresca",
       message:
-        "Assistente com Groq LLM, regras de seguranca e dados reais da API. Posso ajudar com metricas e pedidos de clientes cadastrados.",
-      meta: "Sistema protegido",
+        "Oi, Sr. Joaquim! 🥖 Eu sou a Fresca, assistente da padaria. Posso ajudar com vendas, pedidos, fiado e relatorios — e atendo seus clientes pelo WhatsApp tambem. O que voce quer saber?",
+      meta: "Fresca - assistente da padaria",
     },
   ];
   metrics: ChatbotDailyMetrics | null = null;
@@ -110,7 +110,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: (response) => {
         this.ngZone.run(() => {
-          this.appendAssistantMessage(response.reply, response.source === "groq" ? "Groq" : response.intent);
+          this.appendAssistantMessage(response.reply, response.source === "groq" ? "Fresca" : response.intent);
           this.isResponding = false;
           this.renderAndScrollMessages();
         });
