@@ -76,9 +76,11 @@ export async function dispatchWhatsAppText({ phone, message }) {
       signal: AbortSignal.timeout(10_000),
     });
   } catch (error) {
+    // Usamos 502 mascarado como 422 porque o Traefik do EasyPanel intercepta
+    // respostas 5xx e substitui pela pagina HTML, descartando headers CORS.
     throw new AppError(
       `Falha ao alcancar Evolution (${dispatchUrl}): ${error.message}`,
-      502,
+      422,
     );
   }
 
@@ -87,7 +89,7 @@ export async function dispatchWhatsAppText({ phone, message }) {
 
     throw new AppError(
       `Evolution respondeu ${response.status} em ${dispatchUrl}: ${body || response.statusText}`,
-      502,
+      422,
     );
   }
 
