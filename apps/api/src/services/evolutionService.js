@@ -1,3 +1,4 @@
+import { normalizePhoneToE164 } from "../constants/seedDefaults.js";
 import { AppError } from "../utils/AppError.js";
 import { getChatbotSettings } from "./chatbotSettingsService.js";
 
@@ -27,6 +28,14 @@ function buildDispatchUrl({ baseUrl, dispatchPath }) {
 export async function dispatchWhatsAppText({ phone, message }) {
   if (!phone || !message) {
     throw new AppError("Telefone e mensagem sao obrigatorios para disparo WhatsApp.", 400);
+  }
+
+  // Garante E.164 com DDI 55 antes de bater na Evolution. Sem isso, ela
+  // tenta entregar com o numero local (ex: 34991614690) e falha.
+  const normalizedPhone = normalizePhoneToE164(phone);
+
+  if (!normalizedPhone) {
+    throw new AppError("Telefone invalido para disparo WhatsApp.", 400);
   }
 
   const settings = await getChatbotSettings();
@@ -61,7 +70,7 @@ export async function dispatchWhatsAppText({ phone, message }) {
         ...(config.apiKey ? { apikey: config.apiKey } : {}),
       },
       body: JSON.stringify({
-        number: phone,
+        number: normalizedPhone,
         text: message,
       }),
       signal: AbortSignal.timeout(10_000),
