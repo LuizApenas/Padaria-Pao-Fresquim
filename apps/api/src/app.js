@@ -23,7 +23,10 @@ export function createApp() {
     }),
   );
   // Habilita leitura de JSON no corpo das requisições.
-  app.use(express.json());
+  // Limite ampliado para acomodar uploads de PDF/imagens em base64
+  // (documentos de funcionarios, fotos de produtos, etc).
+  app.use(express.json({ limit: "25mb" }));
+  app.use(express.urlencoded({ limit: "25mb", extended: true }));
   // Registra logs HTTP no terminal para facilitar depuração.
   app.use(morgan("dev"));
   app.use((_request, response, next) => {
