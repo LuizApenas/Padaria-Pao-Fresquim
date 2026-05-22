@@ -21,6 +21,9 @@ const DEFAULT_SETTINGS = {
   evolutionApiKey: "",
   evolutionDispatchPath: "/message/sendText",
   ownerPhone: SEED_PROPRIETARIO_OWNER_PHONE_E164,
+  // Master switch do atendimento WhatsApp. Quando false, o webhook ignora
+  // todas as mensagens recebidas (notificacoes outbound seguem funcionando).
+  whatsappBotEnabled: true,
   orderReadyNotificationsEnabled: true,
   debtWarningsEnabled: true,
   dailyMetricsEnabled: true,
@@ -74,6 +77,8 @@ function sanitizeSettings(settings) {
     evolutionApiKey: settings.evolutionApiKey ?? "",
     evolutionDispatchPath: settings.evolutionDispatchPath ?? "/message/sendText",
     ownerPhone,
+    whatsappBotEnabled:
+      settings.whatsappBotEnabled === undefined ? true : Boolean(settings.whatsappBotEnabled),
     orderReadyNotificationsEnabled: Boolean(settings.orderReadyNotificationsEnabled),
     debtWarningsEnabled: Boolean(settings.debtWarningsEnabled),
     dailyMetricsEnabled: Boolean(settings.dailyMetricsEnabled),
@@ -148,6 +153,8 @@ export async function updateChatbotSettings(data) {
     evolutionApiKey: data.evolutionApiKey,
     evolutionDispatchPath: data.evolutionDispatchPath,
     ownerPhone: data.ownerPhone,
+    whatsappBotEnabled:
+      data.whatsappBotEnabled === undefined ? current.whatsappBotEnabled : data.whatsappBotEnabled,
     orderReadyNotificationsEnabled: data.orderReadyNotificationsEnabled,
     debtWarningsEnabled: data.debtWarningsEnabled,
     dailyMetricsEnabled: data.dailyMetricsEnabled,

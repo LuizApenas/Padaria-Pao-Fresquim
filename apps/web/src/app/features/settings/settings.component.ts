@@ -24,6 +24,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     evolutionApiKey: "",
     evolutionDispatchPath: "/message/sendText",
     ownerPhone: "5511999990001",
+    whatsappBotEnabled: true,
     orderReadyNotificationsEnabled: true,
     debtWarningsEnabled: true,
     dailyMetricsEnabled: true,

@@ -79,6 +79,13 @@
     <div class="catalog-list">
       <div class="settings-item">
         <div>
+          <strong>Atendimento WhatsApp (Fresca)</strong>
+          <div class="client-time">Liga ou desliga a resposta automatica para mensagens recebidas no WhatsApp. Notificacoes outbound (pedido pronto, fiado) seguem funcionando.</div>
+        </div>
+        <button class="toggle" [class.on]="settings.whatsappBotEnabled" type="button" (click)="settings.whatsappBotEnabled = !settings.whatsappBotEnabled"></button>
+      </div>
+      <div class="settings-item">
+        <div>
           <strong>Avisar pedido pronto</strong>
           <div class="client-time">Envia mensagem quando o pedido estiver pronto para coleta.</div>
         </div>

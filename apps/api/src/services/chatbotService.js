@@ -347,6 +347,10 @@ function buildSystemPrompt({ metrics, produtos, sender, worker }) {
     "- Se um produto nao existir no catalogo, nao invente substituto; diga que a equipe precisa confirmar disponibilidade.",
     "- Nao prometa entrega. Use retirada/coleta ou preparo, salvo se o sistema futuramente informar uma opcao de entrega.",
     "- Antes de considerar um pedido validado, confirme itens, quantidades e valor estimado quando disponivel.",
+    "Regras de menu no WhatsApp:",
+    "- No WhatsApp, o sistema apresenta um menu numerado (1 Pedido, 2 Status, 3 Fiado, 4 Atendente) quando o cliente cumprimenta ou pede ajuda.",
+    "- Se o cliente escolher 1, conduza o pedido pedindo itens. Se escolher 2, pergunte numero/data do pedido. Se escolher 3, informe o saldo de fiado disponivel no contexto. Se escolher 4, informe que vai encaminhar para um atendente humano e que a equipe da padaria entrara em contato.",
+    "- Aceite tambem texto livre fora do menu, sem exigir que o cliente use numeros.",
     "Regras para historico/status de pedidos:",
     "- Consulte historico/status apenas para cliente cadastrado identificado.",
     "- Nao revele dados de um cliente para outro.",
@@ -982,6 +986,76 @@ function isEvolutionOutgoingMessage(payload = {}) {
   return Boolean(payload?.data?.key?.fromMe ?? payload?.key?.fromMe ?? payload?.fromMe);
 }
 
+// Detecta cumprimentos ou pedidos explicitos de menu/ajuda no WhatsApp.
+function isGreetingOrMenuRequest(text = "") {
+  const normalized = String(text)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim();
+
+  if (!normalized) return false;
+  if (normalized.length > 40) return false;
+
+  const triggers = [
+    "menu",
+    "ajuda",
+    "opcoes",
+    "opcao",
+    "oi",
+    "ola",
+    "ola!",
+    "oi!",
+    "bom dia",
+    "boa tarde",
+    "boa noite",
+    "comecar",
+    "iniciar",
+    "comeco",
+  ];
+
+  return triggers.some((trigger) => normalized === trigger || normalized.startsWith(`${trigger} `));
+}
+
+// Mapeia "1" -> "Quero fazer um pedido", etc. Permite continuar o fluxo no LLM.
+function expandMenuChoice(text = "") {
+  const trimmed = String(text).trim();
+  const map = {
+    1: "Quero fazer um pedido.",
+    2: "Quero consultar o status do meu pedido.",
+    3: "Quero saber meu saldo de fiado.",
+    4: "Quero falar com um atendente humano.",
+  };
+
+  if (map[trimmed]) {
+    return map[trimmed];
+  }
+
+  // Suporta "1." "1 -" "1)" etc.
+  const head = trimmed.match(/^([1-4])[\s).:-]/);
+  if (head && map[head[1]]) {
+    return map[head[1]];
+  }
+
+  return null;
+}
+
+function buildClientMenu(clienteNome) {
+  const nome = clienteNome ? clienteNome.split(" ")[0] : "";
+  const saudacao = nome ? `Oi, ${nome}!` : "Oi!";
+
+  return [
+    `${saudacao} 🥖 Eu sou a Fresca, da Padaria Pao FresQUIM. Como posso ajudar?`,
+    "",
+    "1️⃣ Fazer um pedido",
+    "2️⃣ Consultar status do meu pedido",
+    "3️⃣ Saber meu saldo de fiado",
+    "4️⃣ Falar com um atendente humano",
+    "",
+    "Responda com o numero da opcao ou descreva o que precisa.",
+  ].join("\n");
+}
+
 /**
  * Processa lote agregado do buffer: uma resposta Groq/regras e um disparo Evolution.
  */
@@ -1004,10 +1078,41 @@ async function processBufferedWhatsappConversation({ texts, meta }) {
     };
   }
 
+  // Menu numerado para clientes: se for cumprimento/pedido de ajuda, envia o
+  // menu e encerra este turno. Se for resposta numerica (1-4), expande para
+  // texto natural antes de mandar ao LLM.
+  if (telefone && meta.clienteId) {
+    if (isGreetingOrMenuRequest(mergedMessage)) {
+      const cliente = await prisma.cliente
+        .findUnique({ where: { id: meta.clienteId }, select: { nome: true } })
+        .catch(() => null);
+
+      await dispatchWhatsAppText({
+        phone: telefone,
+        message: buildClientMenu(cliente?.nome),
+      });
+
+      return {
+        processed: true,
+        mergedMessages: texts.length,
+        intent: "MENU",
+        source: "menu",
+      };
+    }
+
+    const expanded = expandMenuChoice(mergedMessage);
+    if (expanded) {
+      // Substituimos a mensagem original por uma instrucao clara para o LLM.
+      texts.splice(0, texts.length, expanded);
+    }
+  }
+
+  const effectiveMessage = texts.join("\n");
+
   try {
     const result = await responderMensagemChatbot(
       {
-        message: mergedMessage,
+        message: effectiveMessage,
         telefone,
         phone: telefone,
       },
@@ -1056,6 +1161,21 @@ export async function handleEvolutionWebhook(payload) {
   const telefone = normalizePhone(remoteJid);
   const conversationKey = telefone || String(remoteJid).trim();
   const fromMe = isEvolutionOutgoingMessage(payload);
+
+  // Master switch: quando o atendimento WhatsApp esta desligado nas
+  // configuracoes, ignoramos qualquer mensagem recebida. Notificacoes
+  // outbound (pedido pronto, aviso fiado) seguem funcionando pois nao
+  // passam por este webhook.
+  const settings = await getChatbotSettings();
+  if (!settings.whatsappBotEnabled) {
+    return {
+      received: true,
+      buffered: false,
+      skipped: true,
+      reason: "whatsapp_bot_disabled",
+      telefone,
+    };
+  }
 
   if (fromMe) {
     return {

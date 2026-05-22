@@ -16,6 +16,7 @@ export type ChatbotSettings = {
   evolutionApiKey: string;
   evolutionDispatchPath: string;
   ownerPhone: string;
+  whatsappBotEnabled: boolean;
   orderReadyNotificationsEnabled: boolean;
   debtWarningsEnabled: boolean;
   dailyMetricsEnabled: boolean;
