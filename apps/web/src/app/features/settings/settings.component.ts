@@ -30,6 +30,18 @@ export class SettingsComponent implements OnInit, OnDestroy {
     messageBufferMs: 2500,
   };
   testMessage = "Teste de integracao Evolution - Padaria Pao Fresquim.";
+
+  // Mascara a API Key para nao expor o valor inteiro no front (somente leitura).
+  get maskedApiKey(): string {
+    const key = this.settings.evolutionApiKey ?? "";
+    if (!key) {
+      return "";
+    }
+    if (key.length <= 8) {
+      return "*".repeat(key.length);
+    }
+    return `${key.slice(0, 4)}${"*".repeat(Math.max(key.length - 8, 4))}${key.slice(-4)}`;
+  }
   isLoading = true;
   isSaving = false;
   isSendingTest = false;

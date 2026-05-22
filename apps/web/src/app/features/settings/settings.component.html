@@ -20,18 +20,24 @@
 <div *ngIf="!isLoading" class="row col-2">
   <div class="panel">
     <div class="panel-title">Integracao Evolution</div>
+    <div class="client-time" style="margin-bottom: 12px;">
+      Credenciais da Evolution sao gerenciadas via variaveis de ambiente
+      (<code>EVOLUTION_API_URL</code>, <code>EVOLUTION_API_KEY</code>,
+      <code>EVOLUTION_DISPATCH_PATH</code>) no servidor. Os campos abaixo sao
+      apenas para visualizacao.
+    </div>
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label">URL de disparo</label>
-        <input class="form-input" name="evolutionApiUrl" [(ngModel)]="settings.evolutionApiUrl" placeholder="https://evolution.exemplo.com/message/sendText/Instancia" />
+        <input class="form-input" name="evolutionApiUrl" [value]="settings.evolutionApiUrl" readonly placeholder="definida no env do servidor" />
       </div>
       <div class="form-group">
         <label class="form-label">API Key Evolution</label>
-        <input class="form-input" name="evolutionApiKey" [(ngModel)]="settings.evolutionApiKey" placeholder="apikey do header" />
+        <input class="form-input" name="evolutionApiKey" [value]="maskedApiKey" readonly placeholder="definida no env do servidor" />
       </div>
       <div class="form-group">
         <label class="form-label">Path de envio</label>
-        <input class="form-input" name="evolutionDispatchPath" [(ngModel)]="settings.evolutionDispatchPath" placeholder="/message/sendText" />
+        <input class="form-input" name="evolutionDispatchPath" [value]="settings.evolutionDispatchPath" readonly placeholder="definido no env do servidor" />
       </div>
       <div class="form-group">
         <label class="form-label">WhatsApp do Sr. Joaquim</label>
