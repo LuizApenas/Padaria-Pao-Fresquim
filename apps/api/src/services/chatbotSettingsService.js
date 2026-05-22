@@ -86,6 +86,25 @@ async function persistSettings(settings) {
   await writeFile(SETTINGS_PATH, JSON.stringify(settings, null, 2));
 }
 
+// Coleta overrides de env vars (precedencia sobre arquivo local) —
+// resolve o caso de containers efemeros onde .runtime/chatbot-config.json
+// some entre redeploys.
+function getEnvOverrides() {
+  const overrides = {};
+
+  if (process.env.EVOLUTION_API_URL) {
+    overrides.evolutionApiUrl = process.env.EVOLUTION_API_URL;
+  }
+  if (process.env.EVOLUTION_API_KEY) {
+    overrides.evolutionApiKey = process.env.EVOLUTION_API_KEY;
+  }
+  if (process.env.EVOLUTION_DISPATCH_PATH) {
+    overrides.evolutionDispatchPath = process.env.EVOLUTION_DISPATCH_PATH;
+  }
+
+  return overrides;
+}
+
 // Le configuracoes do disco; falha silenciosa retorna apenas DEFAULT_SETTINGS.
 export async function getChatbotSettings() {
   let persisted = {};
@@ -99,6 +118,7 @@ export async function getChatbotSettings() {
   let settings = sanitizeSettings({
     ...DEFAULT_SETTINGS,
     ...persisted,
+    ...getEnvOverrides(),
   });
 
   const defaultOwnerPhone = await resolveDefaultOwnerPhone();

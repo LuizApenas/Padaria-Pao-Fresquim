@@ -43,6 +43,13 @@ export async function dispatchWhatsAppText({ phone, message }) {
     };
   }
 
+  if (!config.apiKey) {
+    throw new AppError(
+      "API Key da Evolution nao configurada. Defina EVOLUTION_API_KEY no env da API ou salve nas Configuracoes do chatbot.",
+      400,
+    );
+  }
+
   const dispatchUrl = buildDispatchUrl(config);
 
   let response;
