@@ -4,8 +4,11 @@ import {
   createContaFiado,
   deleteContaFiado,
   getContaFiadoByClienteId,
+  getResumoFiado,
   listContasFiado,
+  listPagamentosFiadoCliente,
   registrarCobrancaFiado,
+  registrarPagamentoFiado,
   updateContaFiado,
 } from "../services/fiadoService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -22,6 +25,39 @@ fiadoRoutes.get(
     const contas = await listContasFiado();
 
     response.status(200).json(contas);
+  }),
+);
+
+fiadoRoutes.get(
+  "/resumo",
+  ensureRole("PROPRIETARIO", "ATENDENTE"),
+  asyncHandler(async (_request, response) => {
+    const resumo = await getResumoFiado();
+
+    response.status(200).json(resumo);
+  }),
+);
+
+fiadoRoutes.get(
+  "/:clienteId/pagamentos",
+  ensureRole("PROPRIETARIO", "ATENDENTE"),
+  asyncHandler(async (request, response) => {
+    const pagamentos = await listPagamentosFiadoCliente(request.params.clienteId);
+
+    response.status(200).json(pagamentos);
+  }),
+);
+
+fiadoRoutes.post(
+  "/:clienteId/pagamento",
+  ensureRole("PROPRIETARIO", "ATENDENTE"),
+  asyncHandler(async (request, response) => {
+    const result = await registrarPagamentoFiado(request.params.clienteId, {
+      ...request.body,
+      funcionarioId: request.user?.id ?? request.body?.funcionarioId,
+    });
+
+    response.status(201).json(result);
   }),
 );
 

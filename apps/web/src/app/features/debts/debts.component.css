@@ -72,3 +72,35 @@
   color: var(--danger, #b1262c);
   font-size: 0.88rem;
 }
+
+.stat-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.status-atencao {
+  color: #c08a1c;
+}
+
+.status-critico {
+  color: #b1262c;
+}
+
+.debtor-actions {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.btn-pagar {
+  background: #1f7a44;
+  color: #fff;
+  border: 0;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-pagar:hover {
+  background: #176638;
+}

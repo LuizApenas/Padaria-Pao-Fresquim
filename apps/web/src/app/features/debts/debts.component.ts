@@ -5,7 +5,7 @@ import { NavigationEnd, Router } from "@angular/router";
 import { Subscription, filter, startWith } from "rxjs";
 import { Debtor } from "../../core/models";
 import { ChatbotApiService, ChatbotSettings } from "../../core/services/chatbot-api.service";
-import { FiadoApiService } from "../../core/services/fiado-api.service";
+import { FiadoApiService, FiadoResumo } from "../../core/services/fiado-api.service";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
 import { formatCurrency } from "../../core/utils/format";
 
@@ -18,6 +18,7 @@ import { formatCurrency } from "../../core/utils/format";
 })
 export class DebtsComponent implements OnInit, OnDestroy {
   debtors: Debtor[] = [];
+  resumo: FiadoResumo | null = null;
   isLoading = true;
   errorMessage = "";
   cronSettings: Pick<ChatbotSettings, "debtAutoCronEnabled" | "debtAutoCronTime"> = {
@@ -63,8 +64,65 @@ export class DebtsComponent implements OnInit, OnDestroy {
   private kickLoad(): void {
     setTimeout(() => {
       this.loadDebtors();
+      this.loadResumo();
       this.loadCronSettings();
     }, 0);
+  }
+
+  private loadResumo(): void {
+    this.fiadoApiService.getResumo().subscribe({
+      next: (resumo) => {
+        this.ngZone.run(() => {
+          this.resumo = resumo;
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+      error: () => {
+        // resumo nao critico; cards mostram '—' se nao carregar.
+      },
+    });
+  }
+
+  get statusCarteiraLabel(): string {
+    const map = { OK: "OK", ATENCAO: "Atencao", CRITICO: "Critico" } as const;
+    return this.resumo ? map[this.resumo.statusCarteira] : "—";
+  }
+
+  registerPayment(debtor: Debtor): void {
+    const input = prompt(
+      `Valor pago por ${debtor.clientName} (saldo atual R$ ${debtor.amount.toFixed(2)}):`,
+      debtor.amount.toFixed(2),
+    );
+    if (!input) return;
+
+    const valor = Number(String(input).replace(",", "."));
+    if (!Number.isFinite(valor) || valor <= 0) {
+      this.errorMessage = "Valor invalido.";
+      return;
+    }
+
+    this.fiadoApiService.registerPayment(debtor.clientId, valor).subscribe({
+      next: (updated) => {
+        this.ngZone.run(() => {
+          // Se quitou totalmente, remove da lista; senao atualiza.
+          if (updated.amount <= 0) {
+            this.debtors = this.debtors.filter((d) => d.clientId !== debtor.clientId);
+          } else {
+            this.debtors = this.debtors.map((d) =>
+              d.clientId === debtor.clientId ? updated : d,
+            );
+          }
+          this.loadResumo();
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+      error: (err) => {
+        this.ngZone.run(() => {
+          this.errorMessage = err?.error?.error || "Nao foi possivel registrar o pagamento.";
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+    });
   }
 
   ngOnDestroy(): void {

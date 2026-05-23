@@ -94,6 +94,7 @@ model Funcionario {
   ferias            Ferias[]
   licencas          Licenca[]
   atestados         Atestado[]
+  pagamentosFiado   PagamentoFiado[]
   criadoEm          DateTime        @default(now()) @map("criado_em")
   atualizadoEm      DateTime        @updatedAt @map("atualizado_em")
 
@@ -159,10 +160,31 @@ model ContaFiado {
   // Garantimos uma única conta de fiado por cliente.
   clienteId          Int                @unique @map("cliente_id")
   cliente            Cliente            @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  pagamentos         PagamentoFiado[]
   criadoEm           DateTime           @default(now()) @map("criado_em")
   atualizadoEm       DateTime           @updatedAt @map("atualizado_em")
 
   @@map("contas_fiado")
+}
+
+// Registro de cada quitação parcial ou total de uma conta de fiado.
+// Permite relatorios de "Recuperado no mes" e historico por cliente.
+model PagamentoFiado {
+  id             Int          @id @default(autoincrement())
+  contaFiadoId   Int          @map("conta_fiado_id")
+  contaFiado     ContaFiado   @relation(fields: [contaFiadoId], references: [id], onDelete: Cascade)
+  valor          Decimal      @db.Decimal(10, 2)
+  dataPagamento  DateTime     @default(now()) @map("data_pagamento")
+  observacao     String?
+  // Quem registrou o recebimento (opcional).
+  funcionarioId  Int?         @map("funcionario_id")
+  funcionario    Funcionario? @relation(fields: [funcionarioId], references: [id], onDelete: SetNull)
+  criadoEm       DateTime     @default(now()) @map("criado_em")
+  atualizadoEm   DateTime     @updatedAt @map("atualizado_em")
+
+  @@index([dataPagamento])
+  @@index([contaFiadoId])
+  @@map("pagamentos_fiado")
 }
 
 // Registro individual de entrada e saída do ponto.

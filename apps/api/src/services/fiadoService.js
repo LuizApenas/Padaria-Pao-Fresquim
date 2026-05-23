@@ -204,6 +204,133 @@ export async function registrarCobrancaFiado(clienteIdParam) {
   return result;
 }
 
+// Registra uma quitacao (parcial ou total) do fiado: cria linha em
+// PagamentoFiado, decrementa saldoDevedor, atualiza status quando zerar.
+export async function registrarPagamentoFiado(clienteIdParam, data = {}) {
+  const clienteId = parseId(clienteIdParam, "clienteId");
+  const valor = ensurePositiveNumber(data.valor, "valor");
+  const observacao = typeof data.observacao === "string" ? data.observacao.trim() : null;
+  const funcionarioId = data.funcionarioId ? parseId(data.funcionarioId, "funcionarioId") : null;
+
+  const conta = await getContaFiadoByClienteId(clienteId);
+  const saldoAtual = Number(conta.saldoDevedor);
+
+  if (valor > saldoAtual + 0.001) {
+    throw new AppError(
+      `Valor (R$ ${valor.toFixed(2)}) maior que o saldo devedor atual (R$ ${saldoAtual.toFixed(2)}).`,
+      400,
+    );
+  }
+
+  const novoSaldo = Number(toMoney(saldoAtual - valor));
+
+  const result = await prisma.$transaction(async (tx) => {
+    const pagamento = await tx.pagamentoFiado.create({
+      data: {
+        contaFiadoId: conta.id,
+        valor: toMoney(valor),
+        observacao: observacao || undefined,
+        funcionarioId: funcionarioId || undefined,
+      },
+    });
+
+    const contaAtualizada = await tx.contaFiado.update({
+      where: { clienteId },
+      data: {
+        saldoDevedor: toMoney(novoSaldo),
+        // Quando quita totalmente, marca como "nada pendente".
+        statusNotificacao: novoSaldo <= 0 ? StatusNotificacao.NENHUMA : conta.statusNotificacao,
+      },
+      include: fiadoInclude,
+    });
+
+    return { pagamento, conta: contaAtualizada };
+  });
+
+  return {
+    conta: serializeContaFiado(result.conta),
+    pagamento: {
+      id: result.pagamento.id,
+      valor: Number(result.pagamento.valor),
+      dataPagamento: result.pagamento.dataPagamento,
+      observacao: result.pagamento.observacao,
+      funcionarioId: result.pagamento.funcionarioId,
+    },
+  };
+}
+
+// Resumo da carteira: total em aberto, recuperado no mes corrente,
+// quantidade de inadimplentes e status agregado da carteira.
+export async function getResumoFiado() {
+  const now = new Date();
+  const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1);
+  const fimMes = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+  const [totalAbertoAgg, inadimplentesCount, pagamentosMes] = await Promise.all([
+    prisma.contaFiado.aggregate({
+      where: { saldoDevedor: { gt: 0 } },
+      _sum: { saldoDevedor: true },
+    }),
+    prisma.contaFiado.count({
+      where: { saldoDevedor: { gt: 0 } },
+    }),
+    prisma.pagamentoFiado.aggregate({
+      where: {
+        dataPagamento: { gte: inicioMes, lt: fimMes },
+      },
+      _sum: { valor: true },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const totalEmAberto = Number(totalAbertoAgg._sum.saldoDevedor ?? 0);
+  const recuperadoNoMes = Number(pagamentosMes._sum.valor ?? 0);
+  const pagamentosCountMes = Number(pagamentosMes._count._all ?? 0);
+
+  // Status agregado simples: critico > 10 inadimplentes ou >5k em aberto;
+  // atencao se houver pelo menos 1; ok se zero.
+  let statusCarteira = "OK";
+  if (totalEmAberto >= 5000 || inadimplentesCount >= 10) {
+    statusCarteira = "CRITICO";
+  } else if (inadimplentesCount > 0) {
+    statusCarteira = "ATENCAO";
+  }
+
+  return {
+    totalEmAberto,
+    recuperadoNoMes,
+    pagamentosCountMes,
+    clientesInadimplentes: inadimplentesCount,
+    statusCarteira,
+    periodoMes: {
+      inicio: inicioMes.toISOString(),
+      fim: fimMes.toISOString(),
+    },
+  };
+}
+
+// Historico de pagamentos de um cliente (mais recentes primeiro).
+export async function listPagamentosFiadoCliente(clienteIdParam) {
+  const clienteId = parseId(clienteIdParam, "clienteId");
+  const conta = await getContaFiadoByClienteId(clienteId);
+
+  const pagamentos = await prisma.pagamentoFiado.findMany({
+    where: { contaFiadoId: conta.id },
+    orderBy: { dataPagamento: "desc" },
+    include: {
+      funcionario: { select: { id: true, nome: true } },
+    },
+  });
+
+  return pagamentos.map((p) => ({
+    id: p.id,
+    valor: Number(p.valor),
+    dataPagamento: p.dataPagamento,
+    observacao: p.observacao,
+    funcionario: p.funcionario,
+  }));
+}
+
 export async function deleteContaFiado(clienteIdParam) {
   const clienteId = parseId(clienteIdParam, "clienteId");
 
