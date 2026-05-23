@@ -5,6 +5,7 @@ import { chatbotRoutes } from "./chatbot.routes.js";
 import { clientesRoutes } from "./clientes.routes.js";
 import { fiadoRoutes } from "./fiado.routes.js";
 import { funcionariosRoutes } from "./funcionarios.routes.js";
+import { helpRoutes } from "./help.routes.js";
 import { produtosRoutes } from "./produtos.routes.js";
 import { relatoriosRoutes } from "./relatorios.routes.js";
 import { vendasRoutes } from "./vendas.routes.js";
@@ -27,6 +28,7 @@ router.use("/produtos", produtosRoutes);
 router.use("/funcionarios", funcionariosRoutes);
 router.use("/vendas", vendasRoutes);
 router.use("/fiado", fiadoRoutes);
+router.use("/help", helpRoutes);
 router.use("/relatorios", relatoriosRoutes);
 
 export { router };

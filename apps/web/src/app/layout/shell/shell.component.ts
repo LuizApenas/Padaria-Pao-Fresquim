@@ -9,13 +9,14 @@ import { BREADCRUMB_HOME, buildBreadcrumbTrail } from "../../core/breadcrumb.bui
 import { AuthService, AuthUser } from "../../core/services/auth.service";
 import { ZoomService } from "../../core/services/zoom.service";
 import { NAV_ITEMS, getPageMeta, resolvePageIdFromUrl } from "../../core/navigation";
+import { HelpDrawerComponent } from "../../shared/help-drawer/help-drawer.component";
 
 const SIDEBAR_STORAGE_KEY = "pf_sidebar_collapsed";
 
 @Component({
   selector: "pf-shell",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, Breadcrumb],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, Breadcrumb, HelpDrawerComponent],
   templateUrl: "./shell.component.html",
   styleUrl: "./shell.component.css"
 })
@@ -31,6 +32,7 @@ export class ShellComponent {
   breadcrumbItems: MenuItem[] = buildBreadcrumbTrail("/dashboard", "dashboard");
   zoomInput = String(this.zoom());
   sidebarCollapsed = localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1";
+  helpOpen = false;
 
   constructor() {
     this.router.events
@@ -60,6 +62,18 @@ export class ShellComponent {
         this.currentPage = page;
         this.breadcrumbItems = trail;
       });
+  }
+
+  toggleHelp(): void {
+    this.helpOpen = !this.helpOpen;
+  }
+
+  closeHelp(): void {
+    this.helpOpen = false;
+  }
+
+  get currentPageId(): string {
+    return this.currentPage?.id ?? "";
   }
 
   toggleSidebar(): void {

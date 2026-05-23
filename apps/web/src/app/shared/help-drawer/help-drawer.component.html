@@ -1,0 +1,54 @@
+<div *ngIf="open" class="help-overlay" (click)="closeDrawer()" role="presentation"></div>
+
+<aside *ngIf="open" class="help-drawer" role="dialog" aria-label="Ajuda Fresca">
+  <header class="help-head">
+    <div class="help-head-left">
+      <div class="help-avatar" aria-hidden="true">🥖</div>
+      <div class="help-head-text">
+        <div class="help-title">Fresca Ajuda</div>
+        <div class="help-sub">Como usar o sistema</div>
+      </div>
+    </div>
+    <button class="help-close" type="button" (click)="closeDrawer()" aria-label="Fechar">×</button>
+  </header>
+
+  <div class="help-body">
+    <div class="help-messages">
+      <div
+        *ngFor="let m of messages"
+        class="help-msg"
+        [class.user]="m.role === 'user'"
+        [class.assistant]="m.role === 'assistant'"
+      >
+        {{ m.text }}
+      </div>
+      <div *ngIf="isAsking" class="help-msg assistant typing">Fresca esta digitando…</div>
+      <div *ngIf="errorMessage" class="help-error">{{ errorMessage }}</div>
+    </div>
+
+    <div *ngIf="messages.length <= 1" class="help-suggestions">
+      <div class="help-sugg-title">Sugestoes</div>
+      <button
+        *ngFor="let q of quickQuestions"
+        type="button"
+        class="help-sugg-btn"
+        (click)="ask(q)"
+      >
+        {{ q }}
+      </button>
+    </div>
+  </div>
+
+  <footer class="help-footer">
+    <textarea
+      class="help-input"
+      rows="2"
+      placeholder="Pergunte qualquer duvida sobre o sistema..."
+      [(ngModel)]="prompt"
+      (keydown.enter)="handleEnter($event)"
+    ></textarea>
+    <button class="help-send" type="button" [disabled]="isAsking || !prompt.trim()" (click)="ask()">
+      {{ isAsking ? "..." : "Enviar" }}
+    </button>
+  </footer>
+</aside>
