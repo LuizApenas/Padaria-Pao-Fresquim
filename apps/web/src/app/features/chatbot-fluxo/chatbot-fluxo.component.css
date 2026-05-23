@@ -134,3 +134,224 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* === Diagrama de fluxo do chatbot === */
+
+.flow-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 1.5rem 0.5rem;
+}
+
+.flow-row {
+  display: flex;
+  gap: 1.25rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.flow-row--3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 980px;
+  gap: 1rem;
+  width: 100%;
+}
+
+.flow-row--4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 1100px;
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.flow-node {
+  background: #ffffff;
+  border: 1px solid var(--border, #e6e9ec);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  min-width: 200px;
+  max-width: 320px;
+  flex: 1 1 220px;
+  box-shadow: 0 1px 3px rgba(15, 23, 32, 0.06);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.flow-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 23, 32, 0.1);
+}
+
+.flow-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.flow-node-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text, #1f2933);
+}
+
+.flow-node-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted, #6b7480);
+  line-height: 1.35;
+}
+
+.flow-mini {
+  font-size: 0.72rem;
+  color: var(--text-muted, #6b7480);
+  margin-top: 0.25rem;
+  border-top: 1px dashed var(--border, #e6e9ec);
+  padding-top: 0.35rem;
+}
+
+/* Variacoes por etapa */
+.flow-node--entry {
+  background: linear-gradient(135deg, #fff7e8 0%, #ffe9c8 100%);
+  border-color: #e3a55c;
+}
+.flow-node--guard {
+  background: #fff5f0;
+  border-color: #e89677;
+}
+.flow-node--branch {
+  background: #eef6f0;
+  border-color: #6dbf94;
+  font-weight: 600;
+}
+.flow-node--funcionario {
+  background: #e8f3fb;
+  border-color: #4a92d4;
+}
+.flow-node--cliente {
+  background: #eef6f0;
+  border-color: #6dbf94;
+}
+.flow-node--bloqueio {
+  background: #fdecec;
+  border-color: #d4584a;
+  opacity: 0.92;
+}
+.flow-node--buffer {
+  background: #fffbe8;
+  border-color: #d4b94a;
+}
+.flow-node--worker {
+  background: #f3eefb;
+  border-color: #8c66c2;
+  max-width: 760px;
+}
+.flow-node--llm {
+  background: linear-gradient(135deg, #f6d488 0%, #e3a55c 100%);
+  border-color: #b97a30;
+  max-width: 360px;
+  color: #4a2b0d;
+}
+.flow-node--llm .flow-node-sub {
+  color: #4a2b0d;
+  opacity: 0.85;
+}
+.flow-node--intent {
+  background: #f7f8fa;
+  border-color: var(--border, #e6e9ec);
+}
+.flow-node--exit {
+  background: linear-gradient(135deg, #e6f2eb 0%, #cfe6d8 100%);
+  border-color: #4a8f6c;
+}
+
+/* Setas */
+.flow-arrow {
+  width: 2px;
+  background: #c5cbd2;
+  margin: 0.5rem 0;
+  position: relative;
+}
+.flow-arrow--down {
+  height: 28px;
+}
+.flow-arrow--down::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #c5cbd2;
+}
+
+/* Setas em ramo (1 -> 3 ou 1 -> 4) */
+.flow-branch-arrows {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 980px;
+  width: 100%;
+  margin: 0.35rem 0;
+}
+.flow-branch-arrows--wide {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 1100px;
+}
+.flow-branch-arrows span {
+  justify-self: center;
+  width: 2px;
+  height: 22px;
+  background: #c5cbd2;
+  position: relative;
+}
+.flow-branch-arrows span::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #c5cbd2;
+}
+
+/* Tools */
+.flow-worker-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  margin-top: 0.35rem;
+}
+.flow-tool {
+  font-size: 0.72rem;
+  font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+  background: #ffffff;
+  border: 1px solid #c9bce0;
+  color: #5a3d96;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+}
+
+@media (max-width: 900px) {
+  .flow-row--3,
+  .flow-row--4 {
+    grid-template-columns: 1fr;
+  }
+  .flow-branch-arrows {
+    grid-template-columns: 1fr;
+  }
+  .flow-branch-arrows span:not(:first-child) {
+    display: none;
+  }
+}

@@ -77,7 +77,141 @@
 
     <div class="tab-content" *ngIf="activeTab === 'flow'">
       <div class="panel">
-        <div class="panel-title">Passos do fluxo</div>
+        <div class="panel-title">Diagrama do fluxo</div>
+        <p class="fluxo-note">
+          Caminho de uma mensagem desde a chegada (WhatsApp ou painel) ate a resposta da Fresca.
+        </p>
+
+        <div class="flow-diagram" aria-label="Diagrama de fluxo do chatbot">
+          <!-- Entrada -->
+          <div class="flow-row">
+            <div class="flow-node flow-node--entry">
+              <div class="flow-icon">💬</div>
+              <div class="flow-node-title">WhatsApp</div>
+              <div class="flow-node-sub">Webhook Evolution</div>
+            </div>
+            <div class="flow-node flow-node--entry">
+              <div class="flow-icon">🖥️</div>
+              <div class="flow-node-title">Painel</div>
+              <div class="flow-node-sub">POST /chatbot/mensagens</div>
+            </div>
+          </div>
+
+          <div class="flow-arrow flow-arrow--down" aria-hidden="true"></div>
+
+          <!-- Guardrail -->
+          <div class="flow-node flow-node--guard">
+            <div class="flow-node-title">🛡️ Guardrail</div>
+            <div class="flow-node-sub">Anti prompt injection + limite de tamanho</div>
+          </div>
+
+          <div class="flow-arrow flow-arrow--down" aria-hidden="true"></div>
+
+          <!-- Resolve remetente -->
+          <div class="flow-node flow-node--branch">
+            <div class="flow-node-title">👤 Resolve remetente</div>
+            <div class="flow-node-sub">match canonico de telefone (DDD+9+8)</div>
+          </div>
+
+          <div class="flow-branch-arrows" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+
+          <div class="flow-row flow-row--3">
+            <div class="flow-node flow-node--funcionario">
+              <div class="flow-node-title">Funcionario</div>
+              <div class="flow-node-sub">Proprietario / Atendente / Padeiro</div>
+              <div class="flow-mini">Menu por cargo · acesso operacional</div>
+            </div>
+            <div class="flow-node flow-node--cliente">
+              <div class="flow-node-title">Cliente</div>
+              <div class="flow-node-sub">cadastrado por telefone/CPF</div>
+              <div class="flow-mini">Menu: Pedido · Status · Fiado · Atendente</div>
+            </div>
+            <div class="flow-node flow-node--bloqueio">
+              <div class="flow-node-title">Desconhecido</div>
+              <div class="flow-node-sub">conta tentativas</div>
+              <div class="flow-mini">Bloqueio temporario apos N falhas</div>
+            </div>
+          </div>
+
+          <div class="flow-arrow flow-arrow--down" aria-hidden="true"></div>
+
+          <!-- Buffer -->
+          <div class="flow-node flow-node--buffer">
+            <div class="flow-node-title">⏳ Buffer de mensagens</div>
+            <div class="flow-node-sub">debounce configuravel (default 2,5s)</div>
+          </div>
+
+          <div class="flow-arrow flow-arrow--down" aria-hidden="true"></div>
+
+          <!-- Worker context -->
+          <div class="flow-node flow-node--worker">
+            <div class="flow-node-title">⚙️ Worker (permissoes por cargo)</div>
+            <div class="flow-worker-tools">
+              <span class="flow-tool">READ_DAILY_METRICS</span>
+              <span class="flow-tool">READ_ACTIVE_PRODUCTS</span>
+              <span class="flow-tool">READ_DEBTORS</span>
+              <span class="flow-tool">READ_PENDING_ORDERS</span>
+              <span class="flow-tool">VALIDATE_ORDER</span>
+              <span class="flow-tool">READ_ORDER_STATUS</span>
+              <span class="flow-tool">DISPATCH_DEBT_CAMPAIGN</span>
+            </div>
+          </div>
+
+          <div class="flow-arrow flow-arrow--down" aria-hidden="true"></div>
+
+          <!-- LLM -->
+          <div class="flow-node flow-node--llm">
+            <div class="flow-icon">🥖</div>
+            <div class="flow-node-title">Fresca · Groq LLM</div>
+            <div class="flow-node-sub">system prompt + contexto sanitizado</div>
+          </div>
+
+          <div class="flow-branch-arrows flow-branch-arrows--wide" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+
+          <!-- Intents -->
+          <div class="flow-row flow-row--4">
+            <div class="flow-node flow-node--intent">
+              <div class="flow-node-title">PEDIDO</div>
+              <div class="flow-node-sub">valida itens + cliente</div>
+            </div>
+            <div class="flow-node flow-node--intent">
+              <div class="flow-node-title">METRICAS</div>
+              <div class="flow-node-sub">hoje / semana / mes</div>
+            </div>
+            <div class="flow-node flow-node--intent">
+              <div class="flow-node-title">FIADO</div>
+              <div class="flow-node-sub">lista + campanha de cobranca</div>
+            </div>
+            <div class="flow-node flow-node--intent">
+              <div class="flow-node-title">ATENDIMENTO</div>
+              <div class="flow-node-sub">texto livre da Fresca</div>
+            </div>
+          </div>
+
+          <div class="flow-arrow flow-arrow--down" aria-hidden="true"></div>
+
+          <!-- Saida -->
+          <div class="flow-row">
+            <div class="flow-node flow-node--exit">
+              <div class="flow-icon">📤</div>
+              <div class="flow-node-title">Resposta WhatsApp</div>
+              <div class="flow-node-sub">dispatchWhatsAppText (Evolution)</div>
+            </div>
+            <div class="flow-node flow-node--exit">
+              <div class="flow-icon">📺</div>
+              <div class="flow-node-title">Resposta painel</div>
+              <div class="flow-node-sub">JSON para o front Angular</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Passos detalhados</div>
         <ol class="fluxo-steps">
           <li *ngFor="let step of doc.flowSteps">{{ step }}</li>
         </ol>
