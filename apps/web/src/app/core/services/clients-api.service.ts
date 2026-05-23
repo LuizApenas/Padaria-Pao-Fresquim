@@ -49,17 +49,17 @@ export class ClientsApiService {
   createClient(client: Client): Observable<Client> {
     return this.http
       .post<Client>(`${API_BASE_URL}/api/clientes`, this.toClientePayload(client))
-      .pipe(map((createdClient) => this.normalizeClient(createdClient)));
+      .pipe(timeout(10000), map((createdClient) => this.normalizeClient(createdClient)));
   }
 
   updateClient(client: Client): Observable<Client> {
     return this.http
       .put<Client>(`${API_BASE_URL}/api/clientes/${client.id}`, this.toClientePayload(client))
-      .pipe(map((updatedClient) => this.normalizeClient(updatedClient)));
+      .pipe(timeout(10000), map((updatedClient) => this.normalizeClient(updatedClient)));
   }
 
   deleteClient(clientId: number): Observable<void> {
-    return this.http.delete<void>(`${API_BASE_URL}/api/clientes/${clientId}`);
+    return this.http.delete<void>(`${API_BASE_URL}/api/clientes/${clientId}`).pipe(timeout(10000));
   }
 
   normalizeClient(client: Client): Client {

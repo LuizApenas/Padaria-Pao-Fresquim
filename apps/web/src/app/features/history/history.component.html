@@ -67,7 +67,13 @@
         <td>{{ formatCurrency(sale.value) }}</td>
         <td><pf-status-badge [text]="sale.status" /></td>
         <td>
-          <button class="btn-cancel-sale" type="button" [disabled]="sale.status === 'CANCELADA'" (click)="cancelSale(sale.id)">
+          <button
+            class="btn-cancel-sale"
+            type="button"
+            [disabled]="sale.status === 'CANCELADA' || !canCancelSales"
+            [title]="canCancelSales ? 'Cancelar venda' : 'Apenas proprietarios podem cancelar vendas'"
+            (click)="cancelSale(sale)"
+          >
             Cancelar
           </button>
         </td>

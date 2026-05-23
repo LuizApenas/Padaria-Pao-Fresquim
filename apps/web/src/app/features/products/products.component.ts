@@ -3,7 +3,10 @@ import { ChangeDetectorRef, Component, NgZone, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { FileUploader } from "@fundamental-ngx/ui5-webcomponents/file-uploader";
 import { Product } from "../../core/models";
+import { ApiErrorMessageService } from "../../core/services/api-error-message.service";
+import { ConfirmService } from "../../core/services/confirm.service";
 import { ProductsApiService } from "../../core/services/products-api.service";
+import { ToastService } from "../../core/services/toast.service";
 import { formatCurrency } from "../../core/utils/format";
 
 type ProductForm = {
@@ -38,6 +41,9 @@ export class ProductsComponent implements OnInit {
 
   constructor(
     private readonly productsApiService: ProductsApiService,
+    private readonly confirmService: ConfirmService,
+    private readonly toastService: ToastService,
+    private readonly apiErrorMessageService: ApiErrorMessageService,
     private readonly changeDetectorRef: ChangeDetectorRef,
     private readonly ngZone: NgZone,
   ) {}
@@ -133,7 +139,7 @@ export class ProductsComponent implements OnInit {
           this.products = this.products.map((product) => (product.id === this.form.id ? updatedProduct : product));
           this.closeModal();
         },
-        error: () => this.showPersistenceError("Nao foi possivel atualizar o produto na API."),
+        error: (error) => this.showPersistenceError(this.apiErrorMessageService.describe(error, "Nao foi possivel atualizar o produto.")),
       });
     } else {
       this.productsApiService.createProduct(normalizedProduct).subscribe({
@@ -141,15 +147,30 @@ export class ProductsComponent implements OnInit {
           this.products = [createdProduct, ...this.products];
           this.closeModal();
         },
-        error: () => this.showPersistenceError("Nao foi possivel cadastrar o produto na API."),
+        error: (error) => this.showPersistenceError(this.apiErrorMessageService.describe(error, "Nao foi possivel cadastrar o produto.")),
       });
     }
   }
 
-  deleteProduct(productId: number): void {
+  async deleteProduct(product: Product): Promise<void> {
+    const confirmed = await this.confirmService.ask({
+      title: "Excluir produto?",
+      message: `O produto ${product.nome ?? product.name} sera removido do catalogo. Confirme apenas se ele nao deve mais aparecer nas vendas.`,
+      confirmLabel: "Excluir produto",
+      tone: "danger",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    const productId = product.id;
     this.productsApiService.deleteProduct(productId).subscribe({
-      next: () => this.removeProductLocally(productId),
-      error: () => this.showPersistenceError("Nao foi possivel excluir o produto na API."),
+      next: () => {
+        this.removeProductLocally(productId);
+        this.toastService.show("Produto excluido.", "success");
+      },
+      error: (error) => this.showPersistenceError(this.apiErrorMessageService.describe(error, "Nao foi possivel excluir o produto.")),
     });
   }
 

@@ -2,7 +2,11 @@ import { CommonModule } from "@angular/common";
 import { ChangeDetectorRef, Component, NgZone, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Client } from "../../core/models";
+import { ApiErrorMessageService } from "../../core/services/api-error-message.service";
+import { AuthService } from "../../core/services/auth.service";
 import { ClientsApiService } from "../../core/services/clients-api.service";
+import { ConfirmService } from "../../core/services/confirm.service";
+import { ToastService } from "../../core/services/toast.service";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
 import { formatCurrency } from "../../core/utils/format";
 
@@ -39,6 +43,10 @@ export class ClientsComponent implements OnInit {
 
   constructor(
     private readonly clientsApiService: ClientsApiService,
+    private readonly authService: AuthService,
+    private readonly confirmService: ConfirmService,
+    private readonly toastService: ToastService,
+    private readonly apiErrorMessageService: ApiErrorMessageService,
     private readonly changeDetectorRef: ChangeDetectorRef,
     private readonly ngZone: NgZone,
   ) {}
@@ -145,7 +153,7 @@ export class ClientsComponent implements OnInit {
           this.closeModal();
           this.loadClients();
         },
-        error: () => this.showPersistenceError("Nao foi possivel atualizar o cliente na API."),
+        error: (error) => this.showPersistenceError(this.apiErrorMessageService.describe(error, "Nao foi possivel atualizar o cliente.")),
       });
     } else {
       this.clientsApiService.createClient(normalizedClient).subscribe({
@@ -153,15 +161,43 @@ export class ClientsComponent implements OnInit {
           this.closeModal();
           this.loadClients();
         },
-        error: () => this.showPersistenceError("Nao foi possivel cadastrar o cliente na API."),
+        error: (error) => this.showPersistenceError(this.apiErrorMessageService.describe(error, "Nao foi possivel cadastrar o cliente.")),
       });
     }
   }
 
-  deleteClient(clientId: number): void {
+  get canDeleteClients(): boolean {
+    return this.authService.getUser()?.role === "PROPRIETARIO";
+  }
+
+  async deleteClient(client: Client): Promise<void> {
+    if (!this.canDeleteClients) {
+      this.showPersistenceError("Seu perfil de atendente nao pode excluir clientes. Solicite a acao ao proprietario.");
+      this.toastService.show("Apenas proprietarios podem excluir clientes.", "warning");
+      return;
+    }
+
+    const confirmed = await this.confirmService.ask({
+      title: "Excluir cliente?",
+      message: `O cadastro de ${client.nome ?? client.name} sera removido. Esta acao nao pode ser desfeita depois de confirmada.`,
+      confirmLabel: "Excluir cliente",
+      tone: "danger",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    const clientId = client.id;
     this.clientsApiService.deleteClient(clientId).subscribe({
-      next: () => this.loadClients(),
-      error: () => this.showPersistenceError("Nao foi possivel excluir o cliente na API."),
+      next: () => {
+        this.loadClients();
+        this.toastService.show("Cliente excluido.", "success");
+      },
+      error: (error) => {
+        this.showPersistenceError(this.apiErrorMessageService.describe(error, "Nao foi possivel excluir o cliente."));
+        this.toastService.show("Cliente nao foi excluido. Verifique a mensagem na tela.", "danger");
+      },
     });
   }
 
@@ -213,10 +249,10 @@ export class ClientsComponent implements OnInit {
           this.changeDetectorRef.detectChanges();
         });
       },
-      error: () => {
+      error: (error) => {
         this.ngZone.run(() => {
           this.clients = [];
-          this.errorMessage = "API de clientes indisponivel. Nao ha fallback mockado nesta tela.";
+          this.errorMessage = this.apiErrorMessageService.describe(error, "Nao consegui carregar clientes. Verifique se a API esta rodando e tente novamente.");
           this.isLoading = false;
           console.error("[clientes] falha ao carregar lista");
           this.changeDetectorRef.detectChanges();

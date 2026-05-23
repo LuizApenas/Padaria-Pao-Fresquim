@@ -64,7 +64,14 @@
                   <path d="M4 20h4l10-10-4-4L4 16v4ZM13 7l4 4" />
                 </svg>
               </button>
-              <button class="icon-action" type="button" aria-label="Excluir cliente" (click)="deleteClient(client.id)">
+              <button
+                class="icon-action"
+                type="button"
+                aria-label="Excluir cliente"
+                [title]="canDeleteClients ? 'Excluir cliente' : 'Apenas proprietarios podem excluir clientes'"
+                [disabled]="!canDeleteClients"
+                (click)="deleteClient(client)"
+              >
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7M7 7l1 13h8l1-13" />
                 </svg>
