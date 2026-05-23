@@ -30,6 +30,16 @@
         placeholder="Ex.: vendas de maio, pedido para cliente 11999999999..."
         aria-label="Mensagem para o assistente"
       />
+      <button
+        class="chat-clear"
+        type="button"
+        [disabled]="isResponding"
+        (click)="resetConversation()"
+        title="Limpar conversa e voltar ao inicio"
+        aria-label="Limpar conversa"
+      >
+        Limpar
+      </button>
       <button class="chat-send" type="button" [disabled]="isResponding" (click)="sendMessage()">
         {{ isResponding ? "..." : "Enviar" }}
       </button>

@@ -140,6 +140,21 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     this.loadMetrics();
   }
 
+  resetConversation(): void {
+    this.prompt = "";
+    this.errorMessage = "";
+    this.messages = [
+      {
+        role: "assistant",
+        title: "Fresca",
+        message:
+          "Conversa reiniciada. 🥖 Sou a Fresca — como posso ajudar agora? Use as sugestoes ao lado ou digite sua pergunta.",
+        meta: "Atendimento zerado",
+      },
+    ];
+    this.changeDetectorRef.detectChanges();
+  }
+
   toggleWeeklyMetrics(): void {
     this.weeklyExpanded = !this.weeklyExpanded;
 

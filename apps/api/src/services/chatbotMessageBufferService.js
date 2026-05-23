@@ -101,6 +101,15 @@ async function flushConversationBuffer(key, onFlush) {
   }
 }
 
+/** Limpa um buffer especifico (encerramento de conversa). */
+export function clearConversationBuffer(key) {
+  const entry = conversationBuffers.get(key);
+  if (!entry) return false;
+  if (entry.timer) clearTimeout(entry.timer);
+  conversationBuffers.delete(key);
+  return true;
+}
+
 /** Utilitario para testes ou reinicio manual do processo. */
 export function clearAllConversationBuffers() {
   for (const entry of conversationBuffers.values()) {

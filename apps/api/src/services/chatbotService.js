@@ -9,6 +9,7 @@ import { dispatchWhatsAppText } from "./evolutionService.js";
 import { getRelatorioDashboard, getRelatorioVendas } from "./relatorioService.js";
 import { getChatbotSettings } from "./chatbotSettingsService.js";
 import {
+  clearConversationBuffer,
   enqueueConversationMessage,
   resolveMessageBufferDelayMs,
 } from "./chatbotMessageBufferService.js";
@@ -632,6 +633,7 @@ function buildSystemPrompt({ metrics, produtos, sender, worker, inadimplentes, p
   lines.push(
     "REGRA CRITICA: use APENAS os dados listados acima. Nao invente nomes, telefones, valores ou status. Se a info nao estiver no contexto, diga claramente que precisa abrir a tela correspondente no painel.",
     "Se o usuario pedir uma acao (ex.: 'cobrar todos com fiado'), confirme antes de executar ('Quer que eu dispare a cobranca por WhatsApp para os N clientes da lista?'). O sistema reconhece a confirmacao e dispara automaticamente.",
+    "Encerramento: se o usuario disser 'tchau', 'obrigado', 'encerrar', 'sair', 'fim', 'so isso', 'valeu' ou similar, NAO continue o atendimento. O sistema ja envia uma despedida e zera o contexto automaticamente.",
   );
 
   return lines.join("\n");
@@ -1364,6 +1366,49 @@ function isEvolutionOutgoingMessage(payload = {}) {
 }
 
 // Detecta cumprimentos ou pedidos explicitos de menu/ajuda no WhatsApp.
+// Detecta intencao de encerrar a conversa. Aceita despedidas e pedidos
+// explicitos de zerar/reiniciar o atendimento.
+function isFarewellOrReset(text = "") {
+  const t = String(text)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim();
+  if (!t) return false;
+  if (t.length > 60) return false;
+
+  const triggers = [
+    "tchau",
+    "ate mais",
+    "ate logo",
+    "ate breve",
+    "fim",
+    "encerrar",
+    "encerra",
+    "finalizar",
+    "finaliza",
+    "sair",
+    "reiniciar",
+    "reinicia",
+    "zerar",
+    "zera",
+    "obrigado",
+    "obrigada",
+    "valeu",
+    "nada mais",
+    "so isso",
+    "e so",
+  ];
+
+  return triggers.some(
+    (trigger) =>
+      t === trigger ||
+      t.startsWith(`${trigger} `) ||
+      t.startsWith(`${trigger},`) ||
+      t.endsWith(` ${trigger}`),
+  );
+}
+
 function isGreetingOrMenuRequest(text = "") {
   const normalized = String(text)
     .toLowerCase()
@@ -1528,6 +1573,29 @@ async function processBufferedWhatsappConversation({ texts, meta }) {
     };
   }
 
+
+  // Encerramento explicito: zera buffer + bloqueio temporario do remetente,
+  // responde uma despedida curta e NAO chama LLM. A proxima mensagem comeca
+  // do zero (menu).
+  if (telefone && isFarewellOrReset(mergedMessage)) {
+    clearConversationBuffer(telefone);
+    clearUnknownSenderFailures(getUnknownSenderKey({ telefone }));
+
+    const primeiroNome = (meta.funcionario?.nome || meta.cliente?.nome || "").split(" ")[0];
+    const saudacao = primeiroNome ? `Ate logo, ${primeiroNome}!` : "Ate logo!";
+
+    await dispatchWhatsAppText({
+      phone: telefone,
+      message: `${saudacao} 🥖 Atendimento encerrado. Quando quiser, e so mandar 'oi' que eu volto com o menu.`,
+    });
+
+    return {
+      processed: true,
+      mergedMessages: texts.length,
+      intent: "ENCERRAMENTO",
+      source: "farewell",
+    };
+  }
 
   // Menu por papel: cliente, proprietario, atendente, padeiro. Cumprimento /
   // pedido de ajuda envia o menu apropriado. Resposta numerica e expandida
