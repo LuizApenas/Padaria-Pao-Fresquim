@@ -313,14 +313,29 @@ async function runChatbotWorkerTool(worker, tool, payload = {}) {
 }
 
 // Detecta intencao explicita de disparar cobranca em massa via texto livre.
+// REQUER mencao a cobranca/fiado/devedores na mensagem para evitar falsos
+// positivos como "pode me dar um resumo da semana?" — sem essa palavra-chave,
+// nao dispara campanha alguma.
 function isConfirmCobrancaCampanha(text = "") {
-  const t = String(text).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const t = String(text).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
   if (!t) return false;
-  const hasCobrar = /(cobrar|enviar cobranca|disparar cobranca|mandar cobranca|notificar fiad)/i.test(t);
-  const hasTodos = /(todos|geral|em massa|todos com fiad|inadimplent|lista)/i.test(t);
-  // Aceita "sim, pode disparar" / "pode enviar" como confirmacao curta
-  const isShortYes = /^(sim|pode|manda|envia|dispara|confirmo|pode sim|pode mandar|pode disparar|pode enviar)([. !]|$)/i.test(t.trim());
-  return (hasCobrar && hasTodos) || isShortYes;
+
+  // Precisa existir palavra-chave de cobranca/fiado/devedor/inadimplente.
+  const temContextoCobranca = /(cobrar|cobranca|cobranc|fiad|devedor|inadimplent|notificar fiad)/i.test(t);
+  if (!temContextoCobranca) return false;
+
+  // Cobranca em massa explicita: "cobrar todos com fiado"
+  const isExplicitMass =
+    /(cobrar|enviar|disparar|mandar|notificar)\b/i.test(t) &&
+    /(todos|geral|em massa|inadimplent|com fiad)/i.test(t);
+  if (isExplicitMass) return true;
+
+  // Confirmacao curta combinada com palavra de cobranca:
+  // "sim, pode cobrar", "pode disparar a cobranca", "manda a cobranca"
+  const isShortConfirm =
+    /^(sim|claro|isso|confirmo|positivo|ok)\b/i.test(t) ||
+    /^(pode|manda|envia|dispara)\s+(a|as|essa|todas)?\s*(cobranc|cobrar)/i.test(t);
+  return isShortConfirm;
 }
 
 // Dispara cobranca WhatsApp para cada cliente com saldo > 0.
@@ -415,9 +430,16 @@ async function listPedidosPendentes() {
   }));
 }
 
+function isoDateNDaysAgo(days) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
 async function buildChatbotAgentContext(worker) {
-  const [metrics, produtos, inadimplentes, pedidosPendentes] = await Promise.all([
-    worker.canUse(CHATBOT_WORKER_TOOLS.READ_DAILY_METRICS)
+  const podeMetrics = worker.canUse(CHATBOT_WORKER_TOOLS.READ_DAILY_METRICS);
+  const [metrics, produtos, inadimplentes, pedidosPendentes, semanal, mensal] = await Promise.all([
+    podeMetrics
       ? runChatbotWorkerTool(worker, CHATBOT_WORKER_TOOLS.READ_DAILY_METRICS).catch(() => null)
       : Promise.resolve(null),
     worker.canUse(CHATBOT_WORKER_TOOLS.READ_ACTIVE_PRODUCTS)
@@ -429,13 +451,27 @@ async function buildChatbotAgentContext(worker) {
     worker.canUse(CHATBOT_WORKER_TOOLS.READ_PENDING_ORDERS)
       ? listPedidosPendentes().catch(() => [])
       : Promise.resolve([]),
+    // Resumo semanal (ultimos 7 dias) e mensal (ultimos 30 dias) — apenas para
+    // quem tem permissao de metricas (PROPRIETARIO).
+    podeMetrics
+      ? getMetricasPeriodoChatbot({
+          dataInicio: isoDateNDaysAgo(6),
+          dataFim: new Date().toISOString().slice(0, 10),
+        }).catch(() => null)
+      : Promise.resolve(null),
+    podeMetrics
+      ? getMetricasPeriodoChatbot({
+          dataInicio: isoDateNDaysAgo(29),
+          dataFim: new Date().toISOString().slice(0, 10),
+        }).catch(() => null)
+      : Promise.resolve(null),
   ]);
 
-  return { metrics, produtos, inadimplentes, pedidosPendentes };
+  return { metrics, produtos, inadimplentes, pedidosPendentes, semanal, mensal };
 }
 
 // Monta o system prompt enviado ao Groq (regras fixas + metricas/catalogo do momento).
-function buildSystemPrompt({ metrics, produtos, sender, worker, inadimplentes, pedidosPendentes }) {
+function buildSystemPrompt({ metrics, produtos, sender, worker, inadimplentes, pedidosPendentes, semanal, mensal }) {
   const productList = produtos
     .slice(0, 80)
     .map((produto) => `#${produto.id} ${produto.nome} (${formatMoney(produto.precoBase)})`)
@@ -545,10 +581,27 @@ function buildSystemPrompt({ metrics, produtos, sender, worker, inadimplentes, p
     "Quando detectar intencao de pedido, responda com orientacao curta e inclua produtos/quantidades entendidos.",
     `Data atual: ${todayIso()}.`,
     metrics
-      ? `Metricas disponiveis: vendas hoje ${formatMoney(metrics.totalSoldToday ?? metrics.totalSold ?? 0)}, pedidos pendentes ${metrics.pedidosPendentes ?? 0}, clientes com fiado ${metrics.debtClients ?? 0}.`
-      : "Metricas disponiveis: nenhuma metrica foi liberada para este atendimento.",
+      ? `Metricas de HOJE: vendas ${formatMoney(metrics.totalSoldToday ?? metrics.totalSold ?? 0)}, ${metrics.salesCount ?? 0} venda(s), ticket medio ${formatMoney(metrics.averageTicket ?? 0)}, pedidos pendentes ${metrics.pedidosPendentes ?? 0}, clientes com fiado ${metrics.debtClients ?? 0}.`
+      : "Metricas de hoje: nenhuma liberada para este atendimento.",
+    semanal
+      ? `Resumo da SEMANA (ultimos 7 dias): vendas ${formatMoney(semanal.totalSold ?? 0)}, ${semanal.salesCount ?? 0} venda(s), ticket medio ${formatMoney(semanal.averageTicket ?? 0)}.`
+      : null,
+    semanal?.topProducts?.length
+      ? `Top produtos da semana: ${semanal.topProducts.slice(0, 5).map((p) => `${p.name} (${p.sales} un, ${formatMoney(p.revenue)})`).join("; ")}.`
+      : null,
+    mensal
+      ? `Resumo do MES (ultimos 30 dias): vendas ${formatMoney(mensal.totalSold ?? 0)}, ${mensal.salesCount ?? 0} venda(s), ticket medio ${formatMoney(mensal.averageTicket ?? 0)}.`
+      : null,
+    mensal?.topProducts?.length
+      ? `Top produtos do mes: ${mensal.topProducts.slice(0, 5).map((p) => `${p.name} (${p.sales} un, ${formatMoney(p.revenue)})`).join("; ")}.`
+      : null,
     `Catalogo ativo resumido: ${productList || "sem produtos carregados"}.`,
   );
+
+  // Remove linhas null (resumos nao disponiveis para o cargo).
+  const filtered = lines.filter((line) => line !== null && line !== undefined);
+  lines.length = 0;
+  lines.push(...filtered);
 
   // Lista REAL de inadimplentes (so para quem tem permissao). Sem isso, o LLM
   // costuma inventar ou dizer "nao tenho acesso".
@@ -657,7 +710,7 @@ async function listarProdutosAtivos() {
 }
 
 // Chama Groq com historico curto e pede JSON de intencao em <intent_json> no final da resposta.
-async function callGroq({ message, history, metrics, produtos, sender, worker, inadimplentes, pedidosPendentes }) {
+async function callGroq({ message, history, metrics, produtos, sender, worker, inadimplentes, pedidosPendentes, semanal, mensal }) {
   const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
@@ -675,7 +728,7 @@ async function callGroq({ message, history, metrics, produtos, sender, worker, i
       temperature: 0.2,
       max_completion_tokens: 650,
       messages: [
-        { role: "system", content: buildSystemPrompt({ metrics, produtos, sender, worker, inadimplentes, pedidosPendentes }) },
+        { role: "system", content: buildSystemPrompt({ metrics, produtos, sender, worker, inadimplentes, pedidosPendentes, semanal, mensal }) },
         ...history,
         {
           role: "user",
@@ -1148,7 +1201,7 @@ export async function responderMensagemChatbot(data = {}, context = {}) {
     };
   }
 
-  const { metrics, produtos, inadimplentes, pedidosPendentes } = await buildChatbotAgentContext(worker);
+  const { metrics, produtos, inadimplentes, pedidosPendentes, semanal, mensal } = await buildChatbotAgentContext(worker);
   const history = safeChatHistory(data.messages);
 
   // Intencao explicita de cobrar todos os fiados: dispara a campanha sem
@@ -1166,7 +1219,7 @@ export async function responderMensagemChatbot(data = {}, context = {}) {
     };
   }
 
-  const groqText = await callGroq({ message, history, metrics, produtos, sender, worker, inadimplentes, pedidosPendentes }).catch(() => null);
+  const groqText = await callGroq({ message, history, metrics, produtos, sender, worker, inadimplentes, pedidosPendentes, semanal, mensal }).catch(() => null);
   const llmIntent = groqText ? parseLlmIntent(groqText) : null;
   const normalized = message.toLowerCase();
 
