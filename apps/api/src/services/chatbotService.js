@@ -315,7 +315,9 @@ function buildSystemPrompt({ metrics, produtos, sender, worker }) {
     "3. Atendimento a clientes cadastrados: ajudar clientes identificados por telefone ou CPF a fazer pedidos e consultar historico/status de pedidos.",
     "4. Apoio comercial: sugerir proximos passos simples ao Sr. Joaquim, como conferir estoque, priorizar pedidos pendentes ou cobrar fiado, quando os dados indicarem necessidade.",
     sender?.type === "FUNCIONARIO"
-      ? `Contexto do remetente: atendimento interno no front, funcionario autenticado ${sender.nome} (${sender.cargo || sender.role}).`
+      ? sender.channel === "WHATSAPP"
+        ? `Contexto do remetente: funcionario ${sender.nome} (${sender.cargo || sender.role}) falando pelo WhatsApp. Trate como atendimento interno, com acesso a metricas e operacao, mas confirme dados sensiveis antes de agir.`
+        : `Contexto do remetente: atendimento interno no front, funcionario autenticado ${sender.nome} (${sender.cargo || sender.role}).`
       : `Contexto do remetente: atendimento externo de cliente cadastrado ${sender?.nome || "nao identificado"}.`,
     "Regras de comunicacao:",
     "- Responda sempre em portugues do Brasil.",
@@ -348,6 +350,7 @@ function buildSystemPrompt({ metrics, produtos, sender, worker }) {
     "- Nao prometa entrega. Use retirada/coleta ou preparo, salvo se o sistema futuramente informar uma opcao de entrega.",
     "- Antes de considerar um pedido validado, confirme itens, quantidades e valor estimado quando disponivel.",
     "Regras de menu no WhatsApp:",
+    "- O menu numerado so e mostrado para CLIENTES no WhatsApp. Funcionarios pelo WhatsApp nao recebem menu, vao direto ao atendimento interno.",
     "- No WhatsApp, o sistema apresenta um menu numerado (1 Pedido, 2 Status, 3 Fiado, 4 Atendente) quando o cliente cumprimenta ou pede ajuda.",
     "- Se o cliente escolher 1, conduza o pedido pedindo itens. Se escolher 2, pergunte numero/data do pedido. Se escolher 3, informe o saldo de fiado disponivel no contexto. Se escolher 4, informe que vai encaminhar para um atendente humano e que a equipe da padaria entrara em contato.",
     "- Aceite tambem texto livre fora do menu, sem exigir que o cliente use numeros.",
@@ -498,6 +501,44 @@ function parseLlmIntent(text = "") {
 
 // --- Identificacao de cliente (telefone/CPF) e remetente do canal ---
 
+// Procura funcionario ativo pelo telefone (E.164 ou local) para identificar
+// remetentes internos quando o atendimento vem pelo WhatsApp.
+async function findFuncionarioPorTelefoneAtivo(telefone) {
+  const telefoneDigits = onlyDigits(telefone);
+
+  if (!telefoneDigits) {
+    return null;
+  }
+
+  const funcionarios = await prisma.funcionario.findMany({
+    where: { ativo: true },
+    select: { id: true, nome: true, email: true, role: true, cargo: true, telefone: true },
+  });
+
+  return funcionarios.find((funcionario) => {
+    const funcionarioDigits = onlyDigits(funcionario.telefone);
+    return funcionarioDigits && funcionarioDigits.endsWith(telefoneDigits.slice(-11));
+  });
+}
+
+// Resolve quem esta no outro lado do WhatsApp: funcionario tem prioridade
+// sobre cliente (alguem que e funcionario E cliente e tratado como funcionario).
+async function resolveWhatsappSender({ telefone, cpf }) {
+  const funcionario = await findFuncionarioPorTelefoneAtivo(telefone);
+
+  if (funcionario) {
+    return { type: "FUNCIONARIO", funcionario };
+  }
+
+  const cliente = await findClienteCadastrado({ telefone, cpf });
+
+  if (cliente) {
+    return { type: "CLIENTE", cliente };
+  }
+
+  return { type: "DESCONHECIDO" };
+}
+
 async function findClienteCadastrado({ telefone, cpf }) {
   const telefoneDigits = onlyDigits(telefone);
   const cpfDigits = onlyDigits(cpf);
@@ -558,6 +599,35 @@ async function resolveChatbotSender(data = {}, context = {}) {
       role: context.requester.role,
       cargo: context.requester.cargo,
       channel: context.channel || "FRONTEND",
+    };
+  }
+
+  // Funcionario identificado pelo telefone do WhatsApp: trata como atendimento
+  // interno (mesma capacidade do remetente autenticado no front).
+  if (context.whatsappFuncionario) {
+    const funcionario = context.whatsappFuncionario;
+    return {
+      type: "FUNCIONARIO",
+      id: funcionario.id,
+      nome: funcionario.nome,
+      email: funcionario.email,
+      role: funcionario.role,
+      cargo: funcionario.cargo,
+      channel: "WHATSAPP",
+    };
+  }
+
+  // Cliente ja identificado pelo webhook: evita nova busca/contabilizacao de
+  // tentativas, pois quem chegou aqui passou pelo gate de seguranca.
+  if (context.whatsappCliente) {
+    const cliente = context.whatsappCliente;
+    return {
+      type: "CLIENTE",
+      id: cliente.id,
+      nome: cliente.nome,
+      telefone: cliente.telefone,
+      cpf: cliente.cpf,
+      channel: "WHATSAPP",
     };
   }
 
@@ -1078,14 +1148,15 @@ async function processBufferedWhatsappConversation({ texts, meta }) {
     };
   }
 
-  // Menu numerado para clientes: se for cumprimento/pedido de ajuda, envia o
-  // menu e encerra este turno. Se for resposta numerica (1-4), expande para
-  // texto natural antes de mandar ao LLM.
-  if (telefone && meta.clienteId) {
+  // Menu numerado APENAS para clientes. Funcionarios identificados pelo
+  // telefone do WhatsApp vao direto ao LLM com perfil interno.
+  if (telefone && meta.clienteId && !meta.funcionarioId) {
     if (isGreetingOrMenuRequest(mergedMessage)) {
-      const cliente = await prisma.cliente
-        .findUnique({ where: { id: meta.clienteId }, select: { nome: true } })
-        .catch(() => null);
+      const cliente =
+        meta.cliente ??
+        (await prisma.cliente
+          .findUnique({ where: { id: meta.clienteId }, select: { nome: true } })
+          .catch(() => null));
 
       await dispatchWhatsAppText({
         phone: telefone,
@@ -1109,6 +1180,15 @@ async function processBufferedWhatsappConversation({ texts, meta }) {
 
   const effectiveMessage = texts.join("\n");
 
+  // Contexto enviado ao orquestrador: prioriza funcionario, depois cliente.
+  // Evita re-busca/contabilizacao de tentativas no resolveChatbotSender.
+  const responderContext = { channel: "WHATSAPP" };
+  if (meta.funcionario) {
+    responderContext.whatsappFuncionario = meta.funcionario;
+  } else if (meta.cliente) {
+    responderContext.whatsappCliente = meta.cliente;
+  }
+
   try {
     const result = await responderMensagemChatbot(
       {
@@ -1116,7 +1196,7 @@ async function processBufferedWhatsappConversation({ texts, meta }) {
         telefone,
         phone: telefone,
       },
-      { channel: "WHATSAPP" },
+      responderContext,
     );
 
     if (result?.reply && telefone) {
@@ -1208,13 +1288,32 @@ export async function handleEvolutionWebhook(payload) {
     };
   }
 
+  let funcionario = null;
   let cliente = null;
   let bloqueado = false;
   let aviso = null;
 
   if (telefone) {
     try {
-      cliente = await findClienteCadastradoExterno({ telefone });
+      const resolved = await resolveWhatsappSender({ telefone });
+
+      if (resolved.type === "FUNCIONARIO") {
+        funcionario = resolved.funcionario;
+        // Funcionario identificado: limpa qualquer contagem de tentativas
+        // (caso o numero tenha sido usado antes como cliente desconhecido).
+        clearUnknownSenderFailures(getUnknownSenderKey({ telefone }));
+      } else if (resolved.type === "CLIENTE") {
+        cliente = resolved.cliente;
+        clearUnknownSenderFailures(getUnknownSenderKey({ telefone }));
+      } else {
+        // Desconhecido: contabiliza tentativa e produz aviso amigavel.
+        try {
+          await findClienteCadastradoExterno({ telefone });
+        } catch (error) {
+          bloqueado = error.statusCode === 429;
+          aviso = error.message;
+        }
+      }
     } catch (error) {
       bloqueado = error.statusCode === 429;
       aviso = error.message;
@@ -1229,7 +1328,10 @@ export async function handleEvolutionWebhook(payload) {
     meta: {
       telefone,
       remoteJid,
+      funcionarioId: funcionario?.id ?? null,
+      funcionario,
       clienteId: cliente?.id ?? null,
+      cliente,
       bloqueado,
       aviso,
     },
@@ -1240,6 +1342,8 @@ export async function handleEvolutionWebhook(payload) {
   return {
     received: true,
     telefone,
+    funcionarioCadastrado: Boolean(funcionario),
+    funcionarioId: funcionario?.id ?? null,
     clienteCadastrado: Boolean(cliente),
     clienteId: cliente?.id ?? null,
     bloqueado,
