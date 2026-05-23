@@ -2,6 +2,8 @@ import { prisma } from "../config/prisma.js";
 import { StatusNotificacao } from "../domain/enums.js";
 import { AppError } from "../utils/AppError.js";
 import { ensureEnumValue, ensurePositiveNumber, parseId, requireFields, toMoney } from "../utils/validation.js";
+import { getChatbotSettings } from "./chatbotSettingsService.js";
+import { dispatchWhatsAppText } from "./evolutionService.js";
 
 const fiadoInclude = {
   cliente: {
@@ -118,18 +120,57 @@ export async function updateContaFiado(clienteIdParam, data) {
 export async function registrarCobrancaFiado(clienteIdParam) {
   const clienteId = parseId(clienteIdParam, "clienteId");
 
-  await getContaFiadoByClienteId(clienteId);
+  const contaAtual = await getContaFiadoByClienteId(clienteId);
+
+  // Tenta disparar WhatsApp ANTES de marcar ENVIADA, para nao mentir o status
+  // quando o disparo falhar (sem telefone, chatbot desligado, Evolution off).
+  const telefone = contaAtual?.cliente?.telefone ?? "";
+  const saldo = Number(contaAtual?.saldoDevedor ?? 0);
+  const nomeCliente = contaAtual?.cliente?.nome ?? "Cliente";
+  const mensagem = [
+    `Oi, ${nomeCliente.split(" ")[0] || nomeCliente}! 🥖`,
+    "Aqui e a Padaria Pao FresQUIM passando para lembrar do seu fiado em aberto.",
+    `Saldo atual: ${saldo.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}.`,
+    "Quando puder, da uma passada na padaria para regularizar. Qualquer duvida, e so responder por aqui.",
+    "Obrigada!",
+  ].join("\n");
+
+  let whatsappStatus = StatusNotificacao.ENVIADA;
+  let whatsappErro = null;
+
+  if (telefone) {
+    try {
+      const settings = await getChatbotSettings();
+      if (!settings.debtWarningsEnabled) {
+        whatsappStatus = StatusNotificacao.PENDENTE;
+        whatsappErro = "debt_warnings_disabled";
+      } else {
+        await dispatchWhatsAppText({ phone: telefone, message: mensagem });
+      }
+    } catch (error) {
+      whatsappStatus = StatusNotificacao.FALHOU;
+      whatsappErro = error?.message || "falha desconhecida no disparo";
+      console.error("[fiado] cobranca WhatsApp falhou:", whatsappErro);
+    }
+  } else {
+    whatsappStatus = StatusNotificacao.PENDENTE;
+    whatsappErro = "cliente sem telefone cadastrado";
+  }
 
   const conta = await prisma.contaFiado.update({
     where: { clienteId },
     data: {
       dataUltimaCobranca: new Date(),
-      statusNotificacao: StatusNotificacao.ENVIADA,
+      statusNotificacao: whatsappStatus,
     },
     include: fiadoInclude,
   });
 
-  return serializeContaFiado(conta);
+  const result = serializeContaFiado(conta);
+  if (whatsappErro) {
+    result.whatsappErro = whatsappErro;
+  }
+  return result;
 }
 
 export async function deleteContaFiado(clienteIdParam) {
