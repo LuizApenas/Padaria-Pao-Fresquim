@@ -5,6 +5,7 @@ import { ensureEnumValue, ensurePositiveNumber, parseId, requireFields, toMoney 
 import { getChatbotSettings } from "./chatbotSettingsService.js";
 import { dispatchWhatsAppText } from "./evolutionService.js";
 
+// Include "pesado" usado em consultas individuais (detalhe de fiado por cliente).
 const fiadoInclude = {
   cliente: {
     include: {
@@ -13,6 +14,36 @@ const fiadoInclude = {
           itens: {
             include: {
               produto: true,
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
+// Include "leve" para listagem da carteira: traz apenas a ultima venda e o
+// ultimo item dela, suficiente para a coluna "Ultima compra" sem explodir o
+// payload nem o tempo de resposta.
+const fiadoListInclude = {
+  cliente: {
+    select: {
+      id: true,
+      nome: true,
+      telefone: true,
+      cpf: true,
+      statusSerasa: true,
+      vendas: {
+        orderBy: { dataHora: "desc" },
+        take: 1,
+        select: {
+          id: true,
+          dataHora: true,
+          itens: {
+            take: 1,
+            select: {
+              subtotal: true,
+              produto: { select: { nome: true } },
             },
           },
         },
@@ -54,7 +85,7 @@ export async function listContasFiado() {
     orderBy: {
       saldoDevedor: "desc",
     },
-    include: fiadoInclude,
+    include: fiadoListInclude,
   });
 
   return contas.map(serializeContaFiado);

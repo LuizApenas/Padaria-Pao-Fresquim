@@ -36,7 +36,7 @@ export class FiadoApiService {
     return this.http
       .get<ContaFiadoApi[]>(`${API_BASE_URL}/api/fiado`, { headers: NO_CACHE_HEADERS })
       .pipe(
-        timeout(8000),
+        timeout(15000),
         map((contas) => contas.map((conta) => this.normalizeDebtor(conta))),
       );
   }
