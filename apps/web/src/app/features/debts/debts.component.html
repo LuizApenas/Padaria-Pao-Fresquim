@@ -40,9 +40,42 @@
   </div>
 
   <div class="tip-card">
-    <div class="tip-label">Acoes sugeridas</div>
-    <div class="tip-text">Automatize cobrancas para titulos vencidos ha mais de 10 dias e priorize os clientes criticos.</div>
-    <button class="btn-activate" type="button">Ativar rotina</button>
+    <div class="tip-label">Configuracoes de rotina</div>
+    <div class="tip-text">
+      Quando ligada, a Fresca dispara WhatsApp para todos os clientes com saldo de fiado
+      todos os dias no horario abaixo (fuso America/Sao_Paulo).
+    </div>
+
+    <div class="cron-row">
+      <label class="cron-toggle-label">
+        <span>Disparo diario automatico</span>
+        <button
+          type="button"
+          class="toggle"
+          [class.on]="cronSettings.debtAutoCronEnabled"
+          (click)="cronSettings.debtAutoCronEnabled = !cronSettings.debtAutoCronEnabled"
+          [attr.aria-pressed]="cronSettings.debtAutoCronEnabled"
+        ></button>
+      </label>
+    </div>
+
+    <div class="cron-row">
+      <label class="cron-time-label" for="debtAutoCronTime">Horario do disparo</label>
+      <input
+        id="debtAutoCronTime"
+        class="form-input cron-time-input"
+        type="time"
+        [(ngModel)]="cronSettings.debtAutoCronTime"
+        [disabled]="!cronSettings.debtAutoCronEnabled"
+      />
+    </div>
+
+    <button class="btn-activate" type="button" [disabled]="cronSaving" (click)="saveCronSettings()">
+      {{ cronSaving ? "Salvando..." : "Salvar configuracoes" }}
+    </button>
+
+    <div *ngIf="cronMessage" class="cron-success">{{ cronMessage }}</div>
+    <div *ngIf="cronError" class="cron-error">{{ cronError }}</div>
   </div>
 </div>
 </div>

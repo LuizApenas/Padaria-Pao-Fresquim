@@ -36,3 +36,39 @@
 .retry-button {
   margin-top: 1rem;
 }
+
+.cron-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.cron-toggle-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cron-time-label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cron-time-input {
+  max-width: 130px;
+  font-size: 0.95rem;
+}
+
+.cron-success {
+  color: var(--green-dark, #1f4a30);
+  font-size: 0.88rem;
+}
+
+.cron-error {
+  color: var(--danger, #b1262c);
+  font-size: 0.88rem;
+}

@@ -1,6 +1,10 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { NavigationEnd, Router } from "@angular/router";
+import { Subscription, filter } from "rxjs";
 import { Debtor } from "../../core/models";
+import { ChatbotApiService, ChatbotSettings } from "../../core/services/chatbot-api.service";
 import { FiadoApiService } from "../../core/services/fiado-api.service";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
 import { formatCurrency } from "../../core/utils/format";
@@ -8,20 +12,52 @@ import { formatCurrency } from "../../core/utils/format";
 @Component({
   selector: "pf-debts",
   standalone: true,
-  imports: [CommonModule, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, StatusBadgeComponent],
   templateUrl: "./debts.component.html",
   styleUrl: "./debts.component.css"
 })
-export class DebtsComponent implements OnInit {
+export class DebtsComponent implements OnInit, OnDestroy {
   debtors: Debtor[] = [];
   isLoading = true;
   errorMessage = "";
+  cronSettings: Pick<ChatbotSettings, "debtAutoCronEnabled" | "debtAutoCronTime"> = {
+    debtAutoCronEnabled: false,
+    debtAutoCronTime: "09:00",
+  };
+  private cronOriginal: ChatbotSettings | null = null;
+  cronSaving = false;
+  cronMessage = "";
+  cronError = "";
   readonly formatCurrency = formatCurrency;
+  private readonly routeSubscription: Subscription;
 
-  constructor(private readonly fiadoApiService: FiadoApiService) {}
+  constructor(
+    private readonly fiadoApiService: FiadoApiService,
+    private readonly chatbotApiService: ChatbotApiService,
+    private readonly router: Router,
+    private readonly changeDetectorRef: ChangeDetectorRef,
+    private readonly ngZone: NgZone,
+  ) {
+    // Recarrega a carteira sempre que a rota terminar em /fiado — cobre o caso
+    // de o componente reaproveitar instancia ou ngOnInit nao ser chamado em
+    // navegacoes encadeadas.
+    this.routeSubscription = this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => {
+        if (event.urlAfterRedirects.startsWith("/fiado")) {
+          this.loadDebtors();
+          this.loadCronSettings();
+        }
+      });
+  }
 
   ngOnInit(): void {
     this.loadDebtors();
+    this.loadCronSettings();
+  }
+
+  ngOnDestroy(): void {
+    this.routeSubscription.unsubscribe();
   }
 
   get totalDebt(): number {
@@ -42,6 +78,64 @@ export class DebtsComponent implements OnInit {
     this.loadDebtors();
   }
 
+  private loadCronSettings(): void {
+    this.chatbotApiService.getSettings().subscribe({
+      next: (settings) => {
+        this.ngZone.run(() => {
+          this.cronOriginal = settings;
+          this.cronSettings = {
+            debtAutoCronEnabled: settings.debtAutoCronEnabled,
+            debtAutoCronTime: settings.debtAutoCronTime || "09:00",
+          };
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+      error: () => {
+        // Silencioso: o card mostra defaults e permite tentar salvar.
+      },
+    });
+  }
+
+  saveCronSettings(): void {
+    if (!this.cronOriginal) return;
+    if (this.cronSaving) return;
+
+    this.cronSaving = true;
+    this.cronMessage = "";
+    this.cronError = "";
+    this.changeDetectorRef.detectChanges();
+
+    const payload: ChatbotSettings = {
+      ...this.cronOriginal,
+      debtAutoCronEnabled: this.cronSettings.debtAutoCronEnabled,
+      debtAutoCronTime: this.cronSettings.debtAutoCronTime || "09:00",
+    };
+
+    this.chatbotApiService.updateSettings(payload).subscribe({
+      next: (settings) => {
+        this.ngZone.run(() => {
+          this.cronOriginal = settings;
+          this.cronSettings = {
+            debtAutoCronEnabled: settings.debtAutoCronEnabled,
+            debtAutoCronTime: settings.debtAutoCronTime || "09:00",
+          };
+          this.cronMessage = settings.debtAutoCronEnabled
+            ? `Rotina ativada para disparar todos os dias as ${settings.debtAutoCronTime}.`
+            : "Rotina desativada.";
+          this.cronSaving = false;
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+      error: () => {
+        this.ngZone.run(() => {
+          this.cronError = "Nao foi possivel salvar as configuracoes da rotina.";
+          this.cronSaving = false;
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+    });
+  }
+
   chargeDebtor(clientId: number): void {
     this.fiadoApiService.registerCharge(clientId).subscribe({
       next: (updatedDebtor) => {
@@ -56,16 +150,23 @@ export class DebtsComponent implements OnInit {
   private loadDebtors(): void {
     this.isLoading = true;
     this.errorMessage = "";
+    this.changeDetectorRef.detectChanges();
 
     this.fiadoApiService.listDebtors().subscribe({
       next: (apiDebtors) => {
-        this.debtors = apiDebtors;
-        this.isLoading = false;
+        this.ngZone.run(() => {
+          this.debtors = apiDebtors;
+          this.isLoading = false;
+          this.changeDetectorRef.detectChanges();
+        });
       },
       error: () => {
-        this.debtors = [];
-        this.errorMessage = "API de fiado indisponivel. Nao ha fallback mockado para carteira de fiado.";
-        this.isLoading = false;
+        this.ngZone.run(() => {
+          this.debtors = [];
+          this.errorMessage = "API de fiado indisponivel. Tente novamente em instantes.";
+          this.isLoading = false;
+          this.changeDetectorRef.detectChanges();
+        });
       },
     });
   }

@@ -26,6 +26,10 @@ const DEFAULT_SETTINGS = {
   whatsappBotEnabled: true,
   orderReadyNotificationsEnabled: true,
   debtWarningsEnabled: true,
+  // Rotina automatica de cobranca: quando ligada, dispara cobranca para todos
+  // os clientes com saldo de fiado uma vez por dia no horario configurado.
+  debtAutoCronEnabled: false,
+  debtAutoCronTime: "09:00",
   dailyMetricsEnabled: true,
   // Debounce do webhook WhatsApp: aguarda N ms apos a ultima mensagem antes de responder.
   messageBufferMs: 2500,
@@ -81,6 +85,10 @@ function sanitizeSettings(settings) {
       settings.whatsappBotEnabled === undefined ? true : Boolean(settings.whatsappBotEnabled),
     orderReadyNotificationsEnabled: Boolean(settings.orderReadyNotificationsEnabled),
     debtWarningsEnabled: Boolean(settings.debtWarningsEnabled),
+    debtAutoCronEnabled: Boolean(settings.debtAutoCronEnabled),
+    debtAutoCronTime: /^([01]\d|2[0-3]):[0-5]\d$/.test(String(settings.debtAutoCronTime ?? ""))
+      ? String(settings.debtAutoCronTime)
+      : "09:00",
     dailyMetricsEnabled: Boolean(settings.dailyMetricsEnabled),
     messageBufferMs: Number(settings.messageBufferMs) > 0 ? Number(settings.messageBufferMs) : 2500,
   };
@@ -157,6 +165,9 @@ export async function updateChatbotSettings(data) {
       data.whatsappBotEnabled === undefined ? current.whatsappBotEnabled : data.whatsappBotEnabled,
     orderReadyNotificationsEnabled: data.orderReadyNotificationsEnabled,
     debtWarningsEnabled: data.debtWarningsEnabled,
+    debtAutoCronEnabled:
+      data.debtAutoCronEnabled === undefined ? current.debtAutoCronEnabled : data.debtAutoCronEnabled,
+    debtAutoCronTime: data.debtAutoCronTime ?? current.debtAutoCronTime,
     dailyMetricsEnabled: data.dailyMetricsEnabled,
     messageBufferMs: data.messageBufferMs,
   });

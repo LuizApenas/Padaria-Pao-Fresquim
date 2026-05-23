@@ -19,6 +19,8 @@ export type ChatbotSettings = {
   whatsappBotEnabled: boolean;
   orderReadyNotificationsEnabled: boolean;
   debtWarningsEnabled: boolean;
+  debtAutoCronEnabled: boolean;
+  debtAutoCronTime: string;
   dailyMetricsEnabled: boolean;
   messageBufferMs: number;
 };
