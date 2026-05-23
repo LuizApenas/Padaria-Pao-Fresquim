@@ -73,6 +73,28 @@ function normalizePhone(value = "") {
   return digits.startsWith("55") ? digits : `55${digits}`;
 }
 
+// Canonicaliza um telefone brasileiro para "DDD + 9 + 8 digitos" (11 chars),
+// removendo prefixos 55/0 e adicionando o 9 do celular quando estiver faltando.
+// Compara qualquer variacao recebida do WhatsApp/Evolution com o que esta no DB.
+function canonicalBrazilianMobile(value = "") {
+  let digits = onlyDigits(value);
+  if (!digits) return "";
+  if (digits.startsWith("55")) digits = digits.slice(2);
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  // Celular sem o 9: DDD + 8 digitos = 10. Insere o 9 apos o DDD.
+  if (digits.length === 10) {
+    digits = `${digits.slice(0, 2)}9${digits.slice(2)}`;
+  }
+  return digits;
+}
+
+function phonesMatch(a, b) {
+  const ca = canonicalBrazilianMobile(a);
+  const cb = canonicalBrazilianMobile(b);
+  if (!ca || !cb) return false;
+  return ca === cb;
+}
+
 function getUnknownSenderKey({ telefone, phone, cpf } = {}) {
   const phoneDigits = normalizePhone(telefone || phone);
   const cpfDigits = onlyDigits(cpf);
@@ -504,9 +526,9 @@ function parseLlmIntent(text = "") {
 // Procura funcionario ativo pelo telefone (E.164 ou local) para identificar
 // remetentes internos quando o atendimento vem pelo WhatsApp.
 async function findFuncionarioPorTelefoneAtivo(telefone) {
-  const telefoneDigits = onlyDigits(telefone);
+  const canonical = canonicalBrazilianMobile(telefone);
 
-  if (!telefoneDigits) {
+  if (!canonical) {
     return null;
   }
 
@@ -515,10 +537,25 @@ async function findFuncionarioPorTelefoneAtivo(telefone) {
     select: { id: true, nome: true, email: true, role: true, cargo: true, telefone: true },
   });
 
-  return funcionarios.find((funcionario) => {
-    const funcionarioDigits = onlyDigits(funcionario.telefone);
-    return funcionarioDigits && funcionarioDigits.endsWith(telefoneDigits.slice(-11));
-  });
+  const match = funcionarios.find((funcionario) => phonesMatch(funcionario.telefone, telefone));
+
+  if (!match) {
+    console.log(
+      "[chatbot] funcionario nao encontrado para telefone:",
+      JSON.stringify({
+        telefoneRecebido: telefone,
+        canonicalRecebido: canonical,
+        candidatos: funcionarios.map((f) => ({
+          id: f.id,
+          nome: f.nome,
+          telefoneDb: f.telefone,
+          canonicalDb: canonicalBrazilianMobile(f.telefone),
+        })),
+      }),
+    );
+  }
+
+  return match;
 }
 
 // Resolve quem esta no outro lado do WhatsApp: funcionario tem prioridade
@@ -540,7 +577,6 @@ async function resolveWhatsappSender({ telefone, cpf }) {
 }
 
 async function findClienteCadastrado({ telefone, cpf }) {
-  const telefoneDigits = onlyDigits(telefone);
   const cpfDigits = onlyDigits(cpf);
   const clientes = await prisma.cliente.findMany({
     where: { ativo: true },
@@ -548,7 +584,7 @@ async function findClienteCadastrado({ telefone, cpf }) {
   });
 
   return clientes.find((cliente) => {
-    const samePhone = telefoneDigits && onlyDigits(cliente.telefone).endsWith(telefoneDigits.slice(-11));
+    const samePhone = telefone && phonesMatch(cliente.telefone, telefone);
     const sameCpf = cpfDigits && onlyDigits(cliente.cpf) === cpfDigits;
 
     return samePhone || sameCpf;
