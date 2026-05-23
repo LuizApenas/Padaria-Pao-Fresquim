@@ -28,6 +28,9 @@ const CHATBOT_WORKER_TOOLS = Object.freeze({
   READ_ACTIVE_PRODUCTS: "READ_ACTIVE_PRODUCTS",
   VALIDATE_ORDER: "VALIDATE_ORDER",
   READ_ORDER_STATUS: "READ_ORDER_STATUS",
+  READ_DEBTORS: "READ_DEBTORS",
+  READ_PENDING_ORDERS: "READ_PENDING_ORDERS",
+  DISPATCH_DEBT_CAMPAIGN: "DISPATCH_DEBT_CAMPAIGN",
 });
 const CHATBOT_WORKER_PERMISSIONS = Object.freeze({
   PROPRIETARIO: new Set(Object.values(CHATBOT_WORKER_TOOLS)),
@@ -35,6 +38,11 @@ const CHATBOT_WORKER_PERMISSIONS = Object.freeze({
     CHATBOT_WORKER_TOOLS.READ_ACTIVE_PRODUCTS,
     CHATBOT_WORKER_TOOLS.VALIDATE_ORDER,
     CHATBOT_WORKER_TOOLS.READ_ORDER_STATUS,
+    CHATBOT_WORKER_TOOLS.READ_PENDING_ORDERS,
+  ]),
+  PADEIRO: new Set([
+    CHATBOT_WORKER_TOOLS.READ_ACTIVE_PRODUCTS,
+    CHATBOT_WORKER_TOOLS.READ_PENDING_ORDERS,
   ]),
   CLIENTE: new Set([
     CHATBOT_WORKER_TOOLS.READ_ACTIVE_PRODUCTS,
@@ -304,21 +312,130 @@ async function runChatbotWorkerTool(worker, tool, payload = {}) {
   throw new AppError("Ferramenta do chatbot nao permitida.", 403);
 }
 
+// Detecta intencao explicita de disparar cobranca em massa via texto livre.
+function isConfirmCobrancaCampanha(text = "") {
+  const t = String(text).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  if (!t) return false;
+  const hasCobrar = /(cobrar|enviar cobranca|disparar cobranca|mandar cobranca|notificar fiad)/i.test(t);
+  const hasTodos = /(todos|geral|em massa|todos com fiad|inadimplent|lista)/i.test(t);
+  // Aceita "sim, pode disparar" / "pode enviar" como confirmacao curta
+  const isShortYes = /^(sim|pode|manda|envia|dispara|confirmo|pode sim|pode mandar|pode disparar|pode enviar)([. !]|$)/i.test(t.trim());
+  return (hasCobrar && hasTodos) || isShortYes;
+}
+
+// Dispara cobranca WhatsApp para cada cliente com saldo > 0.
+async function dispararCampanhaCobranca(inadimplentes) {
+  if (!Array.isArray(inadimplentes) || inadimplentes.length === 0) {
+    return { message: "Nao ha clientes com fiado em aberto no momento. Nada a disparar." };
+  }
+
+  const settings = await getChatbotSettings();
+  if (!settings.debtWarningsEnabled) {
+    return {
+      message:
+        "Cobranca por WhatsApp esta desligada nas configuracoes. Ligue 'Aviso de fiado' no painel para disparar.",
+    };
+  }
+
+  let enviados = 0;
+  let falhas = 0;
+  const detalhes = [];
+
+  for (const item of inadimplentes) {
+    try {
+      const cobranca = await registrarCobrancaFiadoInterna(item.clienteId);
+      if (cobranca?.statusNotificacao === "ENVIADA") {
+        enviados += 1;
+        detalhes.push(`${item.nome}: ok`);
+      } else {
+        falhas += 1;
+        detalhes.push(`${item.nome}: ${cobranca?.whatsappErro || cobranca?.statusNotificacao || "nao enviado"}`);
+      }
+    } catch (error) {
+      falhas += 1;
+      detalhes.push(`${item.nome}: ${error?.message || "erro"}`);
+    }
+  }
+
+  return {
+    message: [
+      `Cobranca disparada para ${inadimplentes.length} cliente(s).`,
+      `Enviados com sucesso: ${enviados}. Falhas: ${falhas}.`,
+      falhas > 0 ? `Detalhes:\n${detalhes.join("\n")}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  };
+}
+
+// Versao interna que reusa o servico fiadoService sem expor request/response.
+async function registrarCobrancaFiadoInterna(clienteId) {
+  // Import dinamico para evitar ciclo de modulos no boot.
+  const { registrarCobrancaFiado } = await import("./fiadoService.js");
+  return registrarCobrancaFiado(clienteId);
+}
+
+async function listInadimplentes() {
+  const contas = await prisma.contaFiado.findMany({
+    where: { saldoDevedor: { gt: 0 } },
+    include: { cliente: { select: { id: true, nome: true, telefone: true } } },
+    orderBy: { saldoDevedor: "desc" },
+    take: 25,
+  });
+
+  return contas
+    .filter((c) => c.cliente)
+    .map((c) => ({
+      clienteId: c.cliente.id,
+      nome: c.cliente.nome,
+      telefone: c.cliente.telefone,
+      saldo: Number(c.saldoDevedor),
+      ultimaCobranca: c.dataUltimaCobranca,
+      statusNotificacao: c.statusNotificacao,
+    }));
+}
+
+async function listPedidosPendentes() {
+  const vendas = await prisma.venda.findMany({
+    where: { status: "PENDENTE" },
+    include: {
+      cliente: { select: { nome: true } },
+      itens: { include: { produto: { select: { nome: true } } } },
+    },
+    orderBy: { dataHora: "desc" },
+    take: 25,
+  });
+
+  return vendas.map((v) => ({
+    id: v.id,
+    dataHora: v.dataHora,
+    cliente: v.cliente?.nome ?? "Sem cliente",
+    valorTotal: Number(v.valorTotal),
+    itens: v.itens.map((i) => `${i.quantidade}x ${i.produto?.nome ?? "?"}`).join(", "),
+  }));
+}
+
 async function buildChatbotAgentContext(worker) {
-  const [metrics, produtos] = await Promise.all([
+  const [metrics, produtos, inadimplentes, pedidosPendentes] = await Promise.all([
     worker.canUse(CHATBOT_WORKER_TOOLS.READ_DAILY_METRICS)
       ? runChatbotWorkerTool(worker, CHATBOT_WORKER_TOOLS.READ_DAILY_METRICS).catch(() => null)
       : Promise.resolve(null),
     worker.canUse(CHATBOT_WORKER_TOOLS.READ_ACTIVE_PRODUCTS)
       ? runChatbotWorkerTool(worker, CHATBOT_WORKER_TOOLS.READ_ACTIVE_PRODUCTS)
       : Promise.resolve([]),
+    worker.canUse(CHATBOT_WORKER_TOOLS.READ_DEBTORS)
+      ? listInadimplentes().catch(() => [])
+      : Promise.resolve([]),
+    worker.canUse(CHATBOT_WORKER_TOOLS.READ_PENDING_ORDERS)
+      ? listPedidosPendentes().catch(() => [])
+      : Promise.resolve([]),
   ]);
 
-  return { metrics, produtos };
+  return { metrics, produtos, inadimplentes, pedidosPendentes };
 }
 
 // Monta o system prompt enviado ao Groq (regras fixas + metricas/catalogo do momento).
-function buildSystemPrompt({ metrics, produtos, sender, worker }) {
+function buildSystemPrompt({ metrics, produtos, sender, worker, inadimplentes, pedidosPendentes }) {
   const productList = produtos
     .slice(0, 80)
     .map((produto) => `#${produto.id} ${produto.nome} (${formatMoney(produto.precoBase)})`)
@@ -433,6 +550,37 @@ function buildSystemPrompt({ metrics, produtos, sender, worker }) {
     `Catalogo ativo resumido: ${productList || "sem produtos carregados"}.`,
   );
 
+  // Lista REAL de inadimplentes (so para quem tem permissao). Sem isso, o LLM
+  // costuma inventar ou dizer "nao tenho acesso".
+  if (inadimplentes && inadimplentes.length > 0) {
+    const linhas = inadimplentes
+      .slice(0, 15)
+      .map((c, i) => `${i + 1}. ${c.nome} — saldo ${formatMoney(c.saldo)} — telefone ${c.telefone || "sem telefone"}`)
+      .join("\n");
+    lines.push(`Clientes com fiado em aberto (top 15 por saldo):\n${linhas}`);
+  } else if (Array.isArray(inadimplentes)) {
+    lines.push("Clientes com fiado em aberto: nenhum no momento.");
+  }
+
+  if (pedidosPendentes && pedidosPendentes.length > 0) {
+    const linhas = pedidosPendentes
+      .slice(0, 10)
+      .map(
+        (p) =>
+          `#${p.id} ${p.cliente} — ${p.itens || "itens?"} — ${formatMoney(p.valorTotal)}`,
+      )
+      .join("\n");
+    lines.push(`Pedidos pendentes:\n${linhas}`);
+  } else if (Array.isArray(pedidosPendentes)) {
+    lines.push("Pedidos pendentes: nenhum no momento.");
+  }
+
+  // Reforco anti-alucinacao: nada de inventar nomes, telefones, valores.
+  lines.push(
+    "REGRA CRITICA: use APENAS os dados listados acima. Nao invente nomes, telefones, valores ou status. Se a info nao estiver no contexto, diga claramente que precisa abrir a tela correspondente no painel.",
+    "Se o usuario pedir uma acao (ex.: 'cobrar todos com fiado'), confirme antes de executar ('Quer que eu dispare a cobranca por WhatsApp para os N clientes da lista?'). O sistema reconhece a confirmacao e dispara automaticamente.",
+  );
+
   return lines.join("\n");
 }
 
@@ -509,7 +657,7 @@ async function listarProdutosAtivos() {
 }
 
 // Chama Groq com historico curto e pede JSON de intencao em <intent_json> no final da resposta.
-async function callGroq({ message, history, metrics, produtos, sender, worker }) {
+async function callGroq({ message, history, metrics, produtos, sender, worker, inadimplentes, pedidosPendentes }) {
   const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
@@ -527,7 +675,7 @@ async function callGroq({ message, history, metrics, produtos, sender, worker })
       temperature: 0.2,
       max_completion_tokens: 650,
       messages: [
-        { role: "system", content: buildSystemPrompt({ metrics, produtos, sender, worker }) },
+        { role: "system", content: buildSystemPrompt({ metrics, produtos, sender, worker, inadimplentes, pedidosPendentes }) },
         ...history,
         {
           role: "user",
@@ -1000,9 +1148,25 @@ export async function responderMensagemChatbot(data = {}, context = {}) {
     };
   }
 
-  const { metrics, produtos } = await buildChatbotAgentContext(worker);
+  const { metrics, produtos, inadimplentes, pedidosPendentes } = await buildChatbotAgentContext(worker);
   const history = safeChatHistory(data.messages);
-  const groqText = await callGroq({ message, history, metrics, produtos, sender, worker }).catch(() => null);
+
+  // Intencao explicita de cobrar todos os fiados: dispara a campanha sem
+  // depender do LLM (acao concreta + resposta natural).
+  if (
+    sender.type === "FUNCIONARIO" &&
+    worker.canUse(CHATBOT_WORKER_TOOLS.DISPATCH_DEBT_CAMPAIGN) &&
+    isConfirmCobrancaCampanha(message)
+  ) {
+    const resultado = await dispararCampanhaCobranca(inadimplentes ?? []);
+    return {
+      source: "campanha_cobranca",
+      intent: "FIADO",
+      reply: resultado.message,
+    };
+  }
+
+  const groqText = await callGroq({ message, history, metrics, produtos, sender, worker, inadimplentes, pedidosPendentes }).catch(() => null);
   const llmIntent = groqText ? parseLlmIntent(groqText) : null;
   const normalized = message.toLowerCase();
   const inferredIntent =
