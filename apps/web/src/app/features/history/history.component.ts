@@ -3,8 +3,12 @@ import { ChangeDetectorRef, Component, NgZone, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import { Employee, Sale } from "../../core/models";
+import { ApiErrorMessageService } from "../../core/services/api-error-message.service";
+import { AuthService } from "../../core/services/auth.service";
+import { ConfirmService } from "../../core/services/confirm.service";
 import { EmployeesApiService } from "../../core/services/employees-api.service";
 import { SalesApiService } from "../../core/services/sales-api.service";
+import { ToastService } from "../../core/services/toast.service";
 import { formatCurrency } from "../../core/utils/format";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
 
@@ -38,6 +42,10 @@ export class HistoryComponent implements OnInit {
   constructor(
     private readonly salesApiService: SalesApiService,
     private readonly employeesApiService: EmployeesApiService,
+    private readonly authService: AuthService,
+    private readonly confirmService: ConfirmService,
+    private readonly toastService: ToastService,
+    private readonly apiErrorMessageService: ApiErrorMessageService,
     private readonly changeDetectorRef: ChangeDetectorRef,
     private readonly ngZone: NgZone,
   ) {}
@@ -74,11 +82,37 @@ export class HistoryComponent implements OnInit {
     this.loadSales();
   }
 
-  cancelSale(saleId: string): void {
+  get canCancelSales(): boolean {
+    return this.authService.getUser()?.role === "PROPRIETARIO";
+  }
+
+  async cancelSale(sale: Sale): Promise<void> {
+    if (!this.canCancelSales) {
+      this.errorMessage = "Seu perfil de atendente nao pode cancelar vendas. Solicite o cancelamento ao proprietario.";
+      this.toastService.show("Apenas proprietarios podem cancelar vendas.", "warning");
+      return;
+    }
+
+    const confirmed = await this.confirmService.ask({
+      title: "Cancelar venda?",
+      message: `A venda #${sale.id} sera marcada como cancelada e os valores sairao dos relatorios ativos.`,
+      confirmLabel: "Cancelar venda",
+      tone: "danger",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    const saleId = sale.id;
     this.salesApiService.cancelSale(saleId).subscribe({
-      next: () => this.loadSales(),
-      error: () => {
-        this.errorMessage = "Nao foi possivel cancelar a venda na API.";
+      next: () => {
+        this.loadSales();
+        this.toastService.show("Venda cancelada.", "success");
+      },
+      error: (error) => {
+        this.errorMessage = this.apiErrorMessageService.describe(error, "Nao foi possivel cancelar a venda.");
+        this.toastService.show("Venda nao foi cancelada. Verifique a mensagem na tela.", "danger");
       },
     });
   }
@@ -117,7 +151,7 @@ export class HistoryComponent implements OnInit {
             canceledSales: 0,
             activeOperators: 0,
           };
-          this.errorMessage = "API de vendas indisponivel. Nao ha fallback mockado nesta tela.";
+          this.errorMessage = "Nao consegui carregar as vendas. Verifique se a API esta rodando e tente novamente.";
           this.isLoading = false;
           this.changeDetectorRef.detectChanges();
         });

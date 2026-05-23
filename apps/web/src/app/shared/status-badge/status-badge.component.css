@@ -1,11 +1,19 @@
 .status {
   display: inline-flex;
   align-items: center;
+  gap: 0.4rem;
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1;
+}
+
+.status-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .status.success {

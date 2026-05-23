@@ -52,13 +52,13 @@ export class SalesApiService {
   }
 
   createSale(payload: CreateSalePayload): Observable<unknown> {
-    return this.http.post<unknown>(`${API_BASE_URL}/api/vendas`, payload);
+    return this.http.post<unknown>(`${API_BASE_URL}/api/vendas`, payload).pipe(timeout(10000));
   }
 
   cancelSale(saleId: number | string): Observable<Sale> {
     return this.http
       .patch<Sale>(`${API_BASE_URL}/api/vendas/${saleId}/cancelar`, {})
-      .pipe(map((sale) => this.normalizeSale(sale)));
+      .pipe(timeout(10000), map((sale) => this.normalizeSale(sale)));
   }
 
   normalizeSale(sale: Sale): Sale {

@@ -2,26 +2,41 @@ import { Prisma } from "@prisma/client";
 
 import { AppError } from "../utils/AppError.js";
 
-// Monta o formato padrão de resposta de erro da API.
-function buildErrorResponse(message, details) {
+function buildErrorResponse(message, details, suggestion) {
   const response = {
     error: message,
+    message,
   };
 
-  // Só adiciona detalhes quando existir algo útil para retornar ao cliente.
   if (details?.length) {
     response.details = details;
+  }
+
+  if (suggestion) {
+    response.suggestion = suggestion;
   }
 
   return response;
 }
 
-// Detecta erros de validação do Zod sem acoplar a aplicação a uma importação direta.
+function getSuggestionForStatus(statusCode) {
+  const suggestions = {
+    400: "Revise os campos informados e tente novamente.",
+    401: "Faca login novamente para continuar.",
+    403: "Use um usuario com permissao para esta operacao.",
+    404: "Atualize a lista e tente selecionar o registro de novo.",
+    409: "Verifique se ja existe outro cadastro com esses dados.",
+    413: "Reduza o tamanho do arquivo ou envie uma URL valida.",
+    500: "Tente novamente em instantes. Se persistir, acione o suporte.",
+  };
+
+  return suggestions[statusCode] ?? "Revise a acao e tente novamente.";
+}
+
 function isZodValidationError(error) {
   return error?.name === "ZodError" && Array.isArray(error?.issues);
 }
 
-// Converte os problemas do Zod para um formato simples e previsível na resposta.
 function formatZodIssues(issues) {
   return issues.map((issue) => ({
     field: issue.path.join("."),
@@ -29,7 +44,6 @@ function formatZodIssues(issues) {
   }));
 }
 
-// Extrai os campos envolvidos em uma violação de unicidade do Prisma.
 function getUniqueConstraintFields(error) {
   const target = error?.meta?.target;
 
@@ -40,7 +54,6 @@ function getUniqueConstraintFields(error) {
   return "informado";
 }
 
-// Extrai o campo de chave estrangeira para facilitar a leitura do erro retornado.
 function getForeignKeyField(error) {
   const fieldName = error?.meta?.field_name;
 
@@ -51,7 +64,6 @@ function getForeignKeyField(error) {
   return "relacionamento informado";
 }
 
-// Identifica erros conhecidos do Prisma mesmo quando eles chegam como objetos simples.
 function getPrismaErrorCode(error) {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     return error.code;
@@ -78,37 +90,42 @@ export function errorHandler(error, _request, response, _next) {
     return response.status(413).json(
       buildErrorResponse(
         "Corpo da requisicao muito grande. Nao envie imagens em base64; use uma URL http(s) ou cadastre sem imagem.",
+        undefined,
+        getSuggestionForStatus(413),
       ),
     );
   }
 
-  // Trata erros gerados manualmente pela própria aplicação.
   if (error instanceof AppError) {
     return response
       .status(error.statusCode)
-      .json(buildErrorResponse(error.message));
+      .json(buildErrorResponse(error.message, undefined, getSuggestionForStatus(error.statusCode)));
   }
 
-  // Trata erros de validação do Zod retornando os campos problemáticos.
   if (isZodValidationError(error)) {
     return response.status(400).json(
-      buildErrorResponse("Dados de entrada inválidos.", formatZodIssues(error.issues)),
+      buildErrorResponse(
+        "Dados de entrada invalidos.",
+        formatZodIssues(error.issues),
+        getSuggestionForStatus(400),
+      ),
     );
   }
 
-  // Centraliza o mapeamento de erros conhecidos do Prisma para respostas legíveis.
   switch (getPrismaErrorCode(error)) {
     case "P2025":
       return response
         .status(404)
-        .json(buildErrorResponse("Registro não encontrado."));
+        .json(buildErrorResponse("Registro nao encontrado.", undefined, getSuggestionForStatus(404)));
 
     case "P2002": {
       const fields = getUniqueConstraintFields(error);
 
       return response.status(409).json(
         buildErrorResponse(
-          `Já existe um registro com o valor informado para o campo ${fields}.`,
+          `Ja existe um registro com o valor informado para o campo ${fields}.`,
+          undefined,
+          getSuggestionForStatus(409),
         ),
       );
     }
@@ -118,7 +135,9 @@ export function errorHandler(error, _request, response, _next) {
 
       return response.status(400).json(
         buildErrorResponse(
-          `Operação inválida: a referência do campo ${field} não existe.`,
+          `Operacao invalida: a referencia do campo ${field} nao existe.`,
+          undefined,
+          getSuggestionForStatus(400),
         ),
       );
     }
@@ -127,10 +146,9 @@ export function errorHandler(error, _request, response, _next) {
       break;
   }
 
-  // Mantém o log dos erros inesperados no servidor para investigação posterior.
   console.error(error);
 
   return response
     .status(500)
-    .json(buildErrorResponse("Erro interno do servidor."));
+    .json(buildErrorResponse("Erro interno do servidor.", undefined, getSuggestionForStatus(500)));
 }

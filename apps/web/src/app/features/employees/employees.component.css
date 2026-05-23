@@ -196,6 +196,21 @@
   grid-column: 1 / -1;
 }
 
+.employee-password-help {
+  margin-top: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.employee-modal-error {
+  padding: 0.85rem 1rem;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-weight: 700;
+}
+
 .employee-modal-actions {
   position: sticky;
   bottom: 0;

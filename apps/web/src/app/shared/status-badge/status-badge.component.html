@@ -1,1 +1,4 @@
-<span class="status" [ngClass]="resolvedTone">{{ text }}</span>
+<span class="status" [ngClass]="resolvedTone" [attr.aria-label]="'Status: ' + text">
+  <span class="status-dot" aria-hidden="true"></span>
+  {{ text }}
+</span>

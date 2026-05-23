@@ -1,0 +1,59 @@
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.confirm-dialog {
+  width: min(440px, 100%);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.26);
+}
+
+.confirm-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--info);
+  font-weight: 900;
+}
+
+.confirm-icon.danger {
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--danger);
+}
+
+.confirm-copy h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.confirm-copy p {
+  margin: 0.4rem 0 0;
+  color: var(--text-muted);
+}
+
+.confirm-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.confirm-danger {
+  background: var(--danger);
+}

@@ -84,7 +84,7 @@
                   <path d="M12 7v5l3 2M5 12a7 7 0 1 0 14 0 7 7 0 0 0-14 0Z" />
                 </svg>
               </button>
-              <button class="icon-action" type="button" aria-label="Excluir funcionario" (click)="deleteEmployee(employee.id)">
+              <button class="icon-action" type="button" aria-label="Excluir funcionario" title="Excluir funcionario" (click)="deleteEmployee(employee)">
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7M7 7l1 13h8l1-13" />
                 </svg>
@@ -182,7 +182,14 @@
               placeholder="Minimo 10, Aa, numero e especial"
               [required]="modalMode === 'create'"
             />
+            <div class="employee-password-help">
+              Use no minimo 10 caracteres, incluindo maiuscula, minuscula, numero e caractere especial.
+            </div>
           </div>
+        </div>
+
+        <div *ngIf="modalErrorMessage" class="employee-modal-error" role="alert" aria-live="assertive">
+          {{ modalErrorMessage }}
         </div>
 
         <div class="employee-modal-actions">

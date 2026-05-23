@@ -3,7 +3,10 @@ import { ChangeDetectorRef, Component, NgZone, OnInit, inject } from "@angular/c
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 import { Employee } from "../../core/models";
+import { ApiErrorMessageService } from "../../core/services/api-error-message.service";
+import { ConfirmService } from "../../core/services/confirm.service";
 import { EmployeePayload, EmployeesApiService } from "../../core/services/employees-api.service";
+import { ToastService } from "../../core/services/toast.service";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
 
 type EmployeeRole = EmployeePayload["role"];
@@ -37,6 +40,7 @@ export class EmployeesComponent implements OnInit {
   employees: Employee[] = [];
   isLoading = true;
   errorMessage = "";
+  modalErrorMessage = "";
   isModalOpen = false;
   selectedEmployee: Employee | null = null;
   modalMode: "create" | "edit" = "create";
@@ -49,6 +53,9 @@ export class EmployeesComponent implements OnInit {
 
   constructor(
     private readonly employeesApiService: EmployeesApiService,
+    private readonly confirmService: ConfirmService,
+    private readonly toastService: ToastService,
+    private readonly apiErrorMessageService: ApiErrorMessageService,
     private readonly changeDetectorRef: ChangeDetectorRef,
     private readonly ngZone: NgZone,
   ) {}
@@ -107,6 +114,7 @@ export class EmployeesComponent implements OnInit {
   openCreateModal(): void {
     this.modalMode = "create";
     this.form = this.getEmptyForm();
+    this.modalErrorMessage = "";
     this.isModalOpen = true;
   }
 
@@ -126,22 +134,24 @@ export class EmployeesComponent implements OnInit {
       email: employee.email ?? "",
       senha: "",
     };
+    this.modalErrorMessage = "";
     this.isModalOpen = true;
   }
 
   closeModal(): void {
     this.isModalOpen = false;
     this.form = this.getEmptyForm();
+    this.modalErrorMessage = "";
   }
 
   submitForm(): void {
     if (!this.isFormValid()) {
-      this.showPersistenceError("Preencha todos os campos obrigatorios do funcionario.");
+      this.showModalError("Preencha todos os campos obrigatorios antes de cadastrar o funcionario.");
       return;
     }
 
     if (this.form.senha.trim() && !this.isStrongPassword(this.form.senha.trim())) {
-      this.showPersistenceError("A senha deve ter minimo 10 caracteres, maiuscula, minuscula, numero e especial.");
+      this.showModalError("Senha invalida. Use no minimo 10 caracteres com letra maiuscula, letra minuscula, numero e caractere especial.");
       return;
     }
 
@@ -159,7 +169,7 @@ export class EmployeesComponent implements OnInit {
           this.closeModal();
           this.loadEmployees();
         },
-        error: () => this.showPersistenceError("Nao foi possivel atualizar o funcionario na API."),
+        error: (error) => this.showModalError(this.apiErrorMessageService.describe(error, "Nao foi possivel atualizar o funcionario.")),
       });
       return;
     }
@@ -169,14 +179,29 @@ export class EmployeesComponent implements OnInit {
         this.closeModal();
         this.loadEmployees();
       },
-      error: () => this.showPersistenceError("Nao foi possivel cadastrar o funcionario na API."),
+      error: (error) => this.showModalError(this.apiErrorMessageService.describe(error, "Nao foi possivel cadastrar o funcionario.")),
     });
   }
 
-  deleteEmployee(employeeId: number): void {
+  async deleteEmployee(employee: Employee): Promise<void> {
+    const confirmed = await this.confirmService.ask({
+      title: "Excluir funcionario?",
+      message: `${employee.nome ?? employee.name} sera removido do cadastro. Verifique antes se nao existem vendas, ponto ou documentos vinculados.`,
+      confirmLabel: "Excluir funcionario",
+      tone: "danger",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    const employeeId = employee.id;
     this.employeesApiService.deleteEmployee(employeeId).subscribe({
-      next: () => this.loadEmployees(),
-      error: () => this.showPersistenceError("Nao foi possivel excluir o funcionario na API."),
+      next: () => {
+        this.loadEmployees();
+        this.toastService.show("Funcionario excluido.", "success");
+      },
+      error: (error) => this.showPersistenceError(this.apiErrorMessageService.describe(error, "Nao foi possivel excluir o funcionario.")),
     });
   }
 
@@ -316,5 +341,10 @@ export class EmployeesComponent implements OnInit {
 
   private showPersistenceError(message: string): void {
     this.errorMessage = message;
+  }
+
+  private showModalError(message: string): void {
+    this.modalErrorMessage = message;
+    this.changeDetectorRef.detectChanges();
   }
 }

@@ -3,9 +3,12 @@ import { Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 import { Client, Product } from "../../core/models";
+import { ApiErrorMessageService } from "../../core/services/api-error-message.service";
 import { ClientsApiService } from "../../core/services/clients-api.service";
+import { ConfirmService } from "../../core/services/confirm.service";
 import { ProductsApiService } from "../../core/services/products-api.service";
 import { SalesApiService } from "../../core/services/sales-api.service";
+import { ToastService } from "../../core/services/toast.service";
 import { formatCurrency } from "../../core/utils/format";
 
 @Component({
@@ -26,6 +29,7 @@ export class SaleComponent implements OnInit {
   isLoading = true;
   isSubmitting = false;
   errorMessage = "";
+  checkoutMessage = "";
 
   readonly formatCurrency = formatCurrency;
 
@@ -34,6 +38,9 @@ export class SaleComponent implements OnInit {
     private readonly clientsApiService: ClientsApiService,
     private readonly productsApiService: ProductsApiService,
     private readonly salesApiService: SalesApiService,
+    private readonly confirmService: ConfirmService,
+    private readonly toastService: ToastService,
+    private readonly apiErrorMessageService: ApiErrorMessageService,
   ) {}
 
   ngOnInit(): void {
@@ -54,11 +61,28 @@ export class SaleComponent implements OnInit {
     return this.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }
 
+  get selectedClient(): Client | undefined {
+    const selectedId = Number(this.selectedClientId);
+
+    if (!selectedId) {
+      return undefined;
+    }
+
+    return this.clients.find((client) => client.id === selectedId);
+  }
+
+  get isSelectedClientBlocked(): boolean {
+    const status = this.selectedClient?.statusSerasa ?? this.selectedClient?.status ?? "";
+
+    return status.toUpperCase() === "NEGATIVADO";
+  }
+
   retry(): void {
     this.loadDependencies();
   }
 
   addProduct(product: Product): void {
+    this.checkoutMessage = "";
     const existing = this.cart.find((item) => item.id === product.id);
     if (existing) {
       existing.quantity += 1;
@@ -82,11 +106,51 @@ export class SaleComponent implements OnInit {
   }
 
   removeItem(id: number): void {
+    const removed = this.cart.find((item) => item.id === id);
+    const index = this.cart.findIndex((item) => item.id === id);
     this.cart = this.cart.filter((item) => item.id !== id);
+
+    if (!removed || index < 0) {
+      return;
+    }
+
+    this.toastService.show(`Item removido: ${removed.name}.`, "info", {
+      label: "Desfazer",
+      run: () => {
+        const next = [...this.cart];
+        next.splice(index, 0, removed);
+        this.cart = next;
+      },
+    });
   }
 
-  finalizeSale(): void {
+  async finalizeSale(): Promise<void> {
+    this.checkoutMessage = "";
+
     if (!this.cart.length) {
+      this.checkoutMessage = "Adicione ao menos um produto antes de finalizar a venda.";
+      return;
+    }
+
+    if (this.payment === "Fiado" && !this.selectedClientId) {
+      this.checkoutMessage = "Venda no fiado exige cliente identificado. Selecione um cliente antes de finalizar.";
+      return;
+    }
+
+    if (this.payment === "Fiado" && this.isSelectedClientBlocked) {
+      const clientName = this.selectedClient?.nome ?? this.selectedClient?.name ?? "Cliente selecionado";
+      this.checkoutMessage = `${clientName} esta negativado e nao pode comprar no fiado. Escolha outra forma de pagamento ou regularize o cadastro.`;
+      this.toastService.show(this.checkoutMessage, "danger");
+      return;
+    }
+
+    const confirmed = await this.confirmService.ask({
+      title: "Finalizar venda?",
+      message: `A venda sera registrada com ${this.cart.length} item(ns), pagamento ${this.payment} e total ${this.formatCurrency(this.subtotal)}.`,
+      confirmLabel: "Finalizar venda",
+    });
+
+    if (!confirmed) {
       return;
     }
 
@@ -106,9 +170,9 @@ export class SaleComponent implements OnInit {
         this.isSubmitting = false;
         this.router.navigateByUrl("/historico");
       },
-      error: () => {
+      error: (error) => {
         this.isSubmitting = false;
-        this.errorMessage = "Nao foi possivel finalizar a venda na API.";
+        this.checkoutMessage = this.apiErrorMessageService.describe(error, "Nao foi possivel finalizar a venda.");
       },
     });
   }
@@ -127,7 +191,7 @@ export class SaleComponent implements OnInit {
         this.isLoading = false;
 
         if (hasApiFailure) {
-          this.errorMessage = "API de clientes/produtos indisponivel. Nao ha fallback mockado na tela de venda.";
+          this.errorMessage = "Nao consegui carregar clientes e produtos. Verifique se a API esta rodando e tente novamente.";
         }
       }
     };

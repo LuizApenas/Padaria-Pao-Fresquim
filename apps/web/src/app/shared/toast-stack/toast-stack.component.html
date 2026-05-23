@@ -1,0 +1,12 @@
+<div class="toast-stack" aria-live="polite" aria-atomic="true">
+  <article *ngFor="let message of toastService.messages()" class="toast" [class]="message.tone">
+    <span class="toast-marker" aria-hidden="true"></span>
+    <span class="toast-text">{{ message.text }}</span>
+    <button *ngIf="message.action" class="toast-action" type="button" (click)="runAction(message)">
+      {{ message.action.label }}
+    </button>
+    <button class="toast-close" type="button" aria-label="Fechar aviso" (click)="toastService.dismiss(message.id)">
+      x
+    </button>
+  </article>
+</div>

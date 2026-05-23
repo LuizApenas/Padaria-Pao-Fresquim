@@ -73,19 +73,22 @@
 
     <div class="payment-panel">
       <div class="payment-label">Identificar cliente</div>
-      <select class="form-select" [(ngModel)]="selectedClientId">
+      <select class="form-select" [(ngModel)]="selectedClientId" (ngModelChange)="checkoutMessage = ''">
         <option value="">Cliente balcao</option>
         <option *ngFor="let client of clients" [value]="client.id">{{ client.nome || client.name }}</option>
       </select>
+      <div *ngIf="selectedClient && isSelectedClientBlocked" class="pdv-client-warning" role="status">
+        Cliente negativado: venda fiado bloqueada para este cadastro.
+      </div>
     </div>
 
     <div class="payment-panel">
       <div class="payment-label">Forma de pagamento</div>
       <div class="payment-methods">
-        <button *ngFor="let option of ['Dinheiro', 'Credito', 'Debito', 'PIX']" class="pay-method" [class.selected]="payment === option" type="button" (click)="payment = option">
+        <button *ngFor="let option of ['Dinheiro', 'Credito', 'Debito', 'PIX']" class="pay-method" [class.selected]="payment === option" type="button" (click)="payment = option; checkoutMessage = ''">
           {{ option }}
         </button>
-        <button class="pay-fiado" [class.selected]="payment === 'Fiado'" type="button" (click)="payment = 'Fiado'">Fiado</button>
+        <button class="pay-fiado" [class.selected]="payment === 'Fiado'" type="button" (click)="payment = 'Fiado'; checkoutMessage = ''">Fiado</button>
       </div>
     </div>
 
@@ -102,6 +105,9 @@
     </div>
 
     <div class="pdv-finalize-area">
+      <div *ngIf="checkoutMessage" class="pdv-checkout-error" role="alert" aria-live="assertive">
+        {{ checkoutMessage }}
+      </div>
       <button class="btn-cancel" type="button" (click)="cart = []">Cancelar</button>
       <button class="btn-finalize" type="button" [disabled]="isSubmitting" (click)="finalizeSale()">
         {{ isSubmitting ? 'Finalizando...' : 'Finalizar venda' }}
