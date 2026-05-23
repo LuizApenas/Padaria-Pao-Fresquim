@@ -1169,11 +1169,24 @@ export async function responderMensagemChatbot(data = {}, context = {}) {
   const groqText = await callGroq({ message, history, metrics, produtos, sender, worker, inadimplentes, pedidosPendentes }).catch(() => null);
   const llmIntent = groqText ? parseLlmIntent(groqText) : null;
   const normalized = message.toLowerCase();
+
+  // Heuristica de PEDIDO: estritos para evitar falso-positivo no proprietario
+  // que diz "quero ver os fiados" (nao e pedido).
+  const looksLikePedido = (() => {
+    if (normalized.includes("comprar")) return true;
+    if (/(fazer|registrar|criar|abrir|fechar|montar)\s+(um\s+)?pedido/.test(normalized)) return true;
+    // Apenas para CLIENTE: regras mais brandas, porque cliente costuma escrever
+    // direto os itens ("quero 2 paes franceses") sem dizer "pedido".
+    if (sender.type === "CLIENTE") {
+      if (normalized.includes("pedido")) return true;
+      if (/^(quero|gostaria de|me ve|me da|me manda|preciso de)\s+\d/.test(normalized)) return true;
+    }
+    return false;
+  })();
+
   const inferredIntent =
     llmIntent?.intent ||
-    (normalized.includes("pedido") || normalized.includes("comprar") || normalized.includes("quero")
-      ? "PEDIDO"
-      : inferIntent(message));
+    (looksLikePedido ? "PEDIDO" : inferIntent(message));
 
   if (inferredIntent === "PEDIDO") {
     const telefone =
@@ -1337,22 +1350,22 @@ const MENU_EXPANSIONS = {
     4: "Quero falar com um atendente humano.",
   },
   PROPRIETARIO: {
-    1: "Quero ver as vendas de hoje.",
-    2: "Quero ver os pedidos pendentes.",
-    3: "Quero ver os clientes com fiado em aberto.",
-    4: "Quero ver o resumo da semana.",
-    5: "Quero ver o resumo do mes.",
+    1: "Me mostre as vendas de hoje (total, ticket medio, top produtos).",
+    2: "Liste os pedidos pendentes.",
+    3: "Liste os clientes com fiado em aberto e seus saldos.",
+    4: "Me mostre o resumo da semana.",
+    5: "Me mostre o resumo do mes.",
   },
   ATENDENTE: {
-    1: "Quero registrar um pedido para um cliente.",
-    2: "Quero consultar o status de um pedido.",
-    3: "Quero consultar o fiado de um cliente.",
-    4: "Quero ver os produtos do catalogo.",
+    1: "Vou registrar um pedido para um cliente, me oriente.",
+    2: "Consultar status de um pedido (pergunte numero ou data).",
+    3: "Consultar fiado de um cliente (pergunte nome ou telefone).",
+    4: "Liste os produtos do catalogo ativo.",
   },
   PADEIRO: {
-    1: "Quero ver os pedidos pendentes para preparar.",
-    2: "Quero conferir os produtos do catalogo.",
-    3: "Quero registrar um item produzido.",
+    1: "Liste os pedidos pendentes para preparar.",
+    2: "Me mostre os produtos do catalogo.",
+    3: "Vou registrar um item produzido, me oriente.",
   },
 };
 
