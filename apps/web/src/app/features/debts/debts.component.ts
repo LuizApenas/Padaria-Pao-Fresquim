@@ -2,7 +2,7 @@ import { CommonModule } from "@angular/common";
 import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { NavigationEnd, Router } from "@angular/router";
-import { Subscription, filter } from "rxjs";
+import { Subscription, filter, startWith } from "rxjs";
 import { Debtor } from "../../core/models";
 import { ChatbotApiService, ChatbotSettings } from "../../core/services/chatbot-api.service";
 import { FiadoApiService } from "../../core/services/fiado-api.service";
@@ -40,20 +40,31 @@ export class DebtsComponent implements OnInit, OnDestroy {
   ) {
     // Recarrega a carteira sempre que a rota terminar em /fiado — cobre o caso
     // de o componente reaproveitar instancia ou ngOnInit nao ser chamado em
-    // navegacoes encadeadas.
+    // navegacoes encadeadas. startWith null garante que dispara no boot.
     this.routeSubscription = this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event) => {
-        if (event.urlAfterRedirects.startsWith("/fiado")) {
-          this.loadDebtors();
-          this.loadCronSettings();
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        startWith(null),
+      )
+      .subscribe(() => {
+        if (this.router.url.startsWith("/fiado")) {
+          this.kickLoad();
         }
       });
   }
 
   ngOnInit(): void {
-    this.loadDebtors();
-    this.loadCronSettings();
+    this.kickLoad();
+  }
+
+  // Defere para o proximo tick: garante que o componente esteja anexado a CD
+  // antes da requisicao. Resolve casos onde a primeira chamada em ngOnInit
+  // dispara antes do view init e os callbacks nao reconciliam o template.
+  private kickLoad(): void {
+    setTimeout(() => {
+      this.loadDebtors();
+      this.loadCronSettings();
+    }, 0);
   }
 
   ngOnDestroy(): void {
@@ -150,20 +161,33 @@ export class DebtsComponent implements OnInit, OnDestroy {
   private loadDebtors(): void {
     this.isLoading = true;
     this.errorMessage = "";
-    this.changeDetectorRef.detectChanges();
+    try {
+      this.changeDetectorRef.detectChanges();
+    } catch {
+      // View ainda nao anexada — ignora; sera renderizado naturalmente.
+    }
+
+    // eslint-disable-next-line no-console
+    console.log("[fiado] iniciando carregamento da carteira...");
 
     this.fiadoApiService.listDebtors().subscribe({
       next: (apiDebtors) => {
         this.ngZone.run(() => {
+          // eslint-disable-next-line no-console
+          console.log("[fiado] carregados", apiDebtors.length, "devedores");
           this.debtors = apiDebtors;
           this.isLoading = false;
           this.changeDetectorRef.detectChanges();
         });
       },
-      error: () => {
+      error: (err) => {
         this.ngZone.run(() => {
+          // eslint-disable-next-line no-console
+          console.error("[fiado] falha ao carregar carteira:", err?.status, err?.message);
           this.debtors = [];
-          this.errorMessage = "API de fiado indisponivel. Tente novamente em instantes.";
+          this.errorMessage = err?.status === 401
+            ? "Sessao expirada. Faca login novamente."
+            : "API de fiado indisponivel. Tente novamente em instantes.";
           this.isLoading = false;
           this.changeDetectorRef.detectChanges();
         });
