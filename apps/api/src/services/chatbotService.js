@@ -338,18 +338,37 @@ function buildSystemPrompt({ metrics, produtos, sender, worker }) {
 
   if (isFuncionario) {
     const role = sender.role || "FUNCIONARIO";
-    const isProprietario = role === "PROPRIETARIO";
 
     lines.push(
       isFuncionarioWhatsapp
-        ? `Contexto do remetente: funcionario ${sender.nome} (${sender.cargo || role}) falando pelo WhatsApp. ATENDIMENTO INTERNO.`
-        : `Contexto do remetente: atendimento interno no painel, funcionario autenticado ${sender.nome} (${sender.cargo || role}).`,
+        ? `Contexto do remetente: ${sender.nome} (${sender.cargo || role}) falando pelo WhatsApp. ATENDIMENTO INTERNO. Cargo: ${role}.`
+        : `Contexto do remetente: atendimento interno no painel, ${sender.nome} (${sender.cargo || role}). Cargo: ${role}.`,
       "ESTE USUARIO E FUNCIONARIO DA PADARIA. NUNCA mostre menu de cliente (Pedido/Status/Fiado/Atendente). NUNCA pergunte telefone ou CPF dele.",
-      isProprietario
-        ? "Cargo: PROPRIETARIO — acesso TOTAL. Pode pedir metricas (diaria/semanal/mensal), relatorios, ranking de produtos, status de fiados, pedidos pendentes, e qualquer indicador operacional disponivel no contexto. Pode tambem registrar/orientar acoes como cobranca de fiado, priorizar pedidos, conferir estoque."
-        : `Cargo: ${role}. Pode consultar dados operacionais do dia, pedidos pendentes, produtos do catalogo e auxiliar a equipe. Para acoes administrativas (relatorios completos, gestao de fiados, cobrancas formais), oriente a procurar o proprietario.`,
-      "Quando o funcionario perguntar 'o que posso ver/fazer aqui?', liste as capacidades disponiveis no cargo dele em bullets curtos, sem mencionar o menu de cliente.",
-      "Pode registrar pedidos para CLIENTES: se o funcionario passar nome/telefone/CPF do cliente comprador + itens, valide contra o catalogo. NUNCA confunda o funcionario com o cliente comprador.",
+    );
+
+    if (role === "PROPRIETARIO") {
+      lines.push(
+        "Cargo PROPRIETARIO — acesso TOTAL. Pode pedir metricas (diaria/semanal/mensal), relatorios, ranking de produtos, status de fiados, pedidos pendentes e qualquer indicador operacional. Pode tambem orientar acoes: cobrar fiado, priorizar pedidos, conferir estoque.",
+        "O sistema ja enviou um menu numerado para o proprietario (1 Vendas hoje, 2 Pedidos pendentes, 3 Fiado em aberto, 4 Resumo semana, 5 Resumo mes). Nao precisa repetir o menu, apenas conduza a opcao ou o texto livre.",
+      );
+    } else if (role === "ATENDENTE") {
+      lines.push(
+        "Cargo ATENDENTE — foco em atendimento operacional. Pode registrar pedidos para clientes, consultar status de pedidos, consultar fiado de um cliente, conferir catalogo. NAO entregue relatorios financeiros completos nem dados sensiveis de outros funcionarios; oriente a procurar o proprietario para isso.",
+        "Menu enviado: 1 Registrar pedido para cliente, 2 Consultar pedido, 3 Consultar fiado, 4 Ver catalogo.",
+      );
+    } else if (role === "PADEIRO") {
+      lines.push(
+        "Cargo PADEIRO — foco em producao. Pode ver pedidos pendentes para preparar, conferir catalogo, registrar item produzido. NAO entregue metricas financeiras ou relatorios; oriente a procurar o proprietario.",
+        "Menu enviado: 1 Pedidos pendentes, 2 Catalogo, 3 Registrar produzido.",
+      );
+    } else {
+      lines.push(
+        "Cargo nao mapeado — responda apenas com orientacoes gerais e oriente a procurar o proprietario para acoes administrativas.",
+      );
+    }
+
+    lines.push(
+      "Pode registrar pedidos para CLIENTES quando o funcionario passar nome/telefone/CPF do cliente comprador + itens, validando contra o catalogo. NUNCA confunda o funcionario com o cliente comprador.",
     );
   } else {
     lines.push(
@@ -578,8 +597,10 @@ async function findFuncionarioPorTelefoneAtivo(telefone) {
   return match;
 }
 
-// Resolve quem esta no outro lado do WhatsApp: funcionario tem prioridade
-// sobre cliente (alguem que e funcionario E cliente e tratado como funcionario).
+// Resolve quem esta no outro lado do WhatsApp. Funcionario tem prioridade
+// sobre cliente. Cada cargo recebe um menu/capacidades diferentes (Proprietario
+// ve metricas, Atendente operacional, Padeiro producao). Cliente segue fluxo
+// de pedido/fiado/atendente.
 async function resolveWhatsappSender({ telefone, cpf }) {
   const funcionario = await findFuncionarioPorTelefoneAtivo(telefone);
 
@@ -1143,25 +1164,43 @@ function isGreetingOrMenuRequest(text = "") {
   return triggers.some((trigger) => normalized === trigger || normalized.startsWith(`${trigger} `));
 }
 
-// Mapeia "1" -> "Quero fazer um pedido", etc. Permite continuar o fluxo no LLM.
-function expandMenuChoice(text = "") {
-  const trimmed = String(text).trim();
-  const map = {
+// Mapas de "1" -> texto natural por papel.
+const MENU_EXPANSIONS = {
+  CLIENTE: {
     1: "Quero fazer um pedido.",
     2: "Quero consultar o status do meu pedido.",
     3: "Quero saber meu saldo de fiado.",
     4: "Quero falar com um atendente humano.",
-  };
+  },
+  PROPRIETARIO: {
+    1: "Quero ver as vendas de hoje.",
+    2: "Quero ver os pedidos pendentes.",
+    3: "Quero ver os clientes com fiado em aberto.",
+    4: "Quero ver o resumo da semana.",
+    5: "Quero ver o resumo do mes.",
+  },
+  ATENDENTE: {
+    1: "Quero registrar um pedido para um cliente.",
+    2: "Quero consultar o status de um pedido.",
+    3: "Quero consultar o fiado de um cliente.",
+    4: "Quero ver os produtos do catalogo.",
+  },
+  PADEIRO: {
+    1: "Quero ver os pedidos pendentes para preparar.",
+    2: "Quero conferir os produtos do catalogo.",
+    3: "Quero registrar um item produzido.",
+  },
+};
 
-  if (map[trimmed]) {
-    return map[trimmed];
-  }
+function expandMenuChoice(text = "", role = "CLIENTE") {
+  const map = MENU_EXPANSIONS[role] || MENU_EXPANSIONS.CLIENTE;
+  const trimmed = String(text).trim();
+
+  if (map[trimmed]) return map[trimmed];
 
   // Suporta "1." "1 -" "1)" etc.
-  const head = trimmed.match(/^([1-4])[\s).:-]/);
-  if (head && map[head[1]]) {
-    return map[head[1]];
-  }
+  const head = trimmed.match(/^([1-9])[\s).:-]/);
+  if (head && map[head[1]]) return map[head[1]];
 
   return null;
 }
@@ -1171,15 +1210,70 @@ function buildClientMenu(clienteNome) {
   const saudacao = nome ? `Oi, ${nome}!` : "Oi!";
 
   return [
-    `${saudacao} 🥖 Eu sou a Fresca, da Padaria Pao FresQUIM. Como posso ajudar?`,
+    `${saudacao} 🥖 Eu sou a Fresca, da Padaria Pao FresQUIM. O que vamos fazer hoje?`,
     "",
     "1️⃣ Fazer um pedido",
     "2️⃣ Consultar status do meu pedido",
     "3️⃣ Saber meu saldo de fiado",
     "4️⃣ Falar com um atendente humano",
     "",
-    "Responda com o numero da opcao ou descreva o que precisa.",
+    "Responda com o numero ou descreva o que precisa.",
   ].join("\n");
+}
+
+function buildProprietarioMenu(nomeFuncionario) {
+  const nome = nomeFuncionario ? nomeFuncionario.split(" ")[0] : "Sr. Joaquim";
+  return [
+    `Oi, ${nome}! 🥖 Eu sou a Fresca. O que vamos olhar hoje?`,
+    "",
+    "1️⃣ Vendas de hoje",
+    "2️⃣ Pedidos pendentes",
+    "3️⃣ Clientes com fiado em aberto",
+    "4️⃣ Resumo da semana",
+    "5️⃣ Resumo do mes",
+    "",
+    "Responda com o numero ou peca direto (ex.: 'top produtos do mes').",
+  ].join("\n");
+}
+
+function buildAtendenteMenu(nomeFuncionario) {
+  const nome = nomeFuncionario ? nomeFuncionario.split(" ")[0] : "tudo bem";
+  return [
+    `Oi, ${nome}! 🥖 Eu sou a Fresca. Como posso ajudar no atendimento?`,
+    "",
+    "1️⃣ Registrar pedido para um cliente",
+    "2️⃣ Consultar status de um pedido",
+    "3️⃣ Consultar fiado de um cliente",
+    "4️⃣ Ver produtos do catalogo",
+    "",
+    "Responda com o numero ou descreva o que precisa.",
+  ].join("\n");
+}
+
+function buildPadeiroMenu(nomeFuncionario) {
+  const nome = nomeFuncionario ? nomeFuncionario.split(" ")[0] : "tudo bem";
+  return [
+    `Oi, ${nome}! 🥖 Eu sou a Fresca. O que precisa na producao?`,
+    "",
+    "1️⃣ Pedidos pendentes para preparar",
+    "2️⃣ Conferir produtos do catalogo",
+    "3️⃣ Registrar item produzido",
+    "",
+    "Responda com o numero ou descreva o que precisa.",
+  ].join("\n");
+}
+
+function buildMenuForRole(role, nome) {
+  switch (role) {
+    case "PROPRIETARIO":
+      return buildProprietarioMenu(nome);
+    case "ATENDENTE":
+      return buildAtendenteMenu(nome);
+    case "PADEIRO":
+      return buildPadeiroMenu(nome);
+    default:
+      return buildClientMenu(nome);
+  }
 }
 
 /**
@@ -1204,32 +1298,30 @@ async function processBufferedWhatsappConversation({ texts, meta }) {
     };
   }
 
-  // Menu numerado APENAS para clientes. Funcionarios identificados pelo
-  // telefone do WhatsApp vao direto ao LLM com perfil interno.
-  if (telefone && meta.clienteId && !meta.funcionarioId) {
-    if (isGreetingOrMenuRequest(mergedMessage)) {
-      const cliente =
-        meta.cliente ??
-        (await prisma.cliente
-          .findUnique({ where: { id: meta.clienteId }, select: { nome: true } })
-          .catch(() => null));
 
+  // Menu por papel: cliente, proprietario, atendente, padeiro. Cumprimento /
+  // pedido de ajuda envia o menu apropriado. Resposta numerica e expandida
+  // para texto natural antes de ir ao LLM.
+  const role = meta.funcionario?.role || (meta.clienteId ? "CLIENTE" : null);
+  const nomeRemetente = meta.funcionario?.nome || meta.cliente?.nome || "";
+
+  if (telefone && role) {
+    if (isGreetingOrMenuRequest(mergedMessage)) {
       await dispatchWhatsAppText({
         phone: telefone,
-        message: buildClientMenu(cliente?.nome),
+        message: buildMenuForRole(role, nomeRemetente),
       });
 
       return {
         processed: true,
         mergedMessages: texts.length,
         intent: "MENU",
-        source: "menu",
+        source: `menu_${role.toLowerCase()}`,
       };
     }
 
-    const expanded = expandMenuChoice(mergedMessage);
+    const expanded = expandMenuChoice(mergedMessage, role);
     if (expanded) {
-      // Substituimos a mensagem original por uma instrucao clara para o LLM.
       texts.splice(0, texts.length, expanded);
     }
   }
@@ -1355,8 +1447,6 @@ export async function handleEvolutionWebhook(payload) {
 
       if (resolved.type === "FUNCIONARIO") {
         funcionario = resolved.funcionario;
-        // Funcionario identificado: limpa qualquer contagem de tentativas
-        // (caso o numero tenha sido usado antes como cliente desconhecido).
         clearUnknownSenderFailures(getUnknownSenderKey({ telefone }));
       } else if (resolved.type === "CLIENTE") {
         cliente = resolved.cliente;
