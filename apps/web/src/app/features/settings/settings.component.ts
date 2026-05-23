@@ -27,6 +27,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     whatsappBotEnabled: true,
     orderReadyNotificationsEnabled: true,
     debtWarningsEnabled: true,
+    debtAutoCronEnabled: false,
+    debtAutoCronTime: "09:00",
     dailyMetricsEnabled: true,
     messageBufferMs: 2500,
   };
