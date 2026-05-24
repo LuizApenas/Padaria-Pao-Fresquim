@@ -138,16 +138,26 @@ export class ProductsComponent implements OnInit {
         next: (updatedProduct) => {
           this.products = this.products.map((product) => (product.id === this.form.id ? updatedProduct : product));
           this.closeModal();
+          this.toastService.show(`Produto ${updatedProduct.nome ?? updatedProduct.name} atualizado.`, "success");
         },
-        error: (error) => this.showPersistenceError(this.apiErrorMessageService.describe(error, "Nao foi possivel atualizar o produto.")),
+        error: (error) => {
+          const msg = this.apiErrorMessageService.describe(error, "Nao foi possivel atualizar o produto.");
+          this.showPersistenceError(msg);
+          this.toastService.show(msg, "danger");
+        },
       });
     } else {
       this.productsApiService.createProduct(normalizedProduct).subscribe({
         next: (createdProduct) => {
           this.products = [createdProduct, ...this.products];
           this.closeModal();
+          this.toastService.show(`Produto ${createdProduct.nome ?? createdProduct.name} cadastrado.`, "success");
         },
-        error: (error) => this.showPersistenceError(this.apiErrorMessageService.describe(error, "Nao foi possivel cadastrar o produto.")),
+        error: (error) => {
+          const msg = this.apiErrorMessageService.describe(error, "Nao foi possivel cadastrar o produto.");
+          this.showPersistenceError(msg);
+          this.toastService.show(msg, "danger");
+        },
       });
     }
   }

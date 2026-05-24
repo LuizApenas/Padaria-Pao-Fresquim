@@ -149,19 +149,29 @@ export class ClientsComponent implements OnInit {
 
     if (this.modalMode === "edit" && this.form.id !== null) {
       this.clientsApiService.updateClient(normalizedClient).subscribe({
-        next: () => {
+        next: (saved) => {
           this.closeModal();
           this.loadClients();
+          this.toastService.show(`Cliente ${saved?.nome || normalizedClient.nome} atualizado.`, "success");
         },
-        error: (error) => this.showPersistenceError(this.apiErrorMessageService.describe(error, "Nao foi possivel atualizar o cliente.")),
+        error: (error) => {
+          const msg = this.apiErrorMessageService.describe(error, "Nao foi possivel atualizar o cliente.");
+          this.showPersistenceError(msg);
+          this.toastService.show(msg, "danger");
+        },
       });
     } else {
       this.clientsApiService.createClient(normalizedClient).subscribe({
-        next: () => {
+        next: (saved) => {
           this.closeModal();
           this.loadClients();
+          this.toastService.show(`Cliente ${saved?.nome || normalizedClient.nome} cadastrado.`, "success");
         },
-        error: (error) => this.showPersistenceError(this.apiErrorMessageService.describe(error, "Nao foi possivel cadastrar o cliente.")),
+        error: (error) => {
+          const msg = this.apiErrorMessageService.describe(error, "Nao foi possivel cadastrar o cliente.");
+          this.showPersistenceError(msg);
+          this.toastService.show(msg, "danger");
+        },
       });
     }
   }

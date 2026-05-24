@@ -10,6 +10,7 @@ import {
   ChatbotApiService,
   ChatbotSettings,
 } from "../../core/services/chatbot-api.service";
+import { ToastService } from "../../core/services/toast.service";
 
 @Component({
   selector: "pf-settings",
@@ -59,6 +60,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly changeDetectorRef: ChangeDetectorRef,
     private readonly ngZone: NgZone,
+    private readonly toastService: ToastService,
   ) {
     this.routeSubscription = this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
@@ -153,6 +155,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.ngZone.run(() => {
           this.settings = settings;
           this.message = "Configuracoes do chatbot salvas na API.";
+          this.toastService.show(this.message, "success");
           this.isSaving = false;
           this.changeDetectorRef.detectChanges();
         });
@@ -160,6 +163,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
       error: (error: HttpErrorResponse) => {
         this.ngZone.run(() => {
           this.errorMessage = this.getApiErrorMessage(error, "salvar");
+          this.toastService.show(this.errorMessage, "danger");
           this.isSaving = false;
           this.changeDetectorRef.detectChanges();
         });

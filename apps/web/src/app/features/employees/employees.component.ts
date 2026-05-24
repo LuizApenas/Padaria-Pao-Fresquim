@@ -168,8 +168,13 @@ export class EmployeesComponent implements OnInit {
         next: () => {
           this.closeModal();
           this.loadEmployees();
+          this.toastService.show(`Funcionario ${payload.nome || ""} atualizado.`, "success");
         },
-        error: (error) => this.showModalError(this.apiErrorMessageService.describe(error, "Nao foi possivel atualizar o funcionario.")),
+        error: (error) => {
+          const msg = this.apiErrorMessageService.describe(error, "Nao foi possivel atualizar o funcionario.");
+          this.showModalError(msg);
+          this.toastService.show(msg, "danger");
+        },
       });
       return;
     }
@@ -178,8 +183,13 @@ export class EmployeesComponent implements OnInit {
       next: () => {
         this.closeModal();
         this.loadEmployees();
+        this.toastService.show(`Funcionario ${payload.nome || ""} cadastrado.`, "success");
       },
-      error: (error) => this.showModalError(this.apiErrorMessageService.describe(error, "Nao foi possivel cadastrar o funcionario.")),
+      error: (error) => {
+        const msg = this.apiErrorMessageService.describe(error, "Nao foi possivel cadastrar o funcionario.");
+        this.showModalError(msg);
+        this.toastService.show(msg, "danger");
+      },
     });
   }
 
