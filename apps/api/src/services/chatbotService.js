@@ -1822,36 +1822,44 @@ const CHATBOT_DOC_VERSION = "1.0.0";
 /**
  * Documentacao read-only para o painel: prompt de exemplo, regras e passos do fluxo (sem segredos).
  */
-export function getChatbotDocumentacao() {
+export async function getChatbotDocumentacao() {
   const sampleSender = {
     type: "FUNCIONARIO",
     nome: "Sr. Joaquim",
     cargo: "PROPRIETARIO",
     role: "PROPRIETARIO",
+    channel: "FRONTEND",
   };
   const sampleWorker = createChatbotWorkerSession(sampleSender);
+
+  // Carrega o MESMO contexto que seria enviado ao LLM neste instante:
+  // metricas do dia, semana, mes; produtos ativos; inadimplentes; pendentes.
+  // Assim o painel "Fluxo" reflete o que a Fresca de fato esta vendo agora.
+  const ctx = await buildChatbotAgentContext(sampleWorker).catch(() => ({
+    metrics: null,
+    produtos: [],
+    inadimplentes: [],
+    pedidosPendentes: [],
+    semanal: null,
+    mensal: null,
+  }));
+
   const systemPrompt = buildSystemPrompt({
-    metrics: {
-      totalSoldToday: 0,
-      pedidosPendentes: 0,
-      debtClients: 0,
-    },
-    produtos: [
-      {
-        id: 0,
-        nome: "(catalogo ativo carregado em tempo real pelo worker)",
-        precoBase: 0,
-      },
-    ],
+    metrics: ctx.metrics,
+    produtos: ctx.produtos ?? [],
     sender: sampleSender,
     worker: sampleWorker,
+    inadimplentes: ctx.inadimplentes ?? [],
+    pedidosPendentes: ctx.pedidosPendentes ?? [],
+    semanal: ctx.semanal,
+    mensal: ctx.mensal,
   });
 
   return {
     version: CHATBOT_DOC_VERSION,
     systemPrompt,
     systemPromptNote:
-      "O prompt enviado ao Groq e montado a cada mensagem com metricas e catalogo atuais. Valores zerados acima sao apenas ilustrativos.",
+      "Este e o prompt REAL que seria enviado ao LLM agora. Dados (metricas, catalogo, fiados, pedidos pendentes) vem do banco em tempo real.",
     rules: [
       "Respostas sempre em portugues do Brasil; tom cordial e objetivo.",
       "O LLM nao acessa banco, SQL, Prisma ou configuracoes — apenas contexto sanitizado pelo worker.",

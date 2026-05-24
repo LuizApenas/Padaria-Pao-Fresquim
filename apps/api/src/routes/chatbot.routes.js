@@ -66,7 +66,7 @@ chatbotRoutes.get(
   "/documentacao",
   ensureRole("PROPRIETARIO", "ATENDENTE"),
   asyncHandler(async (_request, response) => {
-    response.status(200).json(getChatbotDocumentacao());
+    response.status(200).json(await getChatbotDocumentacao());
   }),
 );
 
