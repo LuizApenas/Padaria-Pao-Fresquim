@@ -28,6 +28,8 @@ type ProductForm = {
 export class ProductsComponent implements OnInit {
   category = "Todos";
   sortBy = "recentes";
+  currentPage = 1;
+  readonly pageSize = 6;
   isModalOpen = false;
   modalMode: "create" | "edit" = "create";
   products: Product[] = [];
@@ -63,6 +65,32 @@ export class ProductsComponent implements OnInit {
     return [...filtered].sort((a, b) => b.id - a.id);
   }
 
+  get totalPages(): number {
+    return Math.max(Math.ceil(this.filteredProducts.length / this.pageSize), 1);
+  }
+
+  get paginatedProducts(): Product[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+
+    return this.filteredProducts.slice(start, start + this.pageSize);
+  }
+
+  get paginationPages(): number[] {
+    return Array.from({ length: this.totalPages }, (_item, index) => index + 1);
+  }
+
+  get paginationStart(): number {
+    if (!this.filteredProducts.length) {
+      return 0;
+    }
+
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  get paginationEnd(): number {
+    return Math.min(this.currentPage * this.pageSize, this.filteredProducts.length);
+  }
+
   get averagePrice(): number {
     if (!this.products.length) {
       return 0;
@@ -87,6 +115,20 @@ export class ProductsComponent implements OnInit {
     }
 
     return new Set(this.products.map((product) => product.categoria)).size;
+  }
+
+  setCategory(category: string): void {
+    this.category = category;
+    this.currentPage = 1;
+  }
+
+  setSortBy(sortBy: string): void {
+    this.sortBy = sortBy;
+    this.currentPage = 1;
+  }
+
+  goToPage(page: number): void {
+    this.currentPage = Math.min(Math.max(page, 1), this.totalPages);
   }
 
   openCreateModal(): void {
@@ -137,6 +179,7 @@ export class ProductsComponent implements OnInit {
       this.productsApiService.updateProduct(normalizedProduct).subscribe({
         next: (updatedProduct) => {
           this.products = this.products.map((product) => (product.id === this.form.id ? updatedProduct : product));
+          this.currentPage = Math.min(this.currentPage, this.totalPages);
           this.closeModal();
           this.toastService.show(`Produto ${updatedProduct.nome ?? updatedProduct.name} atualizado.`, "success");
         },
@@ -150,6 +193,7 @@ export class ProductsComponent implements OnInit {
       this.productsApiService.createProduct(normalizedProduct).subscribe({
         next: (createdProduct) => {
           this.products = [createdProduct, ...this.products];
+          this.currentPage = 1;
           this.closeModal();
           this.toastService.show(`Produto ${createdProduct.nome ?? createdProduct.name} cadastrado.`, "success");
         },
@@ -281,6 +325,7 @@ export class ProductsComponent implements OnInit {
 
   private removeProductLocally(productId: number): void {
     this.products = this.products.filter((product) => product.id !== productId);
+    this.currentPage = Math.min(this.currentPage, this.totalPages);
   }
 
   private showPersistenceError(message: string): void {

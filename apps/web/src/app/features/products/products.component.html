@@ -19,7 +19,7 @@
         class="filter-tab"
         [class.active]="category === item"
         type="button"
-        (click)="category = item"
+        (click)="setCategory(item)"
       >
         {{ item }}
       </button>
@@ -27,7 +27,7 @@
 
     <div class="sort-group">
       <span class="sort-label">ORDENAR POR:</span>
-      <select class="sort-select" [(ngModel)]="sortBy">
+      <select class="sort-select" [ngModel]="sortBy" (ngModelChange)="setSortBy($event)">
         <option value="recentes">Mais Recentes</option>
         <option value="preco">Menor Preco</option>
       </select>
@@ -42,7 +42,7 @@
       <button class="btn-secondary" type="button" (click)="retry()">Tentar novamente</button>
     </div>
 
-    <article *ngFor="let product of filteredProducts" class="product-card">
+    <article *ngFor="let product of paginatedProducts" class="product-card">
       <div class="product-hero" [ngClass]="!product.imagemUrl ? getProductVisual(product.nome) : null">
         <span class="product-category-badge">{{ product.categoria }}</span>
         <img *ngIf="product.imagemUrl" class="product-image" [src]="product.imagemUrl" [alt]="product.nome" />
@@ -73,6 +73,30 @@
         </div>
       </div>
     </article>
+  </div>
+
+  <div *ngIf="!isLoading && !errorMessage && filteredProducts.length > 0" class="products-pagination">
+    <div class="pagination-summary">
+      Mostrando {{ paginationStart }}-{{ paginationEnd }} de {{ filteredProducts.length }} produto(s)
+    </div>
+
+    <div class="pagination-controls">
+      <button class="pagination-btn" type="button" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+        Anterior
+      </button>
+      <button
+        *ngFor="let page of paginationPages"
+        class="pagination-page"
+        [class.active]="currentPage === page"
+        type="button"
+        (click)="goToPage(page)"
+      >
+        {{ page }}
+      </button>
+      <button class="pagination-btn" type="button" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+        Proxima
+      </button>
+    </div>
   </div>
 
   <div class="products-summary">
