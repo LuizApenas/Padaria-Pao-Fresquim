@@ -681,6 +681,39 @@ function matchProdutosFromText(message, produtos) {
     }));
 }
 
+function formatCatalogoParaPedido(produtos = []) {
+  const linhas = produtos
+    .slice(0, 40)
+    .map((produto) => `#${produto.id} ${produto.nome} - ${formatMoney(produto.precoBase)}`);
+
+  if (!linhas.length) {
+    return "No momento nao encontrei produtos ativos no catalogo. Tente novamente em alguns instantes.";
+  }
+
+  return [
+    "Claro. Estes sao os produtos que voce pode pedir:",
+    "",
+    ...linhas,
+    "",
+    "Responda com os itens e quantidades. Exemplo: 2 paes franceses e 1 cafe coado.",
+  ].join("\n");
+}
+
+function isPedidoStartWithoutItems(message = "") {
+  const normalized = String(message)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim();
+
+  return (
+    /^(fazer|quero fazer|gostaria de fazer|iniciar|comecar|abrir|criar)\s+(um\s+)?pedido\b/.test(normalized) ||
+    /^pedido$/.test(normalized) ||
+    normalized === "quero pedir" ||
+    normalized === "fazer um pedido"
+  );
+}
+
 function normalizeLlmItems(items, produtos) {
   if (!Array.isArray(items)) {
     return [];
@@ -1336,8 +1369,13 @@ export async function responderMensagemChatbot(data = {}, context = {}) {
       return {
         source: groqText ? "groq" : "rules",
         intent: "PEDIDO",
-        reply:
-          "Cliente identificado, mas nao reconheci produtos ativos no pedido. Envie os itens pelo nome cadastrado no sistema, por exemplo: 2 paes franceses.",
+        reply: isPedidoStartWithoutItems(message)
+          ? formatCatalogoParaPedido(produtos)
+          : [
+              "Cliente identificado, mas nao reconheci esses itens no catalogo ativo.",
+              "",
+              formatCatalogoParaPedido(produtos),
+            ].join("\n"),
       };
     }
 
