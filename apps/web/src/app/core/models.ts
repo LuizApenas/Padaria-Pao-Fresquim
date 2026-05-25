@@ -38,6 +38,7 @@ export interface Product {
   precoBase?: number;
   categoria?: string;
   imagemUrl?: string | null;
+  imageUrl?: string | null;
   name: string;
   category: string;
   sku: string;

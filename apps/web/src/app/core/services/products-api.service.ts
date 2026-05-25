@@ -71,6 +71,7 @@ export class ProductsApiService {
     const categoria = product.categoria ?? product.category;
     const codigoBarras = product.codigoBarras ?? product.sku;
     const precoBase = product.precoBase ?? product.price;
+    const imagemUrl = this.normalizeImagemUrl(product.imagemUrl ?? product.imageUrl ?? null);
 
     return {
       ...product,
@@ -84,8 +85,31 @@ export class ProductsApiService {
       price: Number(precoBase),
       stock: product.stock ?? 0,
       unit: product.unit ?? "un",
-      imagemUrl: product.imagemUrl ?? null,
+      imagemUrl,
+      imageUrl: imagemUrl,
     };
+  }
+
+  private normalizeImagemUrl(value: string | null | undefined): string | null {
+    if (!value) {
+      return null;
+    }
+
+    const supabasePublicPath = "/storage/v1/object/public/";
+    const markerIndex = value.indexOf(supabasePublicPath);
+    if (markerIndex === -1) {
+      return value;
+    }
+
+    const objectPath = value.slice(markerIndex + supabasePublicPath.length);
+    const [, ...pathParts] = objectPath.split("/");
+    const storageObjectPath = pathParts.join("/");
+
+    if (!storageObjectPath) {
+      return value;
+    }
+
+    return `${API_BASE_URL}/api/produtos/imagens/${encodeURIComponent(storageObjectPath)}`;
   }
 
   private toProdutoPayload(product: Product) {

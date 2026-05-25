@@ -1,6 +1,9 @@
 import { Router } from "express";
 
 import {
+  downloadProdutoImagem,
+} from "../services/produtoImagemStorageService.js";
+import {
   createProduto,
   deleteProduto,
   getProdutoByCodigoBarras,
@@ -13,6 +16,22 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ensureAuth, ensureRole } from "../middlewares/auth.js";
 
 const produtosRoutes = Router();
+
+produtosRoutes.get(
+  "/imagens/:objectPath",
+  asyncHandler(async (request, response) => {
+    const image = await downloadProdutoImagem(request.params.objectPath);
+
+    response
+      .status(200)
+      .set({
+        "Content-Type": image.contentType,
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cross-Origin-Resource-Policy": "cross-origin",
+      })
+      .send(image.buffer);
+  }),
+);
 
 produtosRoutes.use(ensureAuth);
 

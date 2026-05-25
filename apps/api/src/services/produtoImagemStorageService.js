@@ -85,6 +85,34 @@ async function uploadToSupabase(objectPath, mime, buffer) {
   return `${projectUrl}/storage/v1/object/public/${bucket}/${objectPath}`;
 }
 
+export async function downloadProdutoImagem(objectPath) {
+  const { projectUrl, serviceRoleKey, bucket } = getSupabaseConfig();
+
+  if (!projectUrl || !serviceRoleKey) {
+    throw new AppError("Storage de produtos nao configurado.", 503);
+  }
+
+  const safeObjectPath = String(objectPath ?? "").trim();
+  if (!safeObjectPath || safeObjectPath.includes("..")) {
+    throw new AppError("Imagem de produto invalida.", 400);
+  }
+
+  const response = await fetch(`${projectUrl}/storage/v1/object/${bucket}/${encodeURIComponent(safeObjectPath)}`, {
+    headers: {
+      Authorization: `Bearer ${serviceRoleKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new AppError("Imagem de produto nao encontrada.", response.status === 404 ? 404 : 502);
+  }
+
+  return {
+    contentType: response.headers.get("content-type") ?? "application/octet-stream",
+    buffer: Buffer.from(await response.arrayBuffer()),
+  };
+}
+
 async function uploadToLocalRuntime(objectPath, buffer) {
   const absolutePath = path.resolve(process.cwd(), ".runtime", "produtos-imagens", objectPath);
   await mkdir(path.dirname(absolutePath), { recursive: true });
