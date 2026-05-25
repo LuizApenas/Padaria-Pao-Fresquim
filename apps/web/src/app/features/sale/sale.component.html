@@ -45,18 +45,42 @@
     </div>
 
     <div class="panel">
-      <div class="panel-title">Catalogo rapido</div>
-      <div class="catalog-list">
-        <div *ngFor="let product of catalog" class="catalog-item">
-          <div>
-            <strong>{{ product.nome || product.name }}</strong>
-            <div class="client-time">COD: {{ product.codigoBarras || product.sku }} | Categoria: {{ product.categoria || product.category }}</div>
+      <div class="catalog-head">
+        <div class="panel-title">Catalogo rapido</div>
+        <div class="catalog-count">{{ catalog.length }} produto(s)</div>
+      </div>
+
+      <div *ngIf="catalog.length === 0 && !isLoading" class="catalog-empty">
+        Nenhum produto encontrado.
+      </div>
+
+      <div class="catalog-grid">
+        <article *ngFor="let product of catalog" class="product-card" (click)="addProduct(product)" tabindex="0" role="button" [attr.aria-label]="'Adicionar ' + (product.nome || product.name)">
+          <div class="product-card-img">
+            <img
+              *ngIf="product.imagemUrl || product.imageUrl; else noImage"
+              [src]="product.imagemUrl || product.imageUrl"
+              [alt]="product.nome || product.name"
+              loading="lazy"
+            />
+            <ng-template #noImage>
+              <div class="product-card-placeholder" aria-hidden="true">🥖</div>
+            </ng-template>
           </div>
-          <div class="toolbar">
-            <strong>{{ formatCurrency(product.precoBase || product.price) }}</strong>
-            <button class="btn-primary" type="button" (click)="addProduct(product)">Adicionar</button>
+          <div class="product-card-body">
+            <strong class="product-card-name">{{ product.nome || product.name }}</strong>
+            <div class="product-card-meta">
+              <span class="product-card-cat">{{ product.categoria || product.category }}</span>
+              <span class="product-card-cod">{{ product.codigoBarras || product.sku }}</span>
+            </div>
+            <div class="product-card-row">
+              <span class="product-card-price">{{ formatCurrency(product.precoBase || product.price) }}</span>
+              <button class="product-card-add" type="button" (click)="$event.stopPropagation(); addProduct(product)" aria-label="Adicionar ao carrinho">
+                +
+              </button>
+            </div>
           </div>
-        </div>
+        </article>
       </div>
     </div>
   </div>

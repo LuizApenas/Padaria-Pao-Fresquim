@@ -1,7 +1,8 @@
 import { CommonModule } from "@angular/common";
-import { Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { Router } from "@angular/router";
+import { NavigationEnd, Router } from "@angular/router";
+import { Subscription, filter, startWith } from "rxjs";
 import { Client, Product } from "../../core/models";
 import { ApiErrorMessageService } from "../../core/services/api-error-message.service";
 import { ClientsApiService } from "../../core/services/clients-api.service";
@@ -18,7 +19,7 @@ import { formatCurrency } from "../../core/utils/format";
   templateUrl: "./sale.component.html",
   styleUrl: "./sale.component.css"
 })
-export class SaleComponent implements OnInit {
+export class SaleComponent implements OnInit, OnDestroy {
   search = "";
   selectedClientId = "";
   payment = "PIX";
@@ -32,6 +33,7 @@ export class SaleComponent implements OnInit {
   checkoutMessage = "";
 
   readonly formatCurrency = formatCurrency;
+  private readonly routeSubscription: Subscription;
 
   constructor(
     private readonly router: Router,
@@ -41,20 +43,42 @@ export class SaleComponent implements OnInit {
     private readonly confirmService: ConfirmService,
     private readonly toastService: ToastService,
     private readonly apiErrorMessageService: ApiErrorMessageService,
-  ) {}
+    private readonly changeDetectorRef: ChangeDetectorRef,
+    private readonly ngZone: NgZone,
+  ) {
+    this.routeSubscription = this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        startWith(null),
+      )
+      .subscribe(() => {
+        if (this.router.url.startsWith("/vendas/nova")) {
+          this.kickLoad();
+        }
+      });
+  }
 
   ngOnInit(): void {
-    this.loadDependencies();
+    this.kickLoad();
+  }
+
+  ngOnDestroy(): void {
+    this.routeSubscription.unsubscribe();
+  }
+
+  private kickLoad(): void {
+    setTimeout(() => this.loadDependencies(), 0);
   }
 
   get catalog() {
-    const normalized = this.search.toLowerCase();
-    return this.products
-      .filter((product) =>
-        (product.nome ?? product.name).toLowerCase().includes(normalized) ||
-        (product.codigoBarras ?? product.sku).includes(this.search),
-      )
-      .slice(0, 6);
+    const normalized = this.search.toLowerCase().trim();
+    if (!normalized) {
+      return this.products;
+    }
+    return this.products.filter((product) =>
+      (product.nome ?? product.name ?? "").toLowerCase().includes(normalized) ||
+      String(product.codigoBarras ?? product.sku ?? "").includes(normalized),
+    );
   }
 
   get subtotal(): number {
@@ -180,43 +204,53 @@ export class SaleComponent implements OnInit {
   private loadDependencies(): void {
     this.isLoading = true;
     this.errorMessage = "";
+    try { this.changeDetectorRef.detectChanges(); } catch { /* view nao anexada */ }
 
     let pending = 2;
     let hasApiFailure = false;
 
     const finish = () => {
       pending -= 1;
+      if (pending !== 0) return;
 
-      if (pending === 0) {
+      this.ngZone.run(() => {
         this.isLoading = false;
-
         if (hasApiFailure) {
           this.errorMessage = "Nao consegui carregar clientes e produtos. Verifique se a API esta rodando e tente novamente.";
         }
-      }
+        this.changeDetectorRef.detectChanges();
+      });
     };
 
     this.clientsApiService.listClients().subscribe({
       next: (clients) => {
-        this.clients = clients;
-        finish();
+        this.ngZone.run(() => {
+          this.clients = clients;
+          finish();
+        });
       },
       error: () => {
-        hasApiFailure = true;
-        this.clients = [];
-        finish();
+        this.ngZone.run(() => {
+          hasApiFailure = true;
+          this.clients = [];
+          finish();
+        });
       },
     });
 
     this.productsApiService.listProducts().subscribe({
       next: (products) => {
-        this.products = products;
-        finish();
+        this.ngZone.run(() => {
+          this.products = products;
+          finish();
+        });
       },
       error: () => {
-        hasApiFailure = true;
-        this.products = [];
-        finish();
+        this.ngZone.run(() => {
+          hasApiFailure = true;
+          this.products = [];
+          finish();
+        });
       },
     });
   }
