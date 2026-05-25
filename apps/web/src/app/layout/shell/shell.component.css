@@ -60,8 +60,16 @@
   border-right: 1px solid #d9e0ea;
   padding: 1px 14px 12px;
   transition: width 0.22s ease, min-width 0.22s ease, padding 0.22s ease;
-  overflow: hidden;
+  /* overflow visible permite que o botao circular .sidebar-toggle se
+     projete para fora da borda direita sem ser cortado pela metade.
+     O scroll interno fica em .sidebar-nav (ver abaixo). */
+  overflow: visible;
   position: relative;
+}
+
+.sidebar-nav {
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .sidebar.collapsed {
