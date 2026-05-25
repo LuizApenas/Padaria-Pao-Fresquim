@@ -241,10 +241,12 @@ export class ProductsComponent implements OnInit {
   private resolveImagemUrlForApi(value: string): string | null {
     const trimmed = value.trim();
 
-    if (!trimmed || trimmed.startsWith("data:")) {
+    if (!trimmed) {
       return null;
     }
 
+    // data:... (base64) e enviado ao backend, que faz upload no Supabase Storage
+    // e devolve a URL publica. URLs http(s) seguem direto.
     return trimmed;
   }
 

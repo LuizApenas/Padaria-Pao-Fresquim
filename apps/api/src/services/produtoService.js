@@ -7,6 +7,7 @@ import {
   requireFields,
   toMoney,
 } from "../utils/validation.js";
+import { uploadProdutoImagemBase64 } from "./produtoImagemStorageService.js";
 
 function serializeProduto(produto) {
   if (!produto) {
@@ -26,7 +27,7 @@ function serializeProduto(produto) {
   };
 }
 
-function buildProdutoData(data, { partial = false } = {}) {
+async function buildProdutoData(data, { partial = false } = {}) {
   if (!partial) {
     requireFields(data, ["codigoBarras", "nome", "precoBase", "categoria"]);
   }
@@ -39,7 +40,15 @@ function buildProdutoData(data, { partial = false } = {}) {
   };
 
   if (data.imagemUrl !== undefined) {
-    produtoData.imagemUrl = normalizeImagemUrl(data.imagemUrl);
+    const raw = data.imagemUrl;
+    // Aceita data URI (base64) vindo do front: faz upload para o Supabase
+    // Storage e persiste apenas a URL publica resultante.
+    if (typeof raw === "string" && /^data:/i.test(raw.trim())) {
+      const uploadedUrl = await uploadProdutoImagemBase64(raw, { nomeProduto: data.nome });
+      produtoData.imagemUrl = uploadedUrl ?? null;
+    } else {
+      produtoData.imagemUrl = normalizeImagemUrl(raw);
+    }
   }
 
   if (data.precoBase !== undefined) {
@@ -51,7 +60,7 @@ function buildProdutoData(data, { partial = false } = {}) {
 
 export async function createProduto(data) {
   const produto = await prisma.produto.create({
-    data: buildProdutoData(data),
+    data: await buildProdutoData(data),
   });
 
   return serializeProduto(produto);
@@ -140,7 +149,7 @@ export async function updateProduto(idParam, data) {
 
   const produto = await prisma.produto.update({
     where: { id },
-    data: buildProdutoData(data, { partial: true }),
+    data: await buildProdutoData(data, { partial: true }),
   });
 
   return serializeProduto(produto);

@@ -142,7 +142,7 @@
                 [maxFileSize]="1"
                 (ui5Change)="onImageSelect($event)"
               ></ui5-file-uploader>
-              <span class="upload-helper">Fundamental NGX UI5 FileUploader ativo. Nesta etapa, a imagem vira preview local; o upload real entra quando ligarmos o storage.</span>
+              <span class="upload-helper">A imagem e enviada ao Supabase Storage ao salvar o produto. Formatos aceitos: JPG, PNG, WEBP ou GIF (ate 5MB).</span>
             </div>
             <img *ngIf="form.imagemUrl" class="product-upload-preview" [src]="form.imagemUrl" alt="Preview do produto" />
           </div>
