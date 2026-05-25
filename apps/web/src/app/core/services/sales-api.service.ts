@@ -61,6 +61,12 @@ export class SalesApiService {
       .pipe(timeout(10000), map((sale) => this.normalizeSale(sale)));
   }
 
+  markOrderReady(saleId: number | string): Observable<{ pedidoId: number; status: string; dispatch: unknown }> {
+    return this.http
+      .post<{ pedidoId: number; status: string; dispatch: unknown }>(`${API_BASE_URL}/api/chatbot/pedidos/${saleId}/pronto`, {})
+      .pipe(timeout(15000));
+  }
+
   normalizeSale(sale: Sale): Sale {
     const value = Number(sale.valorTotal ?? sale.value ?? 0);
     const productNames = sale.itens

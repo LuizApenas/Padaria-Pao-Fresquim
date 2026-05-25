@@ -86,6 +86,41 @@ export class HistoryComponent implements OnInit {
     return this.authService.getUser()?.role === "PROPRIETARIO";
   }
 
+  get canMarkOrderReady(): boolean {
+    const role = this.authService.getUser()?.role;
+
+    return role === "PROPRIETARIO" || role === "ATENDENTE";
+  }
+
+  async markOrderReady(sale: Sale): Promise<void> {
+    if (!this.canMarkOrderReady) {
+      this.toastService.show("Seu perfil nao pode concluir pedidos.", "warning");
+      return;
+    }
+
+    const confirmed = await this.confirmService.ask({
+      title: "Concluir pedido?",
+      message: `A venda #${sale.id} sera marcada como concluida e o cliente recebera o aviso de retirada pelo WhatsApp.`,
+      confirmLabel: "Concluir e avisar",
+      tone: "default",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.salesApiService.markOrderReady(sale.id).subscribe({
+      next: () => {
+        this.loadSales();
+        this.toastService.show("Pedido concluido e cliente avisado.", "success");
+      },
+      error: (error) => {
+        this.errorMessage = this.apiErrorMessageService.describe(error, "Nao foi possivel concluir o pedido e enviar o aviso.");
+        this.toastService.show("Pedido nao foi concluido. Verifique a mensagem na tela.", "danger");
+      },
+    });
+  }
+
   async cancelSale(sale: Sale): Promise<void> {
     if (!this.canCancelSales) {
       this.errorMessage = "Seu perfil de atendente nao pode cancelar vendas. Solicite o cancelamento ao proprietario.";
