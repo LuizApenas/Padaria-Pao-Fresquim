@@ -58,8 +58,8 @@
         <article *ngFor="let product of catalog" class="product-card" (click)="addProduct(product)" tabindex="0" role="button" [attr.aria-label]="'Adicionar ' + (product.nome || product.name)">
           <div class="product-card-img">
             <img
-              *ngIf="product.imagemUrl || product.imageUrl; else noImage"
-              [src]="product.imagemUrl || product.imageUrl"
+              *ngIf="product.imagemUrl; else noImage"
+              [src]="product.imagemUrl"
               [alt]="product.nome || product.name"
               loading="lazy"
             />
