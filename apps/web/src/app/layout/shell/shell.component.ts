@@ -1,5 +1,5 @@
 import { CommonModule } from "@angular/common";
-import { Component, inject } from "@angular/core";
+import { Component, HostListener, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { MenuItem } from "primeng/api";
@@ -13,6 +13,14 @@ import { NAV_ITEMS, getPageMeta, resolvePageIdFromUrl } from "../../core/navigat
 import { HelpDrawerComponent } from "../../shared/help-drawer/help-drawer.component";
 
 const SIDEBAR_STORAGE_KEY = "pf_sidebar_collapsed";
+const BASE_APP_SCALE = 0.85;
+const ZOOM_STEP = 10;
+
+type ShortcutItem = {
+  key: string;
+  label: string;
+  path: string;
+};
 
 @Component({
   selector: "pf-shell",
@@ -30,12 +38,25 @@ export class ShellComponent {
   readonly navItems = NAV_ITEMS;
   readonly zoom = this.zoomService.zoom;
   readonly breadcrumbHome = BREADCRUMB_HOME;
+  readonly shortcuts: ShortcutItem[] = [
+    { key: "F1", label: "Dashboard", path: "/dashboard" },
+    { key: "F2", label: "Nova venda", path: "/vendas/nova" },
+    { key: "F3", label: "Produtos", path: "/produtos" },
+    { key: "F4", label: "Clientes", path: "/clientes" },
+    { key: "F5", label: "Historico", path: "/historico" },
+    { key: "F6", label: "Fiado", path: "/fiado" },
+    { key: "F7", label: "Relatorios", path: "/relatorios" },
+    { key: "F8", label: "Funcionarios", path: "/funcionarios" },
+    { key: "F9", label: "Chatbot", path: "/chatbot" },
+    { key: "F10", label: "Configuracoes", path: "/configuracoes" },
+  ];
   currentPage = getPageMeta("dashboard");
   breadcrumbItems: MenuItem[] = buildBreadcrumbTrail("/dashboard", "dashboard");
   zoomInput = String(this.zoom());
   sidebarCollapsed = localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1";
   mobileSidebarOpen = false;
   helpOpen = false;
+  shortcutsOpen = false;
 
   constructor() {
     this.router.events
@@ -76,8 +97,56 @@ export class ShellComponent {
     this.helpOpen = false;
   }
 
+  toggleShortcuts(): void {
+    this.shortcutsOpen = !this.shortcutsOpen;
+  }
+
+  closeShortcuts(): void {
+    this.shortcutsOpen = false;
+  }
+
+  openHelpFromShortcuts(): void {
+    this.shortcutsOpen = false;
+    this.helpOpen = true;
+  }
+
+  navigateShortcut(item: ShortcutItem): void {
+    this.shortcutsOpen = false;
+    this.router.navigateByUrl(item.path);
+  }
+
   get currentPageId(): string {
     return this.currentPage?.id ?? "";
+  }
+
+  @HostListener("document:keydown", ["$event"])
+  handleGlobalKeydown(event: KeyboardEvent): void {
+    if (this.isEditableTarget(event.target)) {
+      return;
+    }
+
+    if (event.key === "Escape") {
+      if (this.shortcutsOpen) {
+        event.preventDefault();
+        this.closeShortcuts();
+      } else if (this.helpOpen) {
+        event.preventDefault();
+        this.closeHelp();
+      }
+      return;
+    }
+
+    if (event.key === "?") {
+      event.preventDefault();
+      this.toggleShortcuts();
+      return;
+    }
+
+    const shortcut = this.shortcuts.find((item) => item.key === event.key);
+    if (shortcut) {
+      event.preventDefault();
+      this.navigateShortcut(shortcut);
+    }
   }
 
   toggleSidebar(): void {
@@ -98,6 +167,14 @@ export class ShellComponent {
     this.zoomInput = String(this.zoom());
   }
 
+  decreaseZoom(): void {
+    this.setPresetZoom(this.zoom() - ZOOM_STEP);
+  }
+
+  increaseZoom(): void {
+    this.setPresetZoom(this.zoom() + ZOOM_STEP);
+  }
+
   applyCustomZoom(): void {
     const parsed = Number(this.zoomInput);
     if (!Number.isFinite(parsed)) {
@@ -109,8 +186,8 @@ export class ShellComponent {
     this.zoomInput = String(this.zoom());
   }
 
-  get zoomScale(): string {
-    return `${this.zoom()}%`;
+  get appScale(): string {
+    return String((this.zoom() / 100) * BASE_APP_SCALE);
   }
 
   get currentThemeMode(): ThemeMode {
@@ -168,6 +245,16 @@ export class ShellComponent {
     };
 
     return labels[role] ?? role;
+  }
+
+  private isEditableTarget(target: EventTarget | null): boolean {
+    const element = target as HTMLElement | null;
+    if (!element) {
+      return false;
+    }
+
+    const tagName = element.tagName?.toLowerCase();
+    return tagName === "input" || tagName === "textarea" || tagName === "select" || element.isContentEditable;
   }
 
   logout(): void {

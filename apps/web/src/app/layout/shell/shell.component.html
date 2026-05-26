@@ -1,4 +1,4 @@
-<div class="erp-shell" [class.sidebar-is-collapsed]="sidebarCollapsed">
+<div class="erp-shell" [class.sidebar-is-collapsed]="sidebarCollapsed" [style.--app-scale]="appScale">
   <div class="shell-overlay" [class.open]="mobileSidebarOpen" (click)="closeMobileSidebar()"></div>
 
   <aside class="sidebar" [class.collapsed]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
@@ -93,7 +93,7 @@
     </button>
   </aside>
 
-  <main class="main" [style.zoom]="zoomScale">
+  <main class="main">
     <header class="topbar">
       <button class="topbar-icon topbar-menu" type="button" aria-label="Abrir menu" (click)="toggleMobileSidebar()">
         <svg viewBox="0 0 24 24" fill="none">
@@ -125,22 +125,9 @@
               />
             </svg>
           </span>
-          <button
-            class="zoom-link"
-            [class.active]="zoom() === 125"
-            type="button"
-            (click)="setPresetZoom(125)"
-          >
-            125%
-          </button>
-          <button
-            class="zoom-link"
-            [class.active]="zoom() === 150"
-            type="button"
-            (click)="setPresetZoom(150)"
-          >
-            150%
-          </button>
+          <button class="zoom-link zoom-step" type="button" (click)="decreaseZoom()" aria-label="Reduzir zoom">-</button>
+          <button class="zoom-link" [class.active]="zoom() === 100" type="button" (click)="setPresetZoom(100)">100%</button>
+          <button class="zoom-link zoom-step" type="button" (click)="increaseZoom()" aria-label="Aumentar zoom">+</button>
           <div class="zoom-custom">
             <input
               class="zoom-input"
@@ -190,7 +177,7 @@
           </svg>
         </button>
 
-        <button class="topbar-icon" type="button" aria-label="Ajuda" title="Ajuda da Fresca" (click)="toggleHelp()">
+        <button class="topbar-icon" type="button" aria-label="Atalhos do sistema" title="Atalhos do sistema" (click)="toggleShortcuts()">
           <svg viewBox="0 0 24 24" fill="none">
             <path
               d="M12 18h.01M9.1 9a3 3 0 1 1 5.8 1c-.5 1.2-1.9 1.7-2.4 2.8-.2.3-.2.7-.2 1.2M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z"
@@ -224,4 +211,30 @@
   </main>
 
   <pf-help-drawer [open]="helpOpen" [page]="currentPageId" (close)="closeHelp()"></pf-help-drawer>
+
+  <div *ngIf="shortcutsOpen" class="shortcut-overlay" (click)="closeShortcuts()" role="presentation"></div>
+  <section *ngIf="shortcutsOpen" class="shortcut-modal" role="dialog" aria-modal="true" aria-label="Atalhos do sistema">
+    <button class="shortcut-close" type="button" (click)="closeShortcuts()" aria-label="Fechar atalhos">x</button>
+    <header class="shortcut-head">
+      <h2>Atalhos do sistema</h2>
+      <p>Use as teclas de funcao fora dos campos de texto para navegar mais rapido.</p>
+    </header>
+
+    <div class="shortcut-grid">
+      <button
+        *ngFor="let item of shortcuts"
+        class="shortcut-item"
+        type="button"
+        (click)="navigateShortcut(item)"
+      >
+        <span class="shortcut-key">{{ item.key }}</span>
+        <span class="shortcut-label">{{ item.label }}</span>
+      </button>
+    </div>
+
+    <footer class="shortcut-footer">
+      <span>Esc fecha janelas abertas. ? mostra esta ajuda.</span>
+      <button class="shortcut-help-link" type="button" (click)="openHelpFromShortcuts()">Fresca Ajuda</button>
+    </footer>
+  </section>
 </div>
