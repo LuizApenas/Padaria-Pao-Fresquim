@@ -45,19 +45,47 @@ export async function emitChatbotEvento({
  * Conta eventos por tipo dentro de um periodo. Retorna {tipo: count, ...}.
  */
 async function countEventosPorTipo(inicio, fim, tipos) {
-  const rows = await prisma.chatbotEvento.groupBy({
-    by: ["tipo"],
-    where: {
-      tipo: { in: tipos },
-      criadoEm: { gte: inicio, lt: fim },
-    },
-    _count: { _all: true },
-  });
-
   const map = {};
   for (const t of tipos) map[t] = 0;
-  for (const r of rows) map[r.tipo] = r._count._all;
+
+  try {
+    const rows = await prisma.chatbotEvento.groupBy({
+      by: ["tipo"],
+      where: {
+        tipo: { in: tipos },
+        criadoEm: { gte: inicio, lt: fim },
+      },
+      _count: { _all: true },
+    });
+
+    for (const r of rows) map[r.tipo] = r._count._all;
+  } catch (error) {
+    if (isChatbotEventosSchemaMissing(error)) {
+      console.warn("[chatbot-eventos] tabela/coluna ausente; retornando KPIs zerados:", error?.message);
+      return map;
+    }
+
+    throw error;
+  }
+
   return map;
+}
+
+function isChatbotEventosSchemaMissing(error) {
+  const code = error?.code || error?.cause?.code;
+  const message = String(error?.message || error?.cause?.message || "").toLowerCase();
+
+  return (
+    code === "P2021" ||
+    code === "P2022" ||
+    code === "42P01" ||
+    code === "42703" ||
+    message.includes("chatbot_eventos") ||
+    message.includes("chatbotEvento") ||
+    message.includes("does not exist") ||
+    message.includes("nao existe") ||
+    message.includes("não existe")
+  );
 }
 
 /**
@@ -130,14 +158,25 @@ export async function houveCobrancaRecente(clienteId, diasJanela = 30) {
   if (!clienteId) return false;
 
   const limite = new Date(Date.now() - diasJanela * 24 * 60 * 60 * 1000);
-  const existe = await prisma.chatbotEvento.findFirst({
-    where: {
-      tipo: CHATBOT_EVENTOS.COBRANCA_DISPARADA,
-      clienteId,
-      criadoEm: { gte: limite },
-    },
-    select: { id: true },
-  });
+  let existe = null;
+
+  try {
+    existe = await prisma.chatbotEvento.findFirst({
+      where: {
+        tipo: CHATBOT_EVENTOS.COBRANCA_DISPARADA,
+        clienteId,
+        criadoEm: { gte: limite },
+      },
+      select: { id: true },
+    });
+  } catch (error) {
+    if (isChatbotEventosSchemaMissing(error)) {
+      console.warn("[chatbot-eventos] tabela/coluna ausente; ignorando correlacao de cobranca:", error?.message);
+      return false;
+    }
+
+    throw error;
+  }
 
   return Boolean(existe);
 }
