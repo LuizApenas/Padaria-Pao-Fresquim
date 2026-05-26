@@ -1,5 +1,6 @@
-import { Component } from "@angular/core";
+import { Component, inject } from "@angular/core";
 import { RouterOutlet } from "@angular/router";
+import { ThemeService } from "./core/services/theme.service";
 import { ConfirmDialogComponent } from "./shared/confirm-dialog/confirm-dialog.component";
 import { ToastStackComponent } from "./shared/toast-stack/toast-stack.component";
 
@@ -13,4 +14,10 @@ import { ToastStackComponent } from "./shared/toast-stack/toast-stack.component"
     <pf-toast-stack />
   `,
 })
-export class AppComponent {}
+export class AppComponent {
+  private readonly themeService = inject(ThemeService);
+
+  constructor() {
+    void this.themeService;
+  }
+}

@@ -77,6 +77,7 @@
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface);
+  color: var(--text);
 }
 
 .pay-method.selected,
@@ -89,7 +90,7 @@
 .sale-contract-note {
   display: grid;
   gap: 0.4rem;
-  background: #f8fafc;
+  background: var(--surface-muted);
 }
 
 .pdv-client-warning,
@@ -177,7 +178,7 @@
 }
 
 .product-card {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border, #e6e9ec);
   border-radius: 14px;
   overflow: hidden;
@@ -190,7 +191,7 @@
 .product-card:hover,
 .product-card:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(15, 23, 32, 0.08);
+  box-shadow: var(--shadow);
   border-color: #b9d6c4;
   outline: none;
 }

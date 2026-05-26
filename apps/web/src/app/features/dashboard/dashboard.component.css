@@ -11,7 +11,7 @@
 .stat-card {
   padding: 1.45rem 1.5rem 1.2rem;
   border-radius: 16px;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
+  box-shadow: var(--shadow);
 }
 
 .stat-card-highlight {
@@ -31,7 +31,7 @@
 }
 
 .stat-label {
-  color: #3d4655;
+  color: var(--text-muted);
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -60,8 +60,8 @@
 }
 
 .stat-icon-slate {
-  background: #f4f6fb;
-  color: #55637a;
+  background: var(--surface-soft);
+  color: var(--text-muted);
 }
 
 .stat-icon-orange {
@@ -71,14 +71,14 @@
 
 .stat-value {
   margin: 0 0 0.45rem;
-  color: #17233a;
+  color: var(--text);
   font-size: 2rem;
   font-weight: 500;
   letter-spacing: -0.03em;
 }
 
 .stat-sub {
-  color: #66758b;
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -106,7 +106,7 @@
   border-radius: 14px;
   background:
     radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 26%),
-    linear-gradient(180deg, #ffffff, #f8fbff);
+    linear-gradient(180deg, var(--surface), var(--surface-muted));
 }
 
 .performance-head {
@@ -119,7 +119,7 @@
 
 .performance-title,
 .latest-sales-title {
-  color: #13213a;
+  color: var(--text);
   font-size: 1.1rem;
   font-weight: 900;
   letter-spacing: -0.03em;
@@ -134,7 +134,7 @@
 .period-btn {
   border: 0;
   background: transparent;
-  color: #4f5d71;
+  color: var(--text-muted);
   padding: 0.45rem 0.85rem;
   border-radius: 999px;
   font-size: 0.75rem;
@@ -143,9 +143,9 @@
 }
 
 .period-btn.active {
-  background: #f1f4f8;
-  color: #1d2738;
-  box-shadow: inset 0 0 0 1px #d9e3ef;
+  background: var(--surface-soft);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border);
 }
 
 .performance-summary {
@@ -160,12 +160,12 @@
   gap: 0.3rem;
   padding: 0.95rem 1rem;
   border-radius: 14px;
-  background: rgba(241, 245, 249, 0.9);
-  border: 1px solid #e2e8f0;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
 }
 
 .performance-kpi strong {
-  color: #122033;
+  color: var(--text);
   font-size: 1rem;
   font-weight: 900;
 }
@@ -176,7 +176,7 @@
 }
 
 .performance-kpi-label {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -196,7 +196,7 @@
   flex-direction: column;
   padding: 1.5rem 1.35rem 1.25rem;
   border-radius: 12px;
-  background: #0f1b2f;
+  background: var(--surface-strong);
   border: 0;
   box-shadow: none;
 }
@@ -223,7 +223,7 @@
   align-items: center;
   padding: 0;
   border: 0;
-  background: #263249;
+  background: var(--surface-soft);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -274,7 +274,7 @@
 }
 
 .alert-sub {
-  color: #b2bfd1;
+  color: var(--text-muted);
   font-size: 0.8rem;
   margin-top: 0.25rem;
 }
@@ -312,7 +312,7 @@
 }
 
 .latest-sales-table th {
-  color: #49556a;
+  color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 800;
 }
@@ -334,8 +334,8 @@
   display: grid;
   place-items: center;
   border-radius: 12px;
-  background: #eef3f8;
-  color: #a6b4c9;
+  background: var(--surface-soft);
+  color: var(--text-soft);
   font-size: 0.84rem;
   font-weight: 800;
 }
@@ -346,19 +346,19 @@
 }
 
 .customer-name {
-  color: #17233a;
+  color: var(--text);
   font-size: 0.95rem;
   font-weight: 800;
 }
 
 .customer-date {
   margin-top: 0.15rem;
-  color: #6f7d92;
+  color: var(--text-muted);
   font-size: 0.82rem;
 }
 
 .product-main {
-  color: #202c42;
+  color: var(--text);
   font-size: 0.95rem;
 }
 
@@ -368,7 +368,7 @@
 }
 
 .sale-value {
-  color: #13213a;
+  color: var(--text);
   font-size: 0.95rem;
   font-weight: 900;
 }

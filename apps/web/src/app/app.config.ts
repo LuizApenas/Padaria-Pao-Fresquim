@@ -16,7 +16,7 @@ export const appConfig: ApplicationConfig = {
       theme: {
         preset: PadariaPreset,
         options: {
-          darkModeSelector: false,
+          darkModeSelector: ".theme-dark",
         },
       },
     }),

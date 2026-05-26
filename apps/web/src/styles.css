@@ -3,15 +3,27 @@
   --green-light: #22c55e;
   --green-dark: #124c31;
   --gold: #c8a44a;
-  --sidebar-bg: #0d1117;
-  --sidebar-active: #182230;
-  --sidebar-text: #94a3b8;
   --bg: #eef2f6;
   --surface: #ffffff;
   --surface-muted: #f8fafc;
+  --surface-soft: #f1f4f8;
+  --surface-strong: #ffffff;
   --border: #dbe3ee;
   --text: #1e293b;
   --text-muted: #64748b;
+  --text-soft: #94a3b8;
+  --shell-bg: #f7f9fc;
+  --sidebar-bg: #f7f9fc;
+  --sidebar-active: #e8f5ef;
+  --sidebar-text: #4a5970;
+  --sidebar-icon: #5c6b81;
+  --topbar-bg: #ffffff;
+  --topbar-icon-bg: transparent;
+  --topbar-icon-hover: #f2f5f8;
+  --topbar-icon-color: #6b778c;
+  --avatar-bg: linear-gradient(135deg, #f4f7fa, #dfe8f1);
+  --avatar-border: #dbe4ee;
+  --overlay: rgba(15, 23, 42, 0.42);
   --danger: #dc2626;
   --warning: #d97706;
   --info: #2563eb;
@@ -22,6 +34,64 @@
   --page-gap: 1.75rem;
   --card-gap: 1.25rem;
   --section-gap: 1.5rem;
+}
+
+:root.theme-dark,
+body.theme-dark {
+  --bg: #08111d;
+  --surface: #0f1b2f;
+  --surface-muted: #132238;
+  --surface-soft: #18273f;
+  --surface-strong: #0b1627;
+  --border: #24364f;
+  --text: #e5edf8;
+  --text-muted: #9fb2c9;
+  --text-soft: #6f8197;
+  --shell-bg: #0b1627;
+  --sidebar-bg: #0a1424;
+  --sidebar-active: #15324c;
+  --sidebar-text: #9fb2c9;
+  --sidebar-icon: #bfd0e3;
+  --topbar-bg: #0f1b2f;
+  --topbar-icon-bg: #132238;
+  --topbar-icon-hover: #1a2e47;
+  --topbar-icon-color: #d6e1ee;
+  --avatar-bg: linear-gradient(135deg, #1b3553, #25486f);
+  --avatar-border: #2e4867;
+  --overlay: rgba(2, 6, 23, 0.68);
+  --shadow: 0 18px 34px rgba(2, 6, 23, 0.38);
+}
+
+:root.theme-contrast,
+body.theme-contrast {
+  --green: #00ff85;
+  --green-light: #78ffb7;
+  --green-dark: #00cc6a;
+  --bg: #000000;
+  --surface: #050505;
+  --surface-muted: #0f0f0f;
+  --surface-soft: #141414;
+  --surface-strong: #000000;
+  --border: #ffffff;
+  --text: #ffffff;
+  --text-muted: #f5f5f5;
+  --text-soft: #d6d6d6;
+  --shell-bg: #000000;
+  --sidebar-bg: #000000;
+  --sidebar-active: #121212;
+  --sidebar-text: #ffffff;
+  --sidebar-icon: #ffffff;
+  --topbar-bg: #000000;
+  --topbar-icon-bg: #000000;
+  --topbar-icon-hover: #1a1a1a;
+  --topbar-icon-color: #ffffff;
+  --avatar-bg: linear-gradient(135deg, #ffffff, #cfcfcf);
+  --avatar-border: #ffffff;
+  --overlay: rgba(0, 0, 0, 0.82);
+  --danger: #ff4d4d;
+  --warning: #ffcc00;
+  --info: #66b3ff;
+  --shadow: none;
 }
 
 *,
@@ -43,6 +113,16 @@ body {
     var(--bg);
   color: var(--text);
   line-height: 1.5;
+}
+
+body.theme-dark {
+  background:
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 28%),
+    linear-gradient(180deg, #08111d 0%, #0b1627 100%);
+}
+
+body.theme-contrast {
+  background: #000000;
 }
 
 button,
@@ -476,6 +556,10 @@ a {
   border-collapse: collapse;
 }
 
+.table-panel {
+  overflow-x: auto;
+}
+
 .client-name,
 .product-name,
 .top-product-name,
@@ -538,6 +622,22 @@ a {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface-muted);
+}
+
+.erp-shell,
+.main,
+.page,
+.feature-page,
+.panel,
+.table-panel,
+.alerts-panel,
+.payment-panel,
+.total-card,
+.tip-card,
+.login-card,
+.employee-card,
+.product-card {
+  min-width: 0;
 }
 
 .top-product-item,
@@ -634,11 +734,11 @@ a {
 
 @media (max-width: 900px) {
   .erp-shell {
-    flex-direction: column;
+    flex-direction: row;
   }
 
   .sidebar {
-    width: 100%;
+    width: auto;
     min-width: 0;
   }
 
@@ -666,5 +766,25 @@ a {
 
   .page {
     padding: 1rem;
+  }
+
+  .table-panel table {
+    min-width: 720px;
+  }
+
+  .topbar-right,
+  .topbar-zoom,
+  .admin-chip,
+  .toolbar,
+  .page-header,
+  .payment-methods,
+  .pdv-actions,
+  .pdv-finalize-area,
+  .historic-filters,
+  .catalog-item,
+  .total-breakdown,
+  .table-footer {
+    align-items: stretch;
+    flex-wrap: wrap;
   }
 }

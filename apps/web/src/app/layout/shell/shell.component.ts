@@ -7,6 +7,7 @@ import { Breadcrumb } from "primeng/breadcrumb";
 import { filter, map, startWith } from "rxjs";
 import { BREADCRUMB_HOME, buildBreadcrumbTrail } from "../../core/breadcrumb.builder";
 import { AuthService, AuthUser } from "../../core/services/auth.service";
+import { ThemeMode, ThemeService } from "../../core/services/theme.service";
 import { ZoomService } from "../../core/services/zoom.service";
 import { NAV_ITEMS, getPageMeta, resolvePageIdFromUrl } from "../../core/navigation";
 import { HelpDrawerComponent } from "../../shared/help-drawer/help-drawer.component";
@@ -23,6 +24,7 @@ const SIDEBAR_STORAGE_KEY = "pf_sidebar_collapsed";
 export class ShellComponent {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly themeService = inject(ThemeService);
   private readonly zoomService = inject(ZoomService);
 
   readonly navItems = NAV_ITEMS;
@@ -32,6 +34,7 @@ export class ShellComponent {
   breadcrumbItems: MenuItem[] = buildBreadcrumbTrail("/dashboard", "dashboard");
   zoomInput = String(this.zoom());
   sidebarCollapsed = localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1";
+  mobileSidebarOpen = false;
   helpOpen = false;
 
   constructor() {
@@ -61,6 +64,7 @@ export class ShellComponent {
       .subscribe(({ page, trail }) => {
         this.currentPage = page;
         this.breadcrumbItems = trail;
+        this.mobileSidebarOpen = false;
       });
   }
 
@@ -81,6 +85,14 @@ export class ShellComponent {
     localStorage.setItem(SIDEBAR_STORAGE_KEY, this.sidebarCollapsed ? "1" : "0");
   }
 
+  toggleMobileSidebar(): void {
+    this.mobileSidebarOpen = !this.mobileSidebarOpen;
+  }
+
+  closeMobileSidebar(): void {
+    this.mobileSidebarOpen = false;
+  }
+
   setPresetZoom(value: number): void {
     this.zoomService.setZoom(value);
     this.zoomInput = String(this.zoom());
@@ -99,6 +111,18 @@ export class ShellComponent {
 
   get zoomScale(): string {
     return `${this.zoom()}%`;
+  }
+
+  get currentThemeMode(): ThemeMode {
+    return this.themeService.mode();
+  }
+
+  setThemeMode(mode: ThemeMode): void {
+    this.themeService.setMode(mode);
+  }
+
+  isThemeMode(mode: ThemeMode): boolean {
+    return this.themeService.isMode(mode);
   }
 
   get currentUser(): AuthUser | null {
