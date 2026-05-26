@@ -535,17 +535,17 @@ function buildSystemPrompt({ metrics, produtos, sender, worker, inadimplentes, p
     if (role === "PROPRIETARIO") {
       lines.push(
         "Cargo PROPRIETARIO — acesso TOTAL. Pode pedir metricas (diaria/semanal/mensal), relatorios, ranking de produtos, status de fiados, pedidos pendentes e qualquer indicador operacional. Pode tambem orientar acoes: cobrar fiado, priorizar pedidos, conferir estoque.",
-        "O sistema ja enviou um menu numerado para o proprietario (1 Vendas hoje, 2 Pedidos pendentes, 3 Fiado em aberto, 4 Resumo semana, 5 Resumo mes). Nao precisa repetir o menu, apenas conduza a opcao ou o texto livre.",
+        "O sistema ja enviou um menu numerado para o proprietario (1 Vendas hoje, 2 Pedidos pendentes, 3 Fiado em aberto, 4 Resumo semana, 5 Resumo mes, 6 Bater ponto). Nao precisa repetir o menu, apenas conduza a opcao ou o texto livre.",
       );
     } else if (role === "ATENDENTE") {
       lines.push(
         "Cargo ATENDENTE — foco em atendimento operacional. Pode registrar pedidos para clientes, consultar status de pedidos, consultar fiado de um cliente, conferir catalogo. NAO entregue relatorios financeiros completos nem dados sensiveis de outros funcionarios; oriente a procurar o proprietario para isso.",
-        "Menu enviado: 1 Registrar pedido para cliente, 2 Consultar pedido, 3 Consultar fiado, 4 Ver catalogo.",
+        "Menu enviado: 1 Registrar pedido para cliente, 2 Consultar pedido, 3 Consultar fiado, 4 Ver catalogo, 5 Bater ponto.",
       );
     } else if (role === "PADEIRO") {
       lines.push(
         "Cargo PADEIRO — foco em producao. Pode ver pedidos pendentes para preparar, conferir catalogo, registrar item produzido. NAO entregue metricas financeiras ou relatorios; oriente a procurar o proprietario.",
-        "Menu enviado: 1 Pedidos pendentes, 2 Catalogo, 3 Registrar produzido.",
+        "Menu enviado: 1 Pedidos pendentes, 2 Catalogo, 3 Registrar produzido, 4 Bater ponto.",
       );
     } else {
       lines.push(
@@ -555,6 +555,7 @@ function buildSystemPrompt({ metrics, produtos, sender, worker, inadimplentes, p
 
     lines.push(
       "Pode registrar pedidos para CLIENTES quando o funcionario passar nome/telefone/CPF do cliente comprador + itens, validando contra o catalogo. NUNCA confunda o funcionario com o cliente comprador.",
+      "Ponto digital: se o funcionario pedir para 'bater ponto', 'registrar entrada/saida' ou 'cheguei/vou sair', o sistema registra automaticamente e responde com o horario. Voce nao precisa pedir confirmacao nem chamar nenhuma rota — o handler interno cuida disso.",
     );
   } else {
     const telefoneCliente = sender?.telefone || "";
@@ -1620,17 +1621,20 @@ const MENU_EXPANSIONS = {
     3: "Liste os clientes com fiado em aberto e seus saldos.",
     4: "Me mostre o resumo da semana.",
     5: "Me mostre o resumo do mes.",
+    6: "__BATER_PONTO_AUTO__",
   },
   ATENDENTE: {
     1: "Vou registrar um pedido para um cliente, me oriente.",
     2: "Consultar status de um pedido (pergunte numero ou data).",
     3: "Consultar fiado de um cliente (pergunte nome ou telefone).",
     4: "Liste os produtos do catalogo ativo.",
+    5: "__BATER_PONTO_AUTO__",
   },
   PADEIRO: {
     1: "Liste os pedidos pendentes para preparar.",
     2: "Me mostre os produtos do catalogo.",
     3: "Vou registrar um item produzido, me oriente.",
+    4: "__BATER_PONTO_AUTO__",
   },
 };
 
@@ -1645,6 +1649,58 @@ function expandMenuChoice(text = "", role = "CLIENTE") {
   if (head && map[head[1]]) return map[head[1]];
 
   return null;
+}
+
+// Detecta intencao de bater ponto e o tipo (ENTRADA/SAIDA/AUTO).
+function detectPontoIntent(text = "") {
+  const t = String(text).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+  if (!t) return null;
+  if (t.length > 80) return null;
+
+  // ENTRADA explicita
+  if (/(bater\s+entrada|registrar\s+entrada|marcar\s+entrada|^entrada$|cheguei|estou\s+aqui|comecei|inicio\s+(do\s+)?expediente)/i.test(t)) {
+    return { tipo: "ENTRADA" };
+  }
+  // SAIDA explicita
+  if (/(bater\s+saida|registrar\s+saida|marcar\s+saida|^saida$|sai|vou\s+sair|fim\s+(do\s+)?expediente|terminei|encerrei)/i.test(t)) {
+    return { tipo: "SAIDA" };
+  }
+  // Generico: "bater ponto", "registrar ponto", "ponto"
+  if (/(bater\s+ponto|registrar\s+ponto|marcar\s+ponto|^ponto$|ponto\s+digital)/i.test(t)) {
+    return { tipo: "AUTO" };
+  }
+  return null;
+}
+
+async function registrarBatidaPontoChatbot({ funcionarioId, tipo }) {
+  // Toggle automatico baseado na ultima batida de HOJE.
+  let tipoFinal = tipo;
+
+  if (tipoFinal === "AUTO") {
+    const inicioDia = new Date();
+    inicioDia.setHours(0, 0, 0, 0);
+
+    const ultima = await prisma.registroPonto.findFirst({
+      where: {
+        funcionarioId,
+        dataHoraBatida: { gte: inicioDia },
+      },
+      orderBy: { dataHoraBatida: "desc" },
+      select: { tipoRegistro: true },
+    });
+
+    // Se ultima foi ENTRADA, alterna para SAIDA; senao, ENTRADA.
+    tipoFinal = ultima?.tipoRegistro === "ENTRADA" ? "SAIDA" : "ENTRADA";
+  }
+
+  const registro = await prisma.registroPonto.create({
+    data: {
+      funcionarioId,
+      tipoRegistro: tipoFinal,
+    },
+  });
+
+  return { tipo: tipoFinal, dataHora: registro.dataHoraBatida };
 }
 
 // Heuristica: cliente pedindo transbordo humano em texto livre.
@@ -1765,6 +1821,7 @@ function buildProprietarioMenu(nomeFuncionario) {
     "3️⃣ Clientes com fiado em aberto",
     "4️⃣ Resumo da semana",
     "5️⃣ Resumo do mes",
+    "6️⃣ Bater ponto",
     "",
     "Responda com o numero ou peca direto (ex.: 'top produtos do mes').",
   ].join("\n");
@@ -1779,6 +1836,7 @@ function buildAtendenteMenu(nomeFuncionario) {
     "2️⃣ Consultar status de um pedido",
     "3️⃣ Consultar fiado de um cliente",
     "4️⃣ Ver produtos do catalogo",
+    "5️⃣ Bater ponto",
     "",
     "Responda com o numero ou descreva o que precisa.",
   ].join("\n");
@@ -1792,6 +1850,7 @@ function buildPadeiroMenu(nomeFuncionario) {
     "1️⃣ Pedidos pendentes para preparar",
     "2️⃣ Conferir produtos do catalogo",
     "3️⃣ Registrar item produzido",
+    "4️⃣ Bater ponto",
     "",
     "Responda com o numero ou descreva o que precisa.",
   ].join("\n");
@@ -1893,6 +1952,56 @@ async function processBufferedWhatsappConversation({ texts, meta }) {
     }
 
     const expanded = expandMenuChoice(mergedMessage, role);
+
+    // Bater ponto via WhatsApp: para funcionarios (qualquer cargo).
+    // Aciona tanto pela opcao numerica do menu (que vira sentinel
+    // __BATER_PONTO_AUTO__) quanto por texto livre detectado pelo
+    // detectPontoIntent (ENTRADA/SAIDA explicitas ou AUTO toggle).
+    if (meta.funcionario) {
+      const pontoIntent =
+        expanded === "__BATER_PONTO_AUTO__"
+          ? { tipo: "AUTO" }
+          : detectPontoIntent(mergedMessage);
+
+      if (pontoIntent) {
+        try {
+          const batida = await registrarBatidaPontoChatbot({
+            funcionarioId: meta.funcionario.id,
+            tipo: pontoIntent.tipo,
+          });
+
+          const horaStr = new Date(batida.dataHora).toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "America/Sao_Paulo",
+          });
+          const tipoLabel = batida.tipo === "ENTRADA" ? "entrada" : "saida";
+
+          await dispatchWhatsAppText({
+            phone: telefone,
+            message: `Ponto de *${tipoLabel}* registrado as ${horaStr} para ${meta.funcionario.nome}. ✅`,
+          });
+
+          return {
+            processed: true,
+            mergedMessages: texts.length,
+            intent: "PONTO",
+            source: `ponto_${batida.tipo.toLowerCase()}`,
+          };
+        } catch (error) {
+          await dispatchWhatsAppText({
+            phone: telefone,
+            message: `Nao consegui registrar o ponto agora (${error?.message || "erro"}). Tente de novo em alguns segundos.`,
+          });
+          return {
+            processed: false,
+            mergedMessages: texts.length,
+            intent: "PONTO_FALHOU",
+            source: "ponto_erro",
+          };
+        }
+      }
+    }
 
     // Transbordo humano: cliente respondendo "4" no menu, ou pedindo em texto
     // livre. Dispara briefing para o atendente e fecha o turno.
