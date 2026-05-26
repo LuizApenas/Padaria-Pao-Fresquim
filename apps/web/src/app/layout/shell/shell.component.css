@@ -3,9 +3,10 @@
 }
 
 .erp-shell {
-  --app-scale: 0.85;
-  width: calc(100% / var(--app-scale));
-  min-height: calc(100vh / var(--app-scale));
+  --app-scale: 1;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: clip;
   zoom: var(--app-scale);
 }
 

@@ -13,7 +13,7 @@ import { NAV_ITEMS, getPageMeta, resolvePageIdFromUrl } from "../../core/navigat
 import { HelpDrawerComponent } from "../../shared/help-drawer/help-drawer.component";
 
 const SIDEBAR_STORAGE_KEY = "pf_sidebar_collapsed";
-const BASE_APP_SCALE = 0.85;
+const BASE_APP_SCALE = 1;
 const ZOOM_STEP = 10;
 
 type ShortcutItem = {
