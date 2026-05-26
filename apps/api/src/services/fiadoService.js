@@ -2,6 +2,11 @@ import { prisma } from "../config/prisma.js";
 import { StatusNotificacao } from "../domain/enums.js";
 import { AppError } from "../utils/AppError.js";
 import { ensureEnumValue, ensurePositiveNumber, parseId, requireFields, toMoney } from "../utils/validation.js";
+import {
+  CHATBOT_EVENTOS,
+  emitChatbotEvento,
+  houveCobrancaRecente,
+} from "./chatbotEventosService.js";
 import { getChatbotSettings } from "./chatbotSettingsService.js";
 import { dispatchWhatsAppText } from "./evolutionService.js";
 
@@ -201,6 +206,17 @@ export async function registrarCobrancaFiado(clienteIdParam) {
   if (whatsappErro) {
     result.whatsappErro = whatsappErro;
   }
+
+  // Evento de funil de cobranca: registra que a cobranca foi disparada,
+  // independentemente do canal (WhatsApp/manual/cron). Pagamento posterior
+  // pode ser correlacionado dentro da janela.
+  void emitChatbotEvento({
+    tipo: CHATBOT_EVENTOS.COBRANCA_DISPARADA,
+    canal: "WHATSAPP",
+    clienteId,
+    payload: { saldo: saldoAtual, status: result.statusNotificacao, erro: whatsappErro },
+  });
+
   return result;
 }
 
@@ -246,6 +262,33 @@ export async function registrarPagamentoFiado(clienteIdParam, data = {}) {
 
     return { pagamento, conta: contaAtualizada };
   });
+
+  // Eventos de KPI:
+  // 1) PAGAMENTO_REGISTRADO sempre
+  // 2) COBRANCA_RESULTOU_PAGAMENTO se ha cobranca recente (janela 30 dias)
+  void emitChatbotEvento({
+    tipo: CHATBOT_EVENTOS.PAGAMENTO_REGISTRADO,
+    canal: "FRONTEND",
+    clienteId,
+    funcionarioId: funcionarioId || null,
+    payload: { valor, saldoAnterior: saldoAtual, saldoNovo: novoSaldo },
+  });
+
+  houveCobrancaRecente(clienteId, 30)
+    .then((tinha) => {
+      if (tinha) {
+        return emitChatbotEvento({
+          tipo: CHATBOT_EVENTOS.COBRANCA_RESULTOU_PAGAMENTO,
+          canal: "FRONTEND",
+          clienteId,
+          payload: { valor, saldoNovo: novoSaldo },
+        });
+      }
+      return null;
+    })
+    .catch((error) => {
+      console.warn("[fiado] falha ao correlacionar cobranca/pagamento:", error?.message);
+    });
 
   return {
     conta: serializeContaFiado(result.conta),

@@ -87,6 +87,36 @@
       </div>
     </div>
 
+    <div *ngIf="kpis" class="panel sidebar-card">
+      <div class="panel-title">KPIs do chatbot (mes)</div>
+      <div class="metrics-list">
+        <div class="metrics-row">
+          <span>Pedidos validados</span>
+          <strong>{{ kpis.pedidosValidados }} / {{ kpis.pedidosIniciados }}</strong>
+        </div>
+        <div class="metrics-row">
+          <span>Taxa de conversao</span>
+          <strong>{{ kpis.taxaConversaoPedidos }}%</strong>
+        </div>
+        <div class="metrics-row">
+          <span>Cobrancas disparadas</span>
+          <strong>{{ kpis.cobrancasDisparadas }}</strong>
+        </div>
+        <div class="metrics-row">
+          <span>Pagamentos pos-cobranca</span>
+          <strong>{{ kpis.pagamentosPosCobranca }}</strong>
+        </div>
+        <div class="metrics-row">
+          <span>Cobranca efetiva</span>
+          <strong>{{ kpis.taxaCobrancaEfetiva }}%</strong>
+        </div>
+        <div class="metrics-row">
+          <span>Transbordos humanos</span>
+          <strong>{{ kpis.handoffsHumanos }}</strong>
+        </div>
+      </div>
+    </div>
+
     <div class="panel sidebar-card expandable-card" id="chatbot-weekly-metrics">
       <button class="expand-trigger" type="button" (click)="toggleWeeklyMetrics()">
         <span class="panel-title">Metricas semanais</span>

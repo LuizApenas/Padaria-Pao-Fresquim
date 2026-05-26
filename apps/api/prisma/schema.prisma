@@ -65,6 +65,7 @@ model Cliente {
   contaFiado   ContaFiado?
   // Histórico de compras vinculadas ao cliente.
   vendas       Venda[]
+  chatbotEventos ChatbotEvento[]
   // Campos padrão de auditoria.
   criadoEm     DateTime     @default(now()) @map("criado_em")
   atualizadoEm DateTime     @updatedAt @map("atualizado_em")
@@ -95,6 +96,7 @@ model Funcionario {
   licencas          Licenca[]
   atestados         Atestado[]
   pagamentosFiado   PagamentoFiado[]
+  chatbotEventos    ChatbotEvento[]
   criadoEm          DateTime        @default(now()) @map("criado_em")
   atualizadoEm      DateTime        @updatedAt @map("atualizado_em")
 
@@ -240,4 +242,26 @@ model Atestado {
   atualizadoEm  DateTime     @updatedAt @map("atualizado_em")
 
   @@map("atestados")
+}
+
+// Eventos do chatbot para KPIs (pedidos validados, cobrancas, pagamentos,
+// transbordo humano). Insercao append-only, leitura por tipo/periodo.
+model ChatbotEvento {
+  id            Int          @id @default(autoincrement())
+  // Tipo do evento: PEDIDO_VALIDADO, COBRANCA_DISPARADA,
+  // PAGAMENTO_REGISTRADO, COBRANCA_RESULTOU_PAGAMENTO, HANDOFF_HUMANO.
+  tipo          String
+  canal         String?      // WHATSAPP | FRONTEND | CRON
+  clienteId     Int?         @map("cliente_id")
+  cliente       Cliente?     @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  funcionarioId Int?         @map("funcionario_id")
+  funcionario   Funcionario? @relation(fields: [funcionarioId], references: [id], onDelete: SetNull)
+  // Detalhes adicionais (itens do pedido, saldo, valor pago, briefing
+  // do handoff, etc). Mantido como string JSON para portabilidade.
+  payload       String?
+  criadoEm      DateTime     @default(now()) @map("criado_em")
+
+  @@index([tipo])
+  @@index([criadoEm])
+  @@map("chatbot_eventos")
 }

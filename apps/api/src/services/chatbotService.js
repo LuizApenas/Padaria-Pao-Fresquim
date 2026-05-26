@@ -15,6 +15,33 @@ import {
   enqueueConversationMessage,
   resolveMessageBufferDelayMs,
 } from "./chatbotMessageBufferService.js";
+import {
+  CHATBOT_EVENTOS,
+  emitChatbotEvento,
+  houveCobrancaRecente,
+} from "./chatbotEventosService.js";
+
+// Ring buffer em memoria: ultimas mensagens por conversa (key = telefone
+// canonico). Usado para montar o briefing do handoff humano com contexto
+// real do que o cliente escreveu nos ultimos turnos.
+const conversationHistoryRing = new Map();
+const HISTORY_RING_MAX = 8;
+
+function appendToHistoryRing(key, role, text) {
+  if (!key || !text) return;
+  const entry = conversationHistoryRing.get(key) ?? [];
+  entry.push({ role, text: String(text).slice(0, 400), at: new Date().toISOString() });
+  while (entry.length > HISTORY_RING_MAX) entry.shift();
+  conversationHistoryRing.set(key, entry);
+}
+
+function readHistoryRing(key) {
+  return conversationHistoryRing.get(key) ?? [];
+}
+
+function clearHistoryRing(key) {
+  conversationHistoryRing.delete(key);
+}
 
 // Constantes do motor de IA e limites de seguranca do atendimento.
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -1371,6 +1398,16 @@ export async function responderMensagemChatbot(data = {}, context = {}) {
     const llmItems = normalizeLlmItems(llmIntent?.itens, produtos);
     const itens = llmItems.length > 0 ? llmItems : matchProdutosFromText(message, produtos);
 
+    // Evento de funil: pedido foi INICIADO (chegou na branch). Permite calcular
+    // a taxa de conversao (validados / iniciados).
+    void emitChatbotEvento({
+      tipo: CHATBOT_EVENTOS.PEDIDO_INICIADO,
+      canal: sender.channel || (sender.type === "CLIENTE" ? "WHATSAPP" : "FRONTEND"),
+      clienteId: sender.type === "CLIENTE" ? sender.id ?? null : null,
+      funcionarioId: sender.type === "FUNCIONARIO" ? sender.id ?? null : null,
+      payload: { itensReconhecidos: itens.length },
+    });
+
     if (!telefone && !cpf) {
       return {
         source: groqText ? "groq" : "rules",
@@ -1404,6 +1441,16 @@ export async function responderMensagemChatbot(data = {}, context = {}) {
     const itensTexto = pedido.itens
       .map((item) => `${item.quantidade}x ${item.produto}`)
       .join(", ");
+
+    // Evento de funil: pedido VALIDADO (registrado). Eleva o numerador da
+    // taxa de conversao.
+    void emitChatbotEvento({
+      tipo: CHATBOT_EVENTOS.PEDIDO_VALIDADO,
+      canal: sender.channel || (sender.type === "CLIENTE" ? "WHATSAPP" : "FRONTEND"),
+      clienteId: sender.type === "CLIENTE" ? sender.id ?? null : null,
+      funcionarioId: sender.type === "FUNCIONARIO" ? sender.id ?? null : null,
+      payload: { pedidoId: pedido.pedidoId, valor: pedido.valorEstimado },
+    });
 
     return {
       source: groqText ? "groq" : "rules",
@@ -1600,6 +1647,98 @@ function expandMenuChoice(text = "", role = "CLIENTE") {
   return null;
 }
 
+// Heuristica: cliente pedindo transbordo humano em texto livre.
+function isHandoffRequest(text = "") {
+  const t = String(text).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+  if (!t) return false;
+  if (t.length > 120) return false;
+  return /(atendente|humano|pessoa real|falar com algu|quero falar com|quero ajuda humana)/i.test(t);
+}
+
+function buildHandoffBriefing({ cliente, telefoneCliente, motivoFinal, historico }) {
+  const linhas = [
+    "🤝 *Transbordo Fresca → atendente humano*",
+    "",
+    `Cliente: *${cliente?.nome ?? "(sem cadastro)"}*`,
+    `Telefone do cliente: *${telefoneCliente || "(desconhecido)"}*`,
+    cliente?.cpf ? `CPF: ${cliente.cpf}` : null,
+    cliente?.endereco ? `Endereco: ${cliente.endereco}` : null,
+    "",
+    `Solicitacao final: ${motivoFinal || "atendimento humano"}`,
+    "",
+    "Ultimas mensagens da conversa:",
+    ...(historico.length > 0
+      ? historico.slice(-6).map(
+          (m, idx) =>
+            `${idx + 1}. [${m.role === "cliente" ? "Cliente" : "Fresca"}] ${m.text}`,
+        )
+      : ["(sem historico recente capturado)"]),
+    "",
+    `Por favor, retorne para ${telefoneCliente || "o cliente"} assim que possivel.`,
+  ];
+
+  return linhas.filter((l) => l !== null && l !== undefined).join("\n");
+}
+
+async function triggerHumanHandoff({ telefone, cliente, motivo }) {
+  const settings = await getChatbotSettings();
+
+  if (!settings.handoffEnabled) {
+    return {
+      sent: false,
+      reason: "handoff_disabled",
+      replyToClient:
+        "Atendimento humano nao esta configurado no momento. Por favor, ligue ou passe na padaria.",
+    };
+  }
+
+  if (!settings.handoffPhone) {
+    return {
+      sent: false,
+      reason: "handoff_phone_missing",
+      replyToClient:
+        "Atendimento humano sem numero de destino configurado. Por favor, ligue ou passe na padaria.",
+    };
+  }
+
+  const historico = telefone ? readHistoryRing(telefone) : [];
+  const briefing = buildHandoffBriefing({
+    cliente,
+    telefoneCliente: telefone,
+    motivoFinal: motivo,
+    historico,
+  });
+
+  try {
+    await dispatchWhatsAppText({ phone: settings.handoffPhone, message: briefing });
+  } catch (error) {
+    return {
+      sent: false,
+      reason: "dispatch_failed",
+      error: error?.message,
+      replyToClient:
+        "Tive uma dificuldade tecnica para chamar o atendente agora. Tente novamente em alguns minutos.",
+    };
+  }
+
+  await emitChatbotEvento({
+    tipo: CHATBOT_EVENTOS.HANDOFF_HUMANO,
+    canal: "WHATSAPP",
+    clienteId: cliente?.id ?? null,
+    payload: {
+      telefoneCliente: telefone,
+      motivo,
+      historicoTamanho: historico.length,
+    },
+  });
+
+  return {
+    sent: true,
+    replyToClient:
+      "Tudo bem! Acabei de chamar um atendente humano. Em breve alguem da padaria entra em contato com voce por aqui. 🥖",
+  };
+}
+
 function buildClientMenu(clienteNome) {
   const nome = clienteNome ? clienteNome.split(" ")[0] : "";
   const saudacao = nome ? `Oi, ${nome}!` : "Oi!";
@@ -1694,11 +1833,18 @@ async function processBufferedWhatsappConversation({ texts, meta }) {
   }
 
 
+  // Captura no ring de historico antes de qualquer processamento, para que
+  // o handoff humano tenha visibilidade do contexto real da conversa.
+  if (telefone) {
+    appendToHistoryRing(telefone, "cliente", mergedMessage);
+  }
+
   // Encerramento explicito: zera buffer + bloqueio temporario do remetente,
   // responde uma despedida curta e NAO chama LLM. A proxima mensagem comeca
   // do zero (menu).
   if (telefone && isFarewellOrReset(mergedMessage)) {
     clearConversationBuffer(telefone);
+    clearHistoryRing(telefone);
     clearUnknownSenderFailures(getUnknownSenderKey({ telefone }));
 
     const primeiroNome = (meta.funcionario?.nome || meta.cliente?.nome || "").split(" ")[0];
@@ -1730,6 +1876,14 @@ async function processBufferedWhatsappConversation({ texts, meta }) {
         message: buildMenuForRole(role, nomeRemetente),
       });
 
+      void emitChatbotEvento({
+        tipo: CHATBOT_EVENTOS.MENU_ENVIADO,
+        canal: "WHATSAPP",
+        clienteId: meta.cliente?.id ?? null,
+        funcionarioId: meta.funcionario?.id ?? null,
+        payload: { role },
+      });
+
       return {
         processed: true,
         mergedMessages: texts.length,
@@ -1739,6 +1893,35 @@ async function processBufferedWhatsappConversation({ texts, meta }) {
     }
 
     const expanded = expandMenuChoice(mergedMessage, role);
+
+    // Transbordo humano: cliente respondendo "4" no menu, ou pedindo em texto
+    // livre. Dispara briefing para o atendente e fecha o turno.
+    const pediuHumano =
+      role === "CLIENTE" &&
+      (mergedMessage.trim() === "4" ||
+        /^4[\s).:-]/.test(mergedMessage.trim()) ||
+        (expanded && /atendente humano/i.test(expanded)) ||
+        isHandoffRequest(mergedMessage));
+
+    if (pediuHumano) {
+      const handoff = await triggerHumanHandoff({
+        telefone,
+        cliente: meta.cliente,
+        motivo: mergedMessage,
+      });
+
+      if (telefone) {
+        await dispatchWhatsAppText({ phone: telefone, message: handoff.replyToClient });
+      }
+
+      return {
+        processed: true,
+        mergedMessages: texts.length,
+        intent: "HANDOFF_HUMANO",
+        source: handoff.sent ? "handoff_enviado" : `handoff_${handoff.reason}`,
+      };
+    }
+
     if (expanded) {
       texts.splice(0, texts.length, expanded);
     }

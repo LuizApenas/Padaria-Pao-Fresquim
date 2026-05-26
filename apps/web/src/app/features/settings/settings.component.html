@@ -105,6 +105,18 @@
         </div>
         <button class="toggle" [class.on]="settings.dailyMetricsEnabled" type="button" (click)="settings.dailyMetricsEnabled = !settings.dailyMetricsEnabled"></button>
       </div>
+      <div class="settings-item">
+        <div>
+          <strong>Transbordo para atendente humano</strong>
+          <div class="client-time">Quando ligado, opcao 4 do menu de cliente envia briefing (nome, telefone, contexto) para o numero abaixo via WhatsApp.</div>
+        </div>
+        <button class="toggle" [class.on]="settings.handoffEnabled" type="button" (click)="settings.handoffEnabled = !settings.handoffEnabled"></button>
+      </div>
+      <div class="form-group settings-full">
+        <label class="form-label">WhatsApp do atendente humano (handoff)</label>
+        <input class="form-input" name="handoffPhone" [(ngModel)]="settings.handoffPhone" placeholder="5511999990001" [disabled]="!settings.handoffEnabled" />
+        <div class="client-time">Numero E.164 que recebera o briefing quando o cliente pedir um humano.</div>
+      </div>
     </div>
   </div>
 </div>

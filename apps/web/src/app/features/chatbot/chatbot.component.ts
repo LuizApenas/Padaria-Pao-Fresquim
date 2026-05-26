@@ -8,6 +8,7 @@ import { ChatMessage } from "../../core/models";
 import {
   ChatbotApiService,
   ChatbotDailyMetrics,
+  ChatbotKpis,
   ChatbotPeriodMetrics,
 } from "../../core/services/chatbot-api.service";
 import { formatCurrency } from "../../core/utils/format";
@@ -35,6 +36,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     },
   ];
   metrics: ChatbotDailyMetrics | null = null;
+  kpis: ChatbotKpis | null = null;
   weeklyMetrics: ChatbotPeriodMetrics | null = null;
   monthlyMetrics: ChatbotPeriodMetrics | null = null;
   weeklyExpanded = false;
@@ -303,6 +305,18 @@ export class ChatbotComponent implements OnInit, OnDestroy {
           this.isLoading = false;
           this.changeDetectorRef.detectChanges();
         });
+      },
+    });
+
+    this.chatbotApiService.getKpis().subscribe({
+      next: (kpis) => {
+        this.ngZone.run(() => {
+          this.kpis = kpis;
+          this.changeDetectorRef.detectChanges();
+        });
+      },
+      error: () => {
+        // KPIs sao opcionais; nao bloqueia o painel.
       },
     });
   }

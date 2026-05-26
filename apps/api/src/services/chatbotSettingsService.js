@@ -26,6 +26,10 @@ const DEFAULT_SETTINGS = {
   whatsappBotEnabled: true,
   orderReadyNotificationsEnabled: true,
   debtWarningsEnabled: true,
+  // Transbordo humano: quando ligado, opcao 4 do menu de cliente envia
+  // briefing para o telefone do atendente/empresa configurado.
+  handoffEnabled: false,
+  handoffPhone: "",
   // Rotina automatica de cobranca: quando ligada, dispara cobranca para todos
   // os clientes com saldo de fiado uma vez por dia no horario configurado.
   debtAutoCronEnabled: false,
@@ -85,6 +89,8 @@ function sanitizeSettings(settings) {
       settings.whatsappBotEnabled === undefined ? true : Boolean(settings.whatsappBotEnabled),
     orderReadyNotificationsEnabled: Boolean(settings.orderReadyNotificationsEnabled),
     debtWarningsEnabled: Boolean(settings.debtWarningsEnabled),
+    handoffEnabled: Boolean(settings.handoffEnabled),
+    handoffPhone: settings.handoffPhone ? normalizePhoneToE164(settings.handoffPhone) : "",
     debtAutoCronEnabled: Boolean(settings.debtAutoCronEnabled),
     debtAutoCronTime: /^([01]\d|2[0-3]):[0-5]\d$/.test(String(settings.debtAutoCronTime ?? ""))
       ? String(settings.debtAutoCronTime)
@@ -165,6 +171,9 @@ export async function updateChatbotSettings(data) {
       data.whatsappBotEnabled === undefined ? current.whatsappBotEnabled : data.whatsappBotEnabled,
     orderReadyNotificationsEnabled: data.orderReadyNotificationsEnabled,
     debtWarningsEnabled: data.debtWarningsEnabled,
+    handoffEnabled:
+      data.handoffEnabled === undefined ? current.handoffEnabled : data.handoffEnabled,
+    handoffPhone: data.handoffPhone === undefined ? current.handoffPhone : data.handoffPhone,
     debtAutoCronEnabled:
       data.debtAutoCronEnabled === undefined ? current.debtAutoCronEnabled : data.debtAutoCronEnabled,
     debtAutoCronTime: data.debtAutoCronTime ?? current.debtAutoCronTime,

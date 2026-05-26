@@ -16,6 +16,7 @@ import {
   handleEvolutionWebhook,
   responderMensagemChatbot,
 } from "../services/chatbotService.js";
+import { getChatbotKpis } from "../services/chatbotEventosService.js";
 import { getChatbotSettings, updateChatbotSettings } from "../services/chatbotSettingsService.js";
 import { dispatchWhatsAppText } from "../services/evolutionService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -123,6 +124,18 @@ chatbotRoutes.post(
     const result = await enviarAvisoSerasaFiado(request.params.clienteId);
 
     response.status(200).json(result);
+  }),
+);
+
+chatbotRoutes.get(
+  "/metricas/kpis",
+  ensureRole("PROPRIETARIO"),
+  asyncHandler(async (request, response) => {
+    const kpis = await getChatbotKpis({
+      dataInicio: request.query.dataInicio,
+      dataFim: request.query.dataFim,
+    });
+    response.status(200).json(kpis);
   }),
 );
 

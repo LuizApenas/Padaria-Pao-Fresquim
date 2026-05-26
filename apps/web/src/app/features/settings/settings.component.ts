@@ -30,6 +30,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     debtWarningsEnabled: true,
     debtAutoCronEnabled: false,
     debtAutoCronTime: "09:00",
+    handoffEnabled: false,
+    handoffPhone: "",
     dailyMetricsEnabled: true,
     messageBufferMs: 2500,
   };

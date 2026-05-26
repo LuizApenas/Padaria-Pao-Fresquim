@@ -21,8 +21,23 @@ export type ChatbotSettings = {
   debtWarningsEnabled: boolean;
   debtAutoCronEnabled: boolean;
   debtAutoCronTime: string;
+  handoffEnabled: boolean;
+  handoffPhone: string;
   dailyMetricsEnabled: boolean;
   messageBufferMs: number;
+};
+
+export type ChatbotKpis = {
+  periodo: { inicio: string; fim: string };
+  pedidosIniciados: number;
+  pedidosValidados: number;
+  taxaConversaoPedidos: number;
+  cobrancasDisparadas: number;
+  pagamentosPosCobranca: number;
+  pagamentosRegistrados: number;
+  taxaCobrancaEfetiva: number;
+  handoffsHumanos: number;
+  menusEnviados: number;
 };
 
 export type ChatbotDailyMetrics = {
@@ -112,6 +127,12 @@ export class ChatbotApiService {
         params: { dataInicio, dataFim },
       })
       .pipe(timeout(12000));
+  }
+
+  getKpis(): Observable<ChatbotKpis> {
+    return this.http
+      .get<ChatbotKpis>(`${API_BASE_URL}/api/chatbot/metricas/kpis`, { headers: NO_CACHE_HEADERS })
+      .pipe(timeout(10000));
   }
 
   sendMessage(payload: {
