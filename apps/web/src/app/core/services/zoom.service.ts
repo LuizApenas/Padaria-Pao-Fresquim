@@ -1,4 +1,4 @@
-import { Injectable, signal } from "@angular/core";
+import { Injectable, effect, signal } from "@angular/core";
 
 const MIN_ZOOM = 80;
 const MAX_ZOOM = 120;
@@ -7,6 +7,12 @@ const DEFAULT_ZOOM = 100;
 @Injectable({ providedIn: "root" })
 export class ZoomService {
   readonly zoom = signal(DEFAULT_ZOOM);
+
+  constructor() {
+    effect(() => {
+      document.documentElement.style.fontSize = `${this.zoom()}%`;
+    });
+  }
 
   setZoom(value: number): void {
     if (!Number.isFinite(value)) {
