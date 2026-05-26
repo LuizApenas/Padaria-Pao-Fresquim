@@ -41,6 +41,10 @@
   min-height: 0;
 }
 
+:host-context(body.theme-contrast) ::ng-deep .pf-breadcrumb.p-breadcrumb {
+  background: #000000;
+}
+
 :host ::ng-deep .pf-breadcrumb .p-breadcrumb-list {
   gap: 0.35rem;
   flex-wrap: wrap;
@@ -53,14 +57,29 @@
   font-weight: 700;
 }
 
+:host-context(body.theme-contrast) ::ng-deep .pf-breadcrumb .p-breadcrumb-item-link,
+:host-context(body.theme-contrast) ::ng-deep .pf-breadcrumb .p-breadcrumb-item-label {
+  color: #ffffff;
+}
+
 :host ::ng-deep .pf-breadcrumb .p-breadcrumb-item-link:hover,
 :host ::ng-deep .pf-breadcrumb .p-breadcrumb-item:last-child .p-breadcrumb-item-label,
 :host ::ng-deep .pf-breadcrumb .p-breadcrumb-home-item .p-breadcrumb-item-link {
   color: var(--green);
 }
 
+:host-context(body.theme-contrast) ::ng-deep .pf-breadcrumb .p-breadcrumb-item-link:hover,
+:host-context(body.theme-contrast) ::ng-deep .pf-breadcrumb .p-breadcrumb-item:last-child .p-breadcrumb-item-label,
+:host-context(body.theme-contrast) ::ng-deep .pf-breadcrumb .p-breadcrumb-home-item .p-breadcrumb-item-link {
+  color: var(--green);
+}
+
 :host ::ng-deep .pf-breadcrumb .p-breadcrumb-separator {
   color: var(--text-soft);
+}
+
+:host-context(body.theme-contrast) ::ng-deep .pf-breadcrumb .p-breadcrumb-separator {
+  color: #ffffff;
 }
 
 .shell-overlay {

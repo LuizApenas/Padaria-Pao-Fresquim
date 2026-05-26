@@ -23,6 +23,18 @@
   background: linear-gradient(180deg, #f6fbf7, #ffffff);
 }
 
+:host-context(body.theme-dark) .tip-card {
+  background: #0f1b2f;
+  border-color: #24364f;
+  color: #e5edf8;
+}
+
+:host-context(body.theme-contrast) .tip-card {
+  background: #000000;
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
 .tip-label {
   font-size: 1rem;
   font-weight: 800;
@@ -31,6 +43,23 @@
 .tip-text {
   color: var(--text-muted);
   line-height: 1.55;
+}
+
+:host-context(body.theme-dark) .tip-label,
+:host-context(body.theme-dark) .cron-toggle-label,
+:host-context(body.theme-dark) .cron-time-label {
+  color: #e5edf8;
+}
+
+:host-context(body.theme-dark) .tip-text {
+  color: #9fb2c9;
+}
+
+:host-context(body.theme-contrast) .tip-label,
+:host-context(body.theme-contrast) .tip-text,
+:host-context(body.theme-contrast) .cron-toggle-label,
+:host-context(body.theme-contrast) .cron-time-label {
+  color: #ffffff;
 }
 
 .retry-button {
@@ -61,6 +90,18 @@
 .cron-time-input {
   max-width: 130px;
   font-size: 0.95rem;
+}
+
+:host-context(body.theme-dark) .cron-time-input {
+  background: #0b1627;
+  border-color: #2e4867;
+  color: #e5edf8;
+}
+
+:host-context(body.theme-contrast) .cron-time-input {
+  background: #000000;
+  border-color: #ffffff;
+  color: #ffffff;
 }
 
 .cron-success {

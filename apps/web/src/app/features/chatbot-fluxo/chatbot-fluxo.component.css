@@ -176,13 +176,19 @@
   padding: 0.9rem 1rem;
   min-width: 200px;
   max-width: 320px;
-  flex: 1 1 220px;
+  width: min(100%, 260px);
+  flex: 0 0 auto;
   box-shadow: 0 1px 3px rgba(15, 23, 32, 0.06);
   text-align: center;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   transition: transform 120ms ease, box-shadow 120ms ease;
+  color: #1f2937;
+}
+
+.flow-row > .flow-node {
+  flex: 0 1 220px;
 }
 
 .flow-node:hover {
@@ -198,18 +204,18 @@
 .flow-node-title {
   font-weight: 700;
   font-size: 0.95rem;
-  color: var(--text, #1f2933);
+  color: #1f2933;
 }
 
 .flow-node-sub {
   font-size: 0.78rem;
-  color: var(--text-muted, #6b7480);
+  color: #475569;
   line-height: 1.35;
 }
 
 .flow-mini {
   font-size: 0.72rem;
-  color: var(--text-muted, #6b7480);
+  color: #475569;
   margin-top: 0.25rem;
   border-top: 1px dashed var(--border, #e6e9ec);
   padding-top: 0.35rem;
@@ -249,11 +255,13 @@
 .flow-node--worker {
   background: #f3eefb;
   border-color: #8c66c2;
+  width: min(100%, 760px);
   max-width: 760px;
 }
 .flow-node--llm {
   background: linear-gradient(135deg, #f6d488 0%, #e3a55c 100%);
   border-color: #b97a30;
+  width: min(100%, 300px);
   max-width: 360px;
   color: #4a2b0d;
 }
@@ -264,6 +272,7 @@
 .flow-node--intent {
   background: #f7f8fa;
   border-color: var(--border, #e6e9ec);
+  width: min(100%, 220px);
 }
 .flow-node--exit {
   background: linear-gradient(135deg, #e6f2eb 0%, #cfe6d8 100%);
