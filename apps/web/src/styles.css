@@ -103,6 +103,8 @@ body.theme-contrast {
 html,
 body {
   min-height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -154,6 +156,8 @@ a {
 .erp-shell {
   min-height: 100vh;
   display: flex;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .sidebar {
@@ -247,6 +251,7 @@ a {
 .main {
   flex: 1;
   min-width: 0;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -364,6 +369,9 @@ a {
 
 .page {
   padding: 1.35rem 2rem 1.75rem;
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .feature-page {
@@ -528,7 +536,7 @@ a {
 }
 
 .stats-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
   gap: var(--card-gap);
 }
 
