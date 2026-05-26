@@ -11,6 +11,7 @@ import {
   SalesChartPoint,
 } from "../../core/utils/sales-chart-aggregation";
 import { SalesChartComponent } from "../../shared/sales-chart/sales-chart.component";
+import { isoDateNDaysAgoBr, todayIsoBr } from "../../core/utils/br-date";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
 
 type DashboardAlert = {
@@ -204,14 +205,9 @@ export class DashboardComponent implements OnInit {
   }
 
   private getDateRange(daysBack: number): { dataInicio: string; dataFim: string } {
-    const end = new Date();
-    const start = new Date();
-
-    start.setDate(start.getDate() - daysBack);
-
     return {
-      dataInicio: start.toISOString().slice(0, 10),
-      dataFim: end.toISOString().slice(0, 10),
+      dataInicio: isoDateNDaysAgoBr(daysBack),
+      dataFim: todayIsoBr(),
     };
   }
 }

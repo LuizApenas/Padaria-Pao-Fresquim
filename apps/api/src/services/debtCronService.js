@@ -4,34 +4,14 @@
 // e a flag debtAutoCronEnabled esta ligada, dispara cobranca em massa.
 
 import { prisma } from "../config/prisma.js";
+import { currentHhmmSp, todayIsoSp } from "../utils/timezone.js";
 import { getChatbotSettings } from "./chatbotSettingsService.js";
 import { registrarCobrancaFiado } from "./fiadoService.js";
 
 const TICK_MS = 60_000;
-const TIMEZONE = "America/Sao_Paulo";
 
 let timer = null;
 let lastFiredAt = null;
-
-function currentHhmmSaoPaulo() {
-  const formatter = new Intl.DateTimeFormat("pt-BR", {
-    timeZone: TIMEZONE,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  return formatter.format(new Date());
-}
-
-function todayKeySaoPaulo() {
-  const formatter = new Intl.DateTimeFormat("pt-BR", {
-    timeZone: TIMEZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  return formatter.format(new Date());
-}
 
 async function runDebtCampaign() {
   const contas = await prisma.contaFiado.findMany({
@@ -62,8 +42,8 @@ async function tick() {
     if (!settings.debtWarningsEnabled) return;
 
     const target = settings.debtAutoCronTime || "09:00";
-    const now = currentHhmmSaoPaulo();
-    const todayKey = todayKeySaoPaulo();
+    const now = currentHhmmSp();
+    const todayKey = todayIsoSp();
 
     if (now === target && lastFiredAt !== todayKey) {
       lastFiredAt = todayKey;

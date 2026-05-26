@@ -53,6 +53,14 @@ export const routes: Routes = [
       { path: "relatorios", component: ReportsComponent, data: { pageId: "relatorios" } },
       { path: "cameras", component: CamerasComponent, data: { pageId: "cameras" } },
       { path: "chatbot", component: ChatbotComponent, data: { pageId: "chatbot" } },
+      {
+        path: "chatbot/kpis",
+        loadComponent: () =>
+          import("./features/chatbot-kpis/chatbot-kpis.component").then(
+            (module) => module.ChatbotKpisComponent,
+          ),
+        data: { pageId: "chatbot-kpis" },
+      },
       { path: "configuracoes", component: SettingsComponent, data: { pageId: "configuracoes" } },
       {
         path: "configuracoes/chatbot-fluxo",

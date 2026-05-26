@@ -1,4 +1,6 @@
 // apps/web/src/app/features/chatbot/chatbot-period.utils.ts
+import { isoDateNDaysAgoBr, todayIsoBr } from "../../core/utils/br-date";
+
 export type ChatbotPeriod = {
   dataInicio: string;
   dataFim: string;
@@ -106,13 +108,9 @@ export function parsePeriodFromMessage(input: string, referenceDate = new Date()
   }
 
   if (normalized.includes("semana")) {
-    const end = new Date(referenceDate);
-    const start = new Date(referenceDate);
-    start.setDate(start.getDate() - 6);
-
     return {
-      dataInicio: start.toISOString().slice(0, 10),
-      dataFim: end.toISOString().slice(0, 10),
+      dataInicio: isoDateNDaysAgoBr(6, referenceDate),
+      dataFim: todayIsoBr(referenceDate),
       label: "ultimos 7 dias",
     };
   }

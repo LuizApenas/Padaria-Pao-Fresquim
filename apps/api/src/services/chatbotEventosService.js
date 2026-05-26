@@ -2,6 +2,8 @@
 // Append-only log de eventos do chatbot + agregacoes para KPIs.
 
 import { prisma } from "../config/prisma.js";
+import { AppError } from "../utils/AppError.js";
+import { spDayBounds, startOfMonthSp, startOfNextMonthSp } from "../utils/timezone.js";
 
 export const CHATBOT_EVENTOS = Object.freeze({
   PEDIDO_INICIADO: "PEDIDO_INICIADO",
@@ -65,13 +67,21 @@ async function countEventosPorTipo(inicio, fim, tipos) {
  * - handoffsHumanos
  */
 export async function getChatbotKpis({ dataInicio, dataFim } = {}) {
-  const now = new Date();
-  const inicio = dataInicio
-    ? new Date(`${dataInicio}T00:00:00`)
-    : new Date(now.getFullYear(), now.getMonth(), 1);
-  const fim = dataFim
-    ? new Date(`${dataFim}T23:59:59.999`)
-    : new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  if ((dataInicio && !dataFim) || (!dataInicio && dataFim)) {
+    throw new AppError("Informe dataInicio e dataFim para consultar o periodo.", 400);
+  }
+
+  const customBounds = dataInicio || dataFim ? spDayBounds(dataInicio, dataFim) : null;
+  const inicio = customBounds ? customBounds.inicio : startOfMonthSp();
+  const fim = customBounds ? customBounds.fim : startOfNextMonthSp();
+
+  if (!inicio || !fim) {
+    throw new AppError("Periodo invalido. Use datas no formato YYYY-MM-DD.", 400);
+  }
+
+  if (inicio > fim) {
+    throw new AppError("dataInicio nao pode ser maior que dataFim.", 400);
+  }
 
   const counts = await countEventosPorTipo(inicio, fim, [
     CHATBOT_EVENTOS.PEDIDO_INICIADO,

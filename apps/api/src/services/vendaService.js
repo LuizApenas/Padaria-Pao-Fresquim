@@ -1,6 +1,7 @@
 import { prisma } from "../config/prisma.js";
 import { FormaPagamento, StatusVenda } from "../domain/enums.js";
 import { AppError } from "../utils/AppError.js";
+import { spDayBounds } from "../utils/timezone.js";
 import {
   ensureEnumValue,
   ensurePositiveInteger,
@@ -231,26 +232,16 @@ export async function listVendas({ inicio, fim, funcionarioId, page = 1, limit =
   if (inicio || fim) {
     where.dataHora = {};
 
-    if (inicio) {
-      const dataInicio = new Date(inicio);
+    const inicioIso = inicio || fim;
+    const fimIso = fim || inicio;
+    const { inicio: dataInicio, fim: dataFim } = spDayBounds(inicioIso, fimIso);
 
-      if (Number.isNaN(dataInicio.getTime())) {
-        throw new AppError("O filtro inicio deve conter uma data valida.", 400);
-      }
-
-      where.dataHora.gte = dataInicio;
+    if (!dataInicio || !dataFim) {
+      throw new AppError("Os filtros inicio e fim devem conter datas validas no formato YYYY-MM-DD.", 400);
     }
 
-    if (fim) {
-      const dataFim = new Date(fim);
-
-      if (Number.isNaN(dataFim.getTime())) {
-        throw new AppError("O filtro fim deve conter uma data valida.", 400);
-      }
-
-      dataFim.setHours(23, 59, 59, 999);
-      where.dataHora.lte = dataFim;
-    }
+    if (inicio) where.dataHora.gte = dataInicio;
+    if (fim) where.dataHora.lte = dataFim;
   }
 
   const [vendas, total, agregados] = await prisma.$transaction([

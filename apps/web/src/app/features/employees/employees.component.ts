@@ -7,6 +7,7 @@ import { ApiErrorMessageService } from "../../core/services/api-error-message.se
 import { ConfirmService } from "../../core/services/confirm.service";
 import { EmployeePayload, EmployeesApiService } from "../../core/services/employees-api.service";
 import { ToastService } from "../../core/services/toast.service";
+import { todayIsoBr } from "../../core/utils/br-date";
 import { StatusBadgeComponent } from "../../shared/status-badge/status-badge.component";
 
 type EmployeeRole = EmployeePayload["role"];
@@ -295,7 +296,7 @@ export class EmployeesComponent implements OnInit {
       endereco: "",
       matricula: "",
       cargo: "",
-      dataAdmissao: new Date().toISOString().slice(0, 10),
+      dataAdmissao: todayIsoBr(),
       contatoEmergencia: "",
       role: "ATENDENTE",
       email: "",
@@ -343,7 +344,7 @@ export class EmployeesComponent implements OnInit {
 
   private toDateInput(date?: string): string {
     if (!date) {
-      return new Date().toISOString().slice(0, 10);
+      return todayIsoBr();
     }
 
     return new Date(date).toISOString().slice(0, 10);

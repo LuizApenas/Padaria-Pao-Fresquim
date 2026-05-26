@@ -1,0 +1,54 @@
+<section class="kpis-page">
+  <header class="kpis-header">
+    <div>
+      <p class="eyebrow">Chatbot</p>
+      <h1>KPIs do chatbot</h1>
+      <p class="period" *ngIf="periodoLabel">{{ periodoLabel }}</p>
+    </div>
+    <button type="button" class="btn-secondary" (click)="retry()" [disabled]="isLoading">
+      Atualizar
+    </button>
+  </header>
+
+  <div class="state" *ngIf="isLoading">Carregando KPIs...</div>
+  <div class="state error" *ngIf="!isLoading && errorMessage">{{ errorMessage }}</div>
+
+  <div class="kpi-grid" *ngIf="!isLoading && kpis">
+    <article class="kpi-card">
+      <span>Pedidos iniciados</span>
+      <strong>{{ kpis.pedidosIniciados }}</strong>
+    </article>
+    <article class="kpi-card">
+      <span>Pedidos validados</span>
+      <strong>{{ kpis.pedidosValidados }}</strong>
+    </article>
+    <article class="kpi-card">
+      <span>Conversao de pedidos</span>
+      <strong>{{ kpis.taxaConversaoPedidos }}%</strong>
+    </article>
+    <article class="kpi-card">
+      <span>Cobrancas disparadas</span>
+      <strong>{{ kpis.cobrancasDisparadas }}</strong>
+    </article>
+    <article class="kpi-card">
+      <span>Pagamentos pos-cobranca</span>
+      <strong>{{ kpis.pagamentosPosCobranca }}</strong>
+    </article>
+    <article class="kpi-card">
+      <span>Efetividade da cobranca</span>
+      <strong>{{ kpis.taxaCobrancaEfetiva }}%</strong>
+    </article>
+    <article class="kpi-card">
+      <span>Pagamentos registrados</span>
+      <strong>{{ kpis.pagamentosRegistrados }}</strong>
+    </article>
+    <article class="kpi-card">
+      <span>Handoffs humanos</span>
+      <strong>{{ kpis.handoffsHumanos }}</strong>
+    </article>
+    <article class="kpi-card">
+      <span>Menus enviados</span>
+      <strong>{{ kpis.menusEnviados }}</strong>
+    </article>
+  </div>
+</section>

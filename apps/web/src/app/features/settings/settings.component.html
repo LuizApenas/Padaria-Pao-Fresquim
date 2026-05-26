@@ -3,7 +3,7 @@
 <div class="page-header">
   <div>
     <div class="page-title">Configuracoes do chatbot</div>
-    <div class="page-subtitle">Evolution API, avisos de coleta, fiado e metricas para o proprietario.</div>
+    <div class="page-subtitle">Evolution API, transbordo humano, avisos de coleta, fiado e metricas para o proprietario.</div>
   </div>
   <div class="settings-header-actions">
     <a class="btn-secondary" routerLink="/configuracoes/chatbot-fluxo">Ver fluxo e prompt do chatbot</a>
@@ -108,14 +108,14 @@
       <div class="settings-item">
         <div>
           <strong>Transbordo para atendente humano</strong>
-          <div class="client-time">Quando ligado, opcao 4 do menu de cliente envia briefing (nome, telefone, contexto) para o numero abaixo via WhatsApp.</div>
+          <div class="client-time">Quando ligado, a opcao de falar com humano envia briefing do atendimento para o numero configurado nesta pagina.</div>
         </div>
         <button class="toggle" [class.on]="settings.handoffEnabled" type="button" (click)="settings.handoffEnabled = !settings.handoffEnabled"></button>
       </div>
       <div class="form-group settings-full">
-        <label class="form-label">WhatsApp do atendente humano (handoff)</label>
+        <label class="form-label">Numero de transbordo no WhatsApp</label>
         <input class="form-input" name="handoffPhone" [(ngModel)]="settings.handoffPhone" placeholder="5511999990001" [disabled]="!settings.handoffEnabled" />
-        <div class="client-time">Numero E.164 que recebera o briefing quando o cliente pedir um humano.</div>
+        <div class="client-time">Use formato E.164, com DDI e DDD. Exemplo: 5511999990001.</div>
       </div>
     </div>
   </div>

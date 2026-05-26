@@ -11,6 +11,7 @@ import {
   ChatbotKpis,
   ChatbotPeriodMetrics,
 } from "../../core/services/chatbot-api.service";
+import { isoDateNDaysAgoBr, startOfCurrentMonthIsoBr, todayIsoBr } from "../../core/utils/br-date";
 import { formatCurrency } from "../../core/utils/format";
 import { ChatbotPeriod, parsePeriodFromMessage } from "./chatbot-period.utils";
 
@@ -174,16 +175,13 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   }
 
   private loadWeeklyMetrics(): void {
-    const today = new Date();
-    const start = new Date(today);
-    start.setDate(today.getDate() - 6);
-    const fmt = (date: Date) => date.toISOString().slice(0, 10);
+    const today = todayIsoBr();
 
     this.weeklyLoading = true;
     this.weeklyError = "";
     this.changeDetectorRef.detectChanges();
 
-    this.chatbotApiService.getPeriodMetrics(fmt(start), fmt(today)).subscribe({
+    this.chatbotApiService.getPeriodMetrics(isoDateNDaysAgoBr(6), today).subscribe({
       next: (metrics) => {
         this.ngZone.run(() => {
           this.weeklyMetrics = metrics;
@@ -202,15 +200,13 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   }
 
   private loadMonthlyMetrics(): void {
-    const today = new Date();
-    const start = new Date(today.getFullYear(), today.getMonth(), 1);
-    const fmt = (date: Date) => date.toISOString().slice(0, 10);
+    const today = todayIsoBr();
 
     this.monthlyLoading = true;
     this.monthlyError = "";
     this.changeDetectorRef.detectChanges();
 
-    this.chatbotApiService.getPeriodMetrics(fmt(start), fmt(today)).subscribe({
+    this.chatbotApiService.getPeriodMetrics(startOfCurrentMonthIsoBr(), today).subscribe({
       next: (metrics) => {
         this.ngZone.run(() => {
           this.monthlyMetrics = metrics;

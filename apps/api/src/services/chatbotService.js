@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../config/prisma.js";
 import { FormaPagamento, StatusNotificacao, StatusVenda } from "../domain/enums.js";
 import { AppError } from "../utils/AppError.js";
+import { isoDateNDaysAgoSp, spDayBounds, todayBoundsSp, todayIsoSp } from "../utils/timezone.js";
 import { parseId, toMoney } from "../utils/validation.js";
 import { dispatchWhatsAppText } from "./evolutionService.js";
 import { getRelatorioDashboard, getRelatorioVendas } from "./relatorioService.js";
@@ -254,7 +255,7 @@ function safeChatHistory(messages = []) {
 }
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  return todayIsoSp();
 }
 
 function formatMoney(value) {
@@ -464,9 +465,7 @@ async function listPedidosPendentes() {
 }
 
 function isoDateNDaysAgo(days) {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
+  return isoDateNDaysAgoSp(days);
 }
 
 async function buildChatbotAgentContext(worker) {
@@ -489,13 +488,13 @@ async function buildChatbotAgentContext(worker) {
     podeMetrics
       ? getMetricasPeriodoChatbot({
           dataInicio: isoDateNDaysAgo(6),
-          dataFim: new Date().toISOString().slice(0, 10),
+          dataFim: todayIsoSp(),
         }).catch(() => null)
       : Promise.resolve(null),
     podeMetrics
       ? getMetricasPeriodoChatbot({
           dataInicio: isoDateNDaysAgo(29),
-          dataFim: new Date().toISOString().slice(0, 10),
+          dataFim: todayIsoSp(),
         }).catch(() => null)
       : Promise.resolve(null),
   ]);
@@ -1233,10 +1232,9 @@ export async function enviarAvisoSerasaFiado(clienteIdParam) {
 }
 
 function buildPeriodBounds(dataInicio, dataFim) {
-  const inicio = new Date(`${dataInicio}T00:00:00`);
-  const fim = new Date(`${dataFim}T23:59:59.999`);
+  const { inicio, fim } = spDayBounds(dataInicio, dataFim);
 
-  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) {
+  if (!inicio || !fim) {
     throw new AppError("Periodo invalido. Use datas no formato YYYY-MM-DD.", 400);
   }
 
@@ -1287,7 +1285,7 @@ async function buildMetricasChatbot({ dataInicio, dataFim }) {
 }
 
 export async function getMetricasDiariasChatbot() {
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = todayIsoSp();
   const metrics = await buildMetricasChatbot({
     dataInicio: hoje,
     dataFim: hoje,
@@ -1677,8 +1675,7 @@ async function registrarBatidaPontoChatbot({ funcionarioId, tipo }) {
   let tipoFinal = tipo;
 
   if (tipoFinal === "AUTO") {
-    const inicioDia = new Date();
-    inicioDia.setHours(0, 0, 0, 0);
+    const { inicio: inicioDia } = todayBoundsSp();
 
     const ultima = await prisma.registroPonto.findFirst({
       where: {

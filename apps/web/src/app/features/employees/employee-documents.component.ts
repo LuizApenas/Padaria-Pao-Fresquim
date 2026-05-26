@@ -19,6 +19,7 @@ import {
   EmployeeDocument,
   EmployeesOperationsApiService,
 } from "../../core/services/employees-operations-api.service";
+import { todayIsoBr } from "../../core/utils/br-date";
 
 import { API_BASE_URL } from "../../core/config/api-base-url";
 
@@ -46,7 +47,7 @@ export class EmployeeDocumentsComponent implements OnInit, OnDestroy {
   employeeName = "";
   documents: EmployeeDocument[] = [];
   selectedFile: File | null = null;
-  dataEntrega = new Date().toISOString().slice(0, 10);
+  dataEntrega = todayIsoBr();
   observacao = "";
   isLoading = true;
   isUploading = false;

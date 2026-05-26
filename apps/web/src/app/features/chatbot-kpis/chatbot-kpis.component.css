@@ -1,0 +1,84 @@
+.kpis-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.kpis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.7rem;
+}
+
+.period {
+  margin: 0.3rem 0 0;
+  color: var(--text-muted);
+}
+
+.btn-secondary {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.65rem 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.state {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.state.error {
+  color: #8a1f11;
+  background: #fff1ed;
+  border-color: #ffd0c4;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.9rem;
+}
+
+.kpi-card {
+  display: grid;
+  gap: 0.45rem;
+  min-height: 108px;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.kpi-card span {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.kpi-card strong {
+  align-self: end;
+  font-size: 1.8rem;
+  color: var(--green);
+}

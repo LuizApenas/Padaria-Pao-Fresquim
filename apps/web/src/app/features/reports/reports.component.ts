@@ -4,6 +4,7 @@ import { ChangeDetectorRef, Component, NgZone, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ReportsApiService, SalesReport } from "../../core/services/reports-api.service";
 import { formatCurrency } from "../../core/utils/format";
+import { isoDateNDaysAgoBr, startOfCurrentMonthIsoBr, todayIsoBr } from "../../core/utils/br-date";
 import {
   aggregateDailyByMonth,
   aggregateDailyByWeek,
@@ -121,21 +122,17 @@ export class ReportsComponent implements OnInit {
 
   applyPreset(preset: Preset): void {
     this.activePreset = preset;
-    const today = new Date();
-    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    const today = todayIsoBr();
 
     if (preset === "hoje") {
-      this.dataInicio = fmt(today);
-      this.dataFim = fmt(today);
+      this.dataInicio = today;
+      this.dataFim = today;
     } else if (preset === "semana") {
-      const start = new Date(today);
-      start.setDate(today.getDate() - 6);
-      this.dataInicio = fmt(start);
-      this.dataFim = fmt(today);
+      this.dataInicio = isoDateNDaysAgoBr(6);
+      this.dataFim = today;
     } else if (preset === "mes") {
-      const start = new Date(today.getFullYear(), today.getMonth(), 1);
-      this.dataInicio = fmt(start);
-      this.dataFim = fmt(today);
+      this.dataInicio = startOfCurrentMonthIsoBr();
+      this.dataFim = today;
     }
 
     if (preset !== "custom") {

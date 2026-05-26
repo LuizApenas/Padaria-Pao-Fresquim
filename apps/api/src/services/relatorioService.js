@@ -1,62 +1,78 @@
 import { prisma } from "../config/prisma.js";
 import { AppError } from "../utils/AppError.js";
+import {
+  APP_TIMEZONE,
+  isoDateNDaysAgoSp,
+  spDayBounds,
+  todayBoundsSp,
+  todayIsoSp,
+  yesterdayBoundsSp,
+} from "../utils/timezone.js";
 import { parseId } from "../utils/validation.js";
 
-function parseDateFilter(value, fieldName, fallback) {
-  if (!value) {
-    return fallback;
+const dayFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: APP_TIMEZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+function assertIsoDate(value, fieldName) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
+    throw new AppError(`O filtro ${fieldName} deve conter uma data valida no formato YYYY-MM-DD.`, 400);
   }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    throw new AppError(`O filtro ${fieldName} deve conter uma data valida.`, 400);
-  }
-
-  return date;
 }
 
-function getDefaultDateRange() {
-  const dataFim = new Date();
-  dataFim.setHours(23, 59, 59, 999);
+function parseDateRange(dataInicio, dataFim) {
+  const inicioIso = dataInicio || isoDateNDaysAgoSp(29);
+  const fimIso = dataFim || todayIsoSp();
 
-  const dataInicio = new Date(dataFim);
-  dataInicio.setDate(dataInicio.getDate() - 29);
-  dataInicio.setHours(0, 0, 0, 0);
+  assertIsoDate(inicioIso, "dataInicio");
+  assertIsoDate(fimIso, "dataFim");
 
-  return { dataInicio, dataFim };
+  const { inicio, fim } = spDayBounds(inicioIso, fimIso);
+
+  if (!inicio || !fim) {
+    throw new AppError("Periodo invalido. Use datas no formato YYYY-MM-DD.", 400);
+  }
+
+  if (inicio > fim) {
+    throw new AppError("dataInicio nao pode ser maior que dataFim.", 400);
+  }
+
+  return { inicioIso, fimIso, inicio, fim };
 }
 
 function formatDay(date) {
-  return date.toISOString().slice(0, 10);
+  // Sempre formata no fuso da padaria (America/Sao_Paulo) para que o eixo X
+  // dos relatorios diarios bata com o calendario que o operador ve no balcao.
+  return dayFormatter.format(date);
 }
 
-function buildDateBuckets(dataInicio, dataFim) {
+function buildDateBuckets(dataInicioIso, dataFimIso) {
   const buckets = new Map();
-  const cursor = new Date(dataInicio);
+  const cursor = new Date(`${dataInicioIso}T12:00:00Z`);
+  const end = new Date(`${dataFimIso}T12:00:00Z`);
 
-  while (cursor <= dataFim) {
-    buckets.set(formatDay(cursor), {
-      date: formatDay(cursor),
-      day: new Intl.DateTimeFormat("pt-BR", { weekday: "short", timeZone: "UTC" })
-        .format(cursor)
+  while (cursor <= end) {
+    const date = cursor.toISOString().slice(0, 10);
+    buckets.set(date, {
+      date,
+      day: new Intl.DateTimeFormat("pt-BR", { weekday: "short", timeZone: APP_TIMEZONE })
+        .format(new Date(`${date}T12:00:00-03:00`))
         .replace(".", "")
         .toUpperCase(),
       value: 0,
       orders: 0,
     });
-    cursor.setDate(cursor.getDate() + 1);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
 
   return buckets;
 }
 
 export async function getRelatorioVendas({ dataInicio, dataFim, produtoId } = {}) {
-  const defaultRange = getDefaultDateRange();
-  const inicio = parseDateFilter(dataInicio, "dataInicio", defaultRange.dataInicio);
-  const fim = parseDateFilter(dataFim, "dataFim", defaultRange.dataFim);
-
-  fim.setHours(23, 59, 59, 999);
+  const { inicioIso, fimIso, inicio, fim } = parseDateRange(dataInicio, dataFim);
 
   const produtoFiltro = produtoId ? parseId(produtoId, "produtoId") : null;
   const where = {
@@ -88,7 +104,7 @@ export async function getRelatorioVendas({ dataInicio, dataFim, produtoId } = {}
   });
 
   const totalSold = vendas.reduce((total, venda) => total + Number(venda.valorTotal), 0);
-  const buckets = buildDateBuckets(inicio, fim);
+  const buckets = buildDateBuckets(inicioIso, fimIso);
   const rankingByProduct = new Map();
 
   for (const venda of vendas) {
@@ -169,17 +185,8 @@ export async function getRelatorioDevedores() {
 }
 
 export async function getRelatorioDashboard() {
-  const hojeInicio = new Date();
-  hojeInicio.setHours(0, 0, 0, 0);
-
-  const hojeFim = new Date(hojeInicio);
-  hojeFim.setHours(23, 59, 59, 999);
-
-  const ontemInicio = new Date(hojeInicio);
-  ontemInicio.setDate(ontemInicio.getDate() - 1);
-
-  const ontemFim = new Date(ontemInicio);
-  ontemFim.setHours(23, 59, 59, 999);
+  const { inicio: hojeInicio, fim: hojeFim } = todayBoundsSp();
+  const { inicio: ontemInicio, fim: ontemFim } = yesterdayBoundsSp();
 
   const [hoje, ontem, clientesComFiado] = await prisma.$transaction([
     prisma.venda.aggregate({

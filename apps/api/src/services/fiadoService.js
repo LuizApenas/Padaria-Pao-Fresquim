@@ -2,6 +2,7 @@ import { prisma } from "../config/prisma.js";
 import { StatusNotificacao } from "../domain/enums.js";
 import { AppError } from "../utils/AppError.js";
 import { ensureEnumValue, ensurePositiveNumber, parseId, requireFields, toMoney } from "../utils/validation.js";
+import { startOfMonthSp, startOfNextMonthSp } from "../utils/timezone.js";
 import {
   CHATBOT_EVENTOS,
   emitChatbotEvento,
@@ -214,7 +215,7 @@ export async function registrarCobrancaFiado(clienteIdParam) {
     tipo: CHATBOT_EVENTOS.COBRANCA_DISPARADA,
     canal: "WHATSAPP",
     clienteId,
-    payload: { saldo: saldoAtual, status: result.statusNotificacao, erro: whatsappErro },
+    payload: { saldo, status: result.statusNotificacao, erro: whatsappErro },
   });
 
   return result;
@@ -305,9 +306,9 @@ export async function registrarPagamentoFiado(clienteIdParam, data = {}) {
 // Resumo da carteira: total em aberto, recuperado no mes corrente,
 // quantidade de inadimplentes e status agregado da carteira.
 export async function getResumoFiado() {
-  const now = new Date();
-  const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1);
-  const fimMes = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  // Mes corrente pelo calendario operacional da padaria.
+  const inicioMes = startOfMonthSp();
+  const fimMes = startOfNextMonthSp();
 
   const [totalAbertoAgg, inadimplentesCount, pagamentosMes] = await Promise.all([
     prisma.contaFiado.aggregate({

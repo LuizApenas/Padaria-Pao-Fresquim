@@ -11,6 +11,14 @@ export const NAV_ITEMS: PageMeta[] = [
   { id: "relatorios", label: "Relatorios", path: "/relatorios", icon: "R", placeholder: "Buscar relatorios..." },
   { id: "cameras", label: "Cameras", path: "/cameras", icon: "M", placeholder: "Pesquisar cameras ou logs..." },
   { id: "chatbot", label: "Chatbot", path: "/chatbot", icon: "AI", placeholder: "Buscar no sistema..." },
+  {
+    id: "chatbot-kpis",
+    label: "KPIs do chatbot",
+    path: "/chatbot/kpis",
+    icon: "K",
+    placeholder: "Buscar metricas e KPIs do chatbot...",
+    parentId: "chatbot",
+  },
   { id: "configuracoes", label: "Configuracoes", path: "/configuracoes", icon: "CFG", placeholder: "Buscar configuracoes..." },
   {
     id: "chatbot-fluxo",
@@ -32,6 +40,10 @@ export function resolvePageIdFromUrl(url: string): string | undefined {
 
   if (pathname.includes("/configuracoes/chatbot-fluxo")) {
     return "chatbot-fluxo";
+  }
+
+  if (pathname.includes("/chatbot/kpis")) {
+    return "chatbot-kpis";
   }
 
   const sorted = [...NAV_ITEMS].sort((a, b) => b.path.length - a.path.length);
