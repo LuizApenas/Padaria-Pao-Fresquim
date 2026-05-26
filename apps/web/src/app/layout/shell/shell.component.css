@@ -22,6 +22,12 @@
   min-width: 0;
 }
 
+:host-context(body.theme-contrast) .page-breadcrumb-bar {
+  background: #000000;
+  border: 1px solid #ffffff;
+  padding: 0.75rem 0.9rem;
+}
+
 .page-current-title {
   margin: 0;
   color: var(--text);
@@ -41,6 +47,7 @@
 
 :host-context(body.theme-contrast) ::ng-deep .pf-breadcrumb.p-breadcrumb {
   background: #000000;
+  color: #ffffff;
 }
 
 :host ::ng-deep .pf-breadcrumb .p-breadcrumb-list {
@@ -78,6 +85,16 @@
 
 :host-context(body.theme-contrast) ::ng-deep .pf-breadcrumb .p-breadcrumb-separator {
   color: #ffffff;
+}
+
+:host-context(body.theme-contrast) ::ng-deep .pf-breadcrumb svg,
+:host-context(body.theme-contrast) ::ng-deep .pf-breadcrumb .p-icon {
+  color: #ffffff;
+  stroke: #ffffff;
+}
+
+:host-context(body.theme-contrast) ::ng-deep .pf-breadcrumb .p-menuitem-text {
+  color: inherit;
 }
 
 .shell-overlay {
