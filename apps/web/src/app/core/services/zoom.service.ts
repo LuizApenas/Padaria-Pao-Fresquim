@@ -1,7 +1,7 @@
 import { Injectable, signal } from "@angular/core";
 
-const MIN_ZOOM = 50;
-const MAX_ZOOM = 200;
+const MIN_ZOOM = 80;
+const MAX_ZOOM = 120;
 const DEFAULT_ZOOM = 100;
 
 @Injectable({ providedIn: "root" })
